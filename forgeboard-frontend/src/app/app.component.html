@@ -1,0 +1,175 @@
+<!-- Wrap the entire page in a black border container -->
+<div class="page-container" [class.hide-border]="!showLayoutBorder">
+
+  <mat-toolbar color="primary" class="header-containter" [class.hide-border]="!showLayoutBorder">
+      PROJECT: FORGEBOARD
+      <!-- Removed toolbar fieldset label and its container -->
+  </mat-toolbar>
+
+  <div class="content-container blue-border" [class.hide-border]="!showLayoutBorder">
+    <div class="fieldset-label content-label" *ngIf="showLayoutBorder">content container</div>
+    <div class="layout-container" [class.hide-border]="!showLayoutBorder">
+      <div class="fieldset-label layout-label" *ngIf="showLayoutBorder">layout container</div>
+      <!-- Layout border with center lines (now inside layout-container) -->
+      <div class="layout-border" *ngIf="showLayoutBorder">
+        <div class="center-line-h"></div>
+        <div class="center-line-v"></div>
+      </div>
+      <!-- Tile grid container inside layout container -->
+      <div class="tile-grid-container" [class.hide-border]="!showLayoutBorder">
+        <div class="fieldset-label tilegrid-label" *ngIf="showLayoutBorder">tile grid container</div>
+        <div
+          class="tile-grid"
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          (cdkDropListDropped)="onTileDrop($event)"
+        >
+          <div
+            *ngIf="showMetricsTile"
+            cdkDrag
+            class="tile-drag"
+          >
+            <div class="tile-drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon> Metrics
+            </div>
+            <app-metrics-indicator></app-metrics-indicator>
+          </div>
+          <div cdkDrag class="tile-drag">
+            <div class="tile-drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon> Connection
+            </div>
+            <app-connection-status></app-connection-status>
+          </div>
+          <div cdkDrag class="tile-drag">
+            <div class="tile-drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon> Logs
+            </div>
+            <app-recent-logs></app-recent-logs>
+          </div>
+          <div cdkDrag class="tile-drag">
+            <div class="tile-drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon> Uptime
+            </div>
+            <app-uptime-summary></app-uptime-summary>
+          </div>
+          <div cdkDrag class="tile-drag">
+            <div class="tile-drag-handle" cdkDragHandle>
+              <mat-icon>drag_indicator</mat-icon> Activity
+            </div>
+            <app-activity-feed></app-activity-feed>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Callout container: fieldset label, aligned and sized to layout container, stacked below -->
+    <div class="callout-container" 
+         [class.animating]="animationsStarted"
+         [class.visible]="showCallout && audioEnabled"
+         *ngIf="showContextBlock">
+      <div class="fieldset-label callout-label" *ngIf="showLayoutBorder">callout container</div>
+      <div (click)="startAnimations()">
+        <div class="callout-meta" [class.animating]="animationsStarted">
+          <!-- Line 1 -->
+          <div class="meta-line">
+            <span class="key" [class.active-cursor]="isCursorActive('field', 0)">
+              <!-- No placeholder needed - starts empty -->
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="0" [characterDelay]="80" fieldType="key" [playDingAtEnd]="true" [dingVolume]="0.6">USER:</span>
+              </span>
+            </span>
+            <span class="val" [class.active-cursor]="isCursorActive('value', 0)">
+              <!-- No placeholder needed - starts empty -->
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="1000" [characterDelay]="80" fieldType="val" [playDingAtEnd]="true" [dingVolume]="0.7">{{userData?.name || 'JEFFREY SANFORD'}}</span>
+              </span>
+            </span>
+          </div>
+          
+          <!-- Line 2 -->
+          <div class="meta-line">
+            <span class="key" [class.active-cursor]="isCursorActive('field', 1)">
+              <!-- No placeholder needed - starts empty -->
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="2000" [characterDelay]="80" fieldType="key" [playDingAtEnd]="true">USERNAME:</span>
+              </span>
+            </span>
+            <span class="val" [class.active-cursor]="isCursorActive('value', 1)">
+              <!-- No placeholder needed - starts empty -->
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="3200" [characterDelay]="80" fieldType="val" [playDingAtEnd]="true">{{userData?.username || 'jeffrey.sanford'}}</span>
+              </span>
+            </span>
+          </div>
+          
+          <!-- Line 3 - Standardize -->
+          <div class="meta-line">
+            <span class="key" [class.active-cursor]="isCursorActive('field', 2)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="4000" [characterDelay]="100" fieldType="key">TITLE:</span>
+              </span>
+            </span>
+            <span class="val" [class.active-cursor]="isCursorActive('value', 2)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="4800" [characterDelay]="80" fieldType="val">{{userData?.title || 'SYSTEMS ARCHITECT'}}</span>
+              </span>
+            </span>
+          </div>
+          
+          <!-- Line 4 - Standardize -->
+          <div class="meta-line">
+            <span class="key" [class.active-cursor]="isCursorActive('field', 3)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="6000" [characterDelay]="100" fieldType="key">CREATED:</span>
+              </span>
+            </span>
+            <span class="val" [class.active-cursor]="isCursorActive('value', 3)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="7000" [characterDelay]="80" fieldType="val">{{userData?.created || '04/20/2025'}}</span>
+              </span>
+            </span>
+          </div>
+          
+          <!-- Line 5 - Standardize -->
+          <div class="meta-line">
+            <span class="key" [class.active-cursor]="isCursorActive('field', 4)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="8000" [characterDelay]="100" fieldType="key">MODIFIED:</span>
+              </span>
+            </span>
+            <span class="val" [class.active-cursor]="isCursorActive('value', 4)">
+              <span class="hidden-before-animation">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span *ngIf="animationsStarted" class="typed-content">
+                <span letterAnimator [animationDelay]="9000" [characterDelay]="80" fieldType="val">{{userData?.modified || (todayDate)}}</span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
+      <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
+      <div class="controls-row">
+        <div
+          class="audio-icon"
+          [class.shake]="isShaking"
+          (click)="enableAudio()"
+          title="Enable/Disable Audio"
+        >
+          <mat-icon>{{ audioEnabled ? 'volume_up' : 'volume_off' }}</mat-icon>
+        </div>
+        <div
+          class="layout-icon"
+          [class.shake]="layoutWiggle"
+          (click)="toggleLayoutMode()"
+          title="Toggle layout border and context block"
+        >
+          <mat-icon>grid_on</mat-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

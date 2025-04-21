@@ -1,0 +1,26 @@
+<div class="indicator-frame">
+  <svg class="indicator-border" viewBox="0 0 200 120" preserveAspectRatio="none">
+    <rect x="1" y="1" width="198" height="118" class="outline" />
+  </svg>
+
+  <div class="indicator-content">
+    <div class="row">
+      <span>CPU</span>
+      <strong>{{ cpu }}%</strong>
+    </div>
+    <div class="row">
+      <span>MEM</span>
+      <strong>{{ memory }}%</strong>
+    </div>
+    <div class="row">
+      <span>STATUS</span>
+      <strong [style.color]="connectionStatus ? 'lime' : 'red'">
+        {{ connectionStatus ? '🟢' : '🔴' }}
+      </strong>
+    </div>
+    <div class="row">
+      <span>TIME</span>
+      <strong>{{ time }}</strong>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,63 @@
+/* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+// Define primary variables
+$primary: #3498db;
+$secondary: #2ecc71;
+$accent: #e74c3c;
+$background-color: #ffffff;
+$translucent-overlay: rgba(0, 0, 0, 0.1);
+
+// Global styles
+body {
+    // background-color: $background-color;  // Remove or comment out this line
+    color: $primary;
+}
+
+// Buttons
+button {
+    background-color: $primary;
+    color: $background-color;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+    &:hover {
+        background-color: $secondary;
+        transform: scale(1.05);
+    }
+
+    &:active {
+        background-color: $accent;
+    }
+}
+
+// Translucent overlay
+.overlay {
+    background-color: $translucent-overlay;
+    backdrop-filter: blur(5px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+// Animations
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
