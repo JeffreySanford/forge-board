@@ -1,0 +1,80 @@
+<div class="layout-container" [class.hide-border]="!showLayoutBorder">
+  <div class="fieldset-label layout-label" *ngIf="showLayoutBorder">layout container</div>
+  <!-- Layout border with center lines -->
+  <div class="layout-border" *ngIf="showLayoutBorder">
+    <div class="center-line-h"></div>
+    <div class="center-line-v"></div>
+  </div>
+  
+  <!-- Tile grid container -->
+  <div class="tile-grid-container" [class.hide-border]="!showLayoutBorder">
+    <div class="fieldset-label tilegrid-label" *ngIf="showLayoutBorder">tile grid container</div>
+    <div
+      class="tile-grid"
+      cdkDropList
+      cdkDropListOrientation="horizontal"
+      [cdkDropListData]="tileOrder"
+      (cdkDropListDropped)="onTileDrop($event)"
+    >
+      <!-- Metrics tile -->
+      <div
+        *ngIf="showMetricsTile"
+        cdkDrag
+        class="tile-drag"
+        [cdkDragData]="'metrics'"
+      >
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Metrics
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('metrics')">
+            <mat-icon>{{ showMetricsTile ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+        <app-metrics-infographic></app-metrics-infographic>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Metrics</div>
+        </div>
+      </div>
+      
+      <!-- Connection tile -->
+      <div 
+        cdkDrag 
+        class="tile-drag"
+        [cdkDragData]="'connection'"
+      >
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Connection
+        </div>
+        <app-connection-status></app-connection-status>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Connection</div>
+        </div>
+      </div>
+      
+      <!-- Other tiles commented out until components are created -->
+      <!--
+      <div cdkDrag class="tile-drag">
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Logs
+        </div>
+        <app-recent-logs></app-recent-logs>
+      </div>
+      
+      <div cdkDrag class="tile-drag">
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Uptime
+        </div>
+        <app-uptime-summary></app-uptime-summary>
+      </div>
+      
+      <div cdkDrag class="tile-drag">
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Activity
+        </div>
+        <app-activity-feed></app-activity-feed>
+      </div>
+      -->
+    </div>
+  </div>
+</div>

@@ -1,0 +1,101 @@
+.connection-container {
+  width: 100%;
+  height: 100%;
+  padding: 0.5em;
+  box-sizing: border-box;
+}
+
+.connection-card {
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa;
+  border-radius: 0.25em;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.connection-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5em 1em;
+  background-color: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.connection-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5em;
+  
+  &.status-connected {
+    color: #2ecc71;
+  }
+  
+  &.status-disconnected {
+    color: #e74c3c;
+  }
+  
+  &.status-connecting {
+    color: #f39c12;
+    animation: rotate 2s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.connection-title {
+  font-weight: bold;
+  flex: 1;
+}
+
+.connection-content {
+  padding: 1em;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-row, .timestamp-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+}
+
+.status-label, .timestamp-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.status-value, .timestamp-value {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.status-value {
+  &.status-connected {
+    color: #2ecc71;
+    font-weight: bold;
+  }
+  
+  &.status-disconnected {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+  
+  &.status-connecting {
+    color: #f39c12;
+    font-weight: bold;
+  }
+}
+
+.timestamp-value {
+  color: #6c757d;
+}

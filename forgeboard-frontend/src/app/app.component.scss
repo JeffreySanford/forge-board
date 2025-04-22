@@ -17,6 +17,43 @@
 }
 
 /* ==========================================================================
+   CONTENT CONTAINER
+   ========================================================================== */
+
+/* Updated to ensure consistent naming with HTML */
+.content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  position: relative;
+  overflow: visible;
+}
+
+/* Blue border styling for content wrapper */
+.content-wrapper.blue-border {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  height: calc(100% - 2em);
+  width: calc(100% - 2em);
+  margin: 1em;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border: 1em solid #3498db;
+  border-radius: 1.5em;
+  position: relative;
+  overflow: visible;
+  background: rgba(255,255,255,0.85) !important;
+}
+
+/* ==========================================================================
    Header
    ========================================================================== */
 
@@ -172,20 +209,85 @@
   background: #eaf6fb;
 }
 
+/* Enhanced drag-drop styles */
+.tile-drag {
+  cursor: move;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tile-drag.cdk-drag-preview {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 2px solid #4eff91 !important;
+  opacity: 0.8;
+}
+
+.tile-drag.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.tile-drag.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tile-grid.cdk-drop-list-dragging .tile-drag:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tile-placeholder {
+  background: #0d1b2a;
+  border: 2px dashed #4eff91;
+  border-radius: 0.5em;
+  min-height: 120px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4eff91;
+}
+
+.placeholder-content {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  text-transform: uppercase;
+  font-size: 1.2em;
+  letter-spacing: 0.1em;
+}
+
+/* Visibility toggle button */
+.tile-visibility-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.tile-visibility-toggle mat-icon {
+  font-size: 18px;
+}
+
+.tile-visibility-toggle:hover {
+  color: #4eff91;
+}
+
 /* ==========================================================================
    ICON CONTROLS (AUDIO & LAYOUT)
    ========================================================================== */
 
 .controls-row {
-  position: absolute;
-  right: 1em;
-  bottom: 1em;
+  position: relative; /* Changed from absolute to relative */
   display: flex;
-  flex-direction: row;
+  flex-direction: row-reverse;
   gap: 1em;
   align-items: center;
   justify-content: flex-end;
   z-index: 100;
+  margin: 1em 1em 1em auto; /* Align to right with margin */
 }
 
 .audio-icon,
@@ -219,7 +321,7 @@
   justify-content: center;
   transition: color 0.2s;
 }
-.layout-icon mat-icon {
+.layout-icon {
   font-size: 28px;
   color: #3498db; /* Vibrant blue */
   margin: 0;
@@ -228,6 +330,28 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  position: relative;
+  margin-right: 1em;
+}
+
+.layout-icon .layout-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #222;
+  color: #ffe066;
+  font-size: 0.7em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 1.3em;
+  height: 1.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  border: 1.5px solid #ffe066;
+  box-shadow: 0 0 4px #ffe066;
+  z-index: 2;
 }
 
 .audio-icon.shake,
@@ -244,6 +368,18 @@
   transform: scale(1.1);
 }
 .audio-icon:hover mat-icon,
+.layout-icon:hover mat-icon {
+  color: #4eff91;
+}
+
+.layout-icon.active,
+.layout-icon:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border: 2px solid #4eff91;
+  box-shadow: 0 0 20px #4eff91, 0 0 10px #4eff91;
+  transform: scale(1.1);
+}
+.layout-icon.active mat-icon,
 .layout-icon:hover mat-icon {
   color: #4eff91;
 }
@@ -332,13 +468,13 @@ fieldset.page-container {
   flex-direction: column;
   border: 3px solid #222;
   border-radius: 1em;
-  margin: 2em 1em 0 1em; /* top 2em, left/right 1em, no bottom margin */
+  margin: 2em 1em 1em 1em; /* Added bottom margin */
   position: relative;
   min-height: 400px;
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
-  background: none;
+  background: rgba(255,255,255,0.7) !important;
   /* Take all available vertical space except footer/callout */
 }
 
@@ -521,6 +657,7 @@ html, body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+  max-height: 7em;
 }
 
 /* Callout drawing: fill callout-container, no extra margin */
@@ -607,7 +744,7 @@ html, body {
   min-width: 320px;
   max-width: none;
   min-height: 3em;
-  max-height: 5em;
+  max-height: 7em;
   width: 100%;
   margin: 1em;
   background: #fff !important;
@@ -640,4 +777,212 @@ html, body {
   min-width: 0;
   box-sizing: border-box;
   /* rest of .callout-container styles unchanged */
+}
+
+.callout-meta {
+  font-size: 0.85em;
+  line-height: 1.2;
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+  padding: 0.2em 0;
+}
+
+.meta-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.5em;
+  margin-bottom: 0.15em;
+  font-size: 0.95em;
+}
+
+.key, .val {
+  display: inline-block;
+  text-align: right;
+  font-family: inherit;
+  font-size: inherit;
+  min-width: 6em;
+  padding: 0 0.2em;
+}
+
+.key {
+  color: #222;
+  font-weight: bold;
+  opacity: 0.85;
+}
+
+.val {
+  color: #3498db;
+  font-weight: normal;
+  opacity: 0.95;
+  min-width: 10em;
+}
+
+/* ==========================================================================
+   LAYOUT OVERLAYS
+   ========================================================================== */
+
+.layout-overlays {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.layout-border-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  border: 3px dashed #3498db;
+  box-sizing: border-box;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.layout-12col-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0.4;
+  // 12 columns with fancy lines
+  background: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(100vw / 12 - 2px),
+    #ffe066 calc(100vw / 12 - 2px),
+    #ffe066 calc(100vw / 12)
+  );
+  border-left: 2px solid #ffe066;
+  border-right: 2px solid #ffe066;
+}
+
+.layout-4col-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0.4;
+  // 4 columns with fancy lines
+  background: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(100vw / 4 - 2px),
+    #e74c3c calc(100vw / 4 - 2px),
+    #e74c3c calc(100vw / 4)
+  );
+  border-left: 2px solid #e74c3c;
+  border-right: 2px solid #e74c3c;
+}
+
+.layout-grid-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 13;
+  opacity: 0.25;
+  background-size: 32px 32px;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat;
+  &.small {
+    background-image:
+      linear-gradient(to right, #4eff91 1px, transparent 1px),
+      linear-gradient(to bottom, #4eff91 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  &.large {
+    background-image:
+      linear-gradient(to right, #3498db 2px, transparent 2px),
+      linear-gradient(to bottom, #3498db 2px, transparent 2px);
+    background-size: 96px 96px;
+    opacity: 0.18;
+  }
+}
+
+.mr-1 {
+  margin-right: 1em;
+}
+
+/* ==========================================================================
+   GLOBAL CONTROLS FOR OVERLAYS
+   ========================================================================== */
+.global-controls {
+  position: fixed;
+  right: 1em;
+  bottom: 1em;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 1em;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 100;
+}
+
+.layout-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(13, 27, 42, 0.7);
+  border: 1px solid rgba(78, 255, 145, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+  padding: 0;
+  
+  mat-icon {
+    font-size: 24px;
+    color: #3498db;
+    transition: color 0.2s;
+  }
+  
+  &:hover {
+    background: rgba(13, 27, 42, 0.9);
+    border: 2px solid #4eff91;
+    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    transform: scale(1.1);
+    
+    mat-icon {
+      color: #4eff91;
+    }
+  }
+  
+  &.active {
+    background: rgba(13, 27, 42, 0.9);
+    border: 2px solid #4eff91;
+    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    
+    mat-icon {
+      color: #4eff91;
+    }
+  }
+  
+  .layout-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #222;
+    color: #ffe066;
+    font-size: 0.7em;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 1.3em;
+    height: 1.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    border: 1.5px solid #ffe066;
+    box-shadow: 0 0 4px #ffe066;
+    z-index: 2;
+  }
+  
+  &.shake {
+    animation: shakeIcon 0.8s cubic-bezier(.36,.07,.19,.97) both;
+    transform-origin: center center;
+  }
 }

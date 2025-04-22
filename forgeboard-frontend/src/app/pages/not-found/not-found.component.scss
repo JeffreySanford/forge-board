@@ -1,0 +1,320 @@
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(0%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes drawLine {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.not-found-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #0d1b2a;
+  color: #4eff91;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  position: relative;
+  padding: 2em;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.blueprint-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(to right, rgba(78, 255, 145, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(78, 255, 145, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(78, 255, 145, 0.5);
+  animation: scan-line 2s linear infinite;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.error-code {
+  font-size: 12rem;
+  font-weight: bold;
+  letter-spacing: -5px;
+  color: rgba(231, 76, 60, 0.7);
+  text-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
+  margin-bottom: 0.1em;
+  animation: pulse 3s infinite;
+}
+
+.error-container {
+  border: 2px solid #e74c3c;
+  border-radius: 8px;
+  padding: 1.5em 2em;
+  width: 100%;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  margin-bottom: 2em;
+}
+
+.error-detail {
+  font-size: 0.9em;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+  border-bottom: 1px dashed rgba(78, 255, 145, 0.3);
+  padding-bottom: 0.5em;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+}
+
+.error-label {
+  color: white;
+  font-weight: bold;
+  min-width: 120px;
+}
+
+.error-value {
+  color: #4eff91;
+  flex: 1;
+  text-align: right;
+  font-family: monospace;
+}
+
+.countdown {
+  color: #ffe066;
+  margin-top: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  
+  span {
+    margin-left: 0.5em;
+    font-weight: bold;
+    animation: blink 1s infinite;
+  }
+}
+
+.footer-actions {
+  margin-top: 2em;
+  display: flex;
+  gap: 1em;
+}
+
+.action-button {
+  background: transparent;
+  color: #4eff91;
+  border: 2px solid #4eff91;
+  border-radius: 4px;
+  padding: 0.75em 1.5em;
+  font-family: inherit;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+
+  &:hover {
+    background: rgba(78, 255, 145, 0.1);
+    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+  }
+}
+
+.corner-blueprint {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  
+  &.top-left {
+    top: 10px;
+    left: 10px;
+    border-top: 2px solid rgba(78, 255, 145, 0.5);
+    border-left: 2px solid rgba(78, 255, 145, 0.5);
+    border-top-left-radius: 8px;
+  }
+  
+  &.top-right {
+    top: 10px;
+    right: 10px;
+    border-top: 2px solid rgba(78, 255, 145, 0.5);
+    border-right: 2px solid rgba(78, 255, 145, 0.5);
+    border-top-right-radius: 8px;
+  }
+  
+  &.bottom-left {
+    bottom: 10px;
+    left: 10px;
+    border-bottom: 2px solid rgba(78, 255, 145, 0.5);
+    border-left: 2px solid rgba(78, 255, 145, 0.5);
+    border-bottom-left-radius: 8px;
+  }
+  
+  &.bottom-right {
+    bottom: 10px;
+    right: 10px;
+    border-bottom: 2px solid rgba(78, 255, 145, 0.5);
+    border-right: 2px solid rgba(78, 255, 145, 0.5);
+    border-bottom-right-radius: 8px;
+  }
+}
+
+/* Service status container */
+.service-status-container {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 2em;
+  border: 2px solid #ffe066;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5em;
+  position: relative;
+}
+
+.service-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px dashed rgba(78, 255, 145, 0.3);
+}
+
+.service-status-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ffe066;
+}
+
+.service-status-refresh {
+  background: transparent;
+  color: #ffe066;
+  border: 1px solid #ffe066;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 224, 102, 0.1);
+  }
+
+  &.spinning mat-icon {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.overall-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1em;
+  font-size: 1em;
+  gap: 0.5em;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  
+  &.online {
+    background-color: #4eff91;
+    box-shadow: 0 0 10px rgba(78, 255, 145, 0.7);
+  }
+  
+  &.offline {
+    background-color: #e74c3c;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+  }
+  
+  &.partial {
+    background-color: #ffe066;
+    box-shadow: 0 0 10px rgba(255, 224, 102, 0.7);
+  }
+  
+  &.checking {
+    background-color: #ffe066;
+    box-shadow: 0 0 10px rgba(255, 224, 102, 0.7);
+  }
+}
+
+.endpoints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.endpoint-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  
+  &:nth-child(odd) {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.endpoint-name {
+  font-weight: bold;
+}
+
+.endpoint-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.latency {
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.horizontal-line {
+  height: 2px;
+  background-color: #ffe066;
+  margin: 1em 0;
+  width: 0;
+  animation: drawLine 1s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

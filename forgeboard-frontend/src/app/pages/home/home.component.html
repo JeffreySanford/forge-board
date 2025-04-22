@@ -1,0 +1,30 @@
+<div class="home-container">
+  <div class="blueprint-grid"></div>
+  
+  <div class="header-section">
+    <h1>ForgeBoard</h1>
+    <p>A modern dashboard experience inspired by vintage engineering blueprints. Monitor system performance, manage projects, and visualize data in a unique technical aesthetic.</p>
+  </div>
+  
+  <div class="features-grid">
+    <div *ngFor="let tile of featuredTiles" 
+         class="feature-tile" 
+         [routerLink]="tile.route"
+         [style.--tile-color]="tile.color">
+      <div class="feature-content">
+        <div class="feature-header">
+          <div class="feature-icon">
+            <mat-icon>{{tile.icon}}</mat-icon>
+          </div>
+          <h3>{{tile.title}}</h3>
+        </div>
+        <p>{{tile.description}}</p>
+      </div>
+      <div class="blueprint-details">REV.01-A</div>
+    </div>
+  </div>
+  
+  <div class="system-status">
+    <p><span class="status-indicator"></span> All systems operational</p>
+  </div>
+</div>

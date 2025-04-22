@@ -48,10 +48,22 @@
     }
   ],
   "targetDefaults": {
-    "@angular-devkit/build-angular:application": {
+    "@angular-devkit/build-angular:browser": {
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "@angular-devkit/build-angular:dev-server": {
+      "cache": true,
+      "dependsOn": ["build"]
+    },
+    "@nx/webpack:webpack": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "serve": {
+      "dependsOn": ["^build"]
     },
     "e2e-ci--**/*": {
       "dependsOn": ["^build"]

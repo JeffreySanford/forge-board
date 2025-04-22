@@ -1,0 +1,34 @@
+<div class="metric-container">
+  <h2>Metrics Dashboard</h2>
+  <p>View system metrics and diagnostics.</p>
+  
+  <!-- Router outlet will load the diagnostics component -->
+  <router-outlet></router-outlet>
+</div>
+
+<div class="indicator-frame">
+  <mat-card class="elevated-card">
+    <mat-card-header>
+      <span class="pulse-icon">
+        <mat-icon>memory</mat-icon></span>
+      <div class="update-bar-wrapper">
+        <input
+          type="range"
+          class="update-bar"
+          min="20"
+          max="2000"
+          step="10"
+          [value]="refreshInterval"
+          (input)="onIntervalChange($event)"
+        />
+      </div>
+    </mat-card-header>
+    <mat-card-content *ngIf="metrics$ | async as m">
+      <div class="metric">
+        CPU {{ m.cpu | number:'1.2-2' }}% • MEM {{ m.memory | number:'1.2-2' }}%
+      </div>
+      <div class="timestamp">{{ m.time | date:'HH:mm:ss.SSS' }}</div>
+      <div #chart class="chart-container"></div>
+    </mat-card-content>
+  </mat-card>
+</div>

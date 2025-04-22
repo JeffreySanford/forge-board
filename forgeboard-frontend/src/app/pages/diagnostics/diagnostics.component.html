@@ -1,0 +1,93 @@
+<div class="diagnostic-container">
+  <h2>System Diagnostics</h2>
+
+  <!-- Health Status Section -->
+  <div class="health-section">
+    <h3>System Health</h3>
+    <div class="health-card">
+      <div class="health-status" [ngClass]="health.status.toLowerCase()">
+        <span class="status-pill">{{health.status}}</span>
+        <span class="uptime">Uptime: {{health.uptime | number}} seconds</span>
+      </div>
+      <div class="health-details">
+        <div class="timeline">
+          <div class="past">
+            <h4>Past</h4>
+            <p>{{health.details.past}}</p>
+          </div>
+          <div class="present">
+            <h4>Present</h4>
+            <p>{{health.details.present}}</p>
+          </div>
+          <div class="future">
+            <h4>Future</h4>
+            <p>{{health.details.future}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backend Services Section -->
+  <div class="services-section">
+    <h3>Backend Services</h3>
+    <div class="service-lists">
+      <div class="service-column">
+        <h4>Services ({{services.length}})</h4>
+        <ul>
+          <li *ngFor="let service of services">{{service}}</li>
+        </ul>
+      </div>
+      <div class="service-column">
+        <h4>Controllers ({{controllers.length}})</h4>
+        <ul>
+          <li *ngFor="let controller of controllers">{{controller}}</li>
+        </ul>
+      </div>
+      <div class="service-column">
+        <h4>Gateways ({{gateways.length}})</h4>
+        <ul>
+          <li *ngFor="let gateway of gateways">{{gateway}}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Logs Section -->
+  <div class="errors-section" *ngIf="errors.length > 0">
+    <h3>Error Logs</h3>
+    <div class="error-list">
+      <div class="error-item" *ngFor="let error of errors">
+        {{error}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Metrics Section -->
+  <div class="metrics-section">
+    <h3>Live Metrics</h3>
+    <div class="metrics-display" *ngIf="metrics$ | async as m">
+      <div class="metric">
+        <label>CPU:</label> {{m.data.cpu | number:'1.1-1'}}%
+      </div>
+      <div class="metric">
+        <label>Memory:</label> {{m.data.memory | number:'1.1-1'}}%
+      </div>
+      <div class="metric">
+        <label>Time:</label> {{m.data.time | date:'HH:mm:ss'}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket Connection Status -->
+  <div class="socket-status">
+    Socket Status: <span [ngClass]="socketStatus">{{socketStatus}}</span>
+  </div>
+  
+  <!-- For debugging purposes - can be removed in production -->
+  <div class="debug-info">
+    <h4>Active Subscriptions</h4>
+    <!-- Changed from *ngFor to show count, as Subscription is not iterable -->
+    <div>Socket Events: Active</div>
+  </div>
+</div>

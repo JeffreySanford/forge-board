@@ -1,0 +1,78 @@
+<div class="not-found-container">
+  <div class="blueprint-grid"></div>
+  <div class="scan-line"></div>
+  
+  <div class="corner-blueprint top-left"></div>
+  <div class="corner-blueprint top-right"></div>
+  <div class="corner-blueprint bottom-left"></div>
+  <div class="corner-blueprint bottom-right"></div>
+  
+  <div class="error-code">{{errorCode}}</div>
+  
+  <div class="error-container">
+    <div class="error-detail">
+      <div class="error-label">ERROR CODE:</div>
+      <div class="error-value">{{errorDetails.code}}</div>
+    </div>
+    <div class="error-detail">
+      <div class="error-label">STATUS:</div>
+      <div class="error-value">{{errorDetails.message}}</div>
+    </div>
+    <div class="error-detail">
+      <div class="error-label">PATH:</div>
+      <div class="error-value">{{errorDetails.path}}</div>
+    </div>
+    <div class="error-detail">
+      <div class="error-label">TIMESTAMP:</div>
+      <div class="error-value">{{errorDetails.timestamp | date:'yyyy-MM-dd HH:mm:ss.SSS'}}</div>
+    </div>
+    
+    <div class="countdown">
+      REDIRECTING TO DASHBOARD IN {{countdown$ | async}} SECONDS
+      <span>_</span>
+    </div>
+  </div>
+  
+  <!-- Service Status Dashboard -->
+  <div class="service-status-container">
+    <div class="service-status-header">
+      <div class="service-status-title">SYSTEM STATUS</div>
+      <button class="service-status-refresh" [class.spinning]="checkingStatus" (click)="refreshStatus()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+    
+    <div class="overall-status">
+      <div class="status-indicator" [class]="overallStatus"></div>
+      <div>{{getOverallStatusText()}}</div>
+    </div>
+    
+    <div class="horizontal-line"></div>
+    
+    <div class="endpoints-list">
+      <div class="endpoint-item" *ngFor="let endpoint of endpoints">
+        <div class="endpoint-name">{{endpoint.name}}</div>
+        <div class="endpoint-status">
+          <ng-container *ngIf="endpoint.status === 'checking'">
+            <div class="latency">CHECKING...</div>
+          </ng-container>
+          <ng-container *ngIf="endpoint.status !== 'checking'">
+            <div class="latency" *ngIf="endpoint.latency">{{endpoint.latency}}ms</div>
+          </ng-container>
+          <div class="status-indicator" [class]="endpoint.status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer-actions">
+    <button class="action-button" (click)="navigateHome()">
+      <mat-icon>home</mat-icon>
+      Return Home
+    </button>
+    <button class="action-button" (click)="refreshStatus()">
+      <mat-icon>refresh</mat-icon>
+      Check Status
+    </button>
+  </div>
+</div>

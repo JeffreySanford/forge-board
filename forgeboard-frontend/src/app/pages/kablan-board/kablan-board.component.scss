@@ -1,0 +1,14 @@
+.kablan-board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.kablan-columns {
+  display: flex;
+  gap: 1em;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+}

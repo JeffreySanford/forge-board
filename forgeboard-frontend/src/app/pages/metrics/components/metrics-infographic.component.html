@@ -1,0 +1,30 @@
+<div class="metrics-container">
+  <div class="metrics-card">
+    <div class="metrics-header">
+      <span class="pulse-icon"><mat-icon>memory</mat-icon></span>
+      <span class="metrics-title">System Metrics</span>
+      <div class="update-bar-wrapper">
+        <input
+          type="range"
+          class="update-bar"
+          min="20"
+          max="2000"
+          step="10"
+          [value]="updateInterval"
+          (input)="onIntervalChange($event)"
+        />
+      </div>
+    </div>
+    <div class="metrics-content" *ngIf="metrics$ | async as m">
+      <div class="metric-row">
+        <span class="metric-label">CPU:</span>
+        <span class="metric-value">{{ m.cpu | number:'1.2-2' }}%</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">Memory:</span>
+        <span class="metric-value">{{ m.memory | number:'1.2-2' }}%</span>
+      </div>
+      <div class="timestamp">{{ m.time | date:'HH:mm:ss.SSS' }}</div>
+    </div>
+  </div>
+</div>

@@ -1,20 +1,44 @@
-const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
-const { join } = require('path');
+const { composePlugins, withNx } = require('@nx/webpack');
+const nodeExternals = require('webpack-node-externals');
 
-module.exports = {
-  output: {
-    path: join(__dirname, '../dist/forgeboard-api'),
-  },
-  plugins: [
-    new NxAppWebpackPlugin({
-      target: 'node',
-      compiler: 'tsc',
-      main: './src/main.ts',
-      tsConfig: './tsconfig.app.json',
-      assets: ['./src/assets'],
-      optimization: false,
-      outputHashing: 'none',
-      generatePackageJson: true,
-    }),
-  ],
-};
+module.exports = composePlugins(
+  withNx(),
+  (config) => {
+    config.devtool = 'source-map';
+    
+    // Target Node.js environment
+    config.target = 'node';
+
+    config.experiments = {
+      ...config.experiments,
+      topLevelAwait: true,
+      outputModule: true,
+    };
+
+    config.output = {
+      ...config.output,
+      module: true,
+      libraryTarget: 'module',
+    };
+
+    config.resolve = {
+      ...config.resolve,
+      extensions: [...(config.resolve?.extensions || []), '.ts', '.tsx', '.mjs', '.js', '.jsx'],
+      fallback: {
+        ...config.resolve?.fallback,
+        path: require.resolve('path-browserify'),
+      }
+    };
+
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      /Critical dependency/,
+      /Module not found/,
+    ];
+
+    // Don't bundle node_modules
+    config.externals = [nodeExternals()];
+
+    return config;
+  }
+);

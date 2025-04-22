@@ -1,14 +1,10 @@
-import {
-  Component,
-  ViewChild,
-  ElementRef,
-  AfterViewInit,
-  OnDestroy,
-} from '@angular/core';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { from, of, interval, Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { UserData } from './services/user-data.service';
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { TileType, TileDragEvent } from './models/tile.model';
+import { TileStateService } from './services/tile-state.service';
 
 @Component({
   selector: 'app-root',
@@ -38,7 +34,63 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   showContextBlock = true;
   showMetricsTile = true;
   layoutWiggle = false;
-  tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
+  tileOrder: TileType[] = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
+  calloutLines = [
+    {
+      key: 'USER:',
+      value: this.userData?.name || 'JEFFREY SANFORD',
+      keyDelay: 0,
+      keyCharDelay: 80,
+      valDelay: 1000,
+      valCharDelay: 80,
+      dingVolume: 0.6
+    },
+    {
+      key: 'USERNAME:',
+      value: this.userData?.username || 'jeffrey.sanford',
+      keyDelay: 2000,
+      keyCharDelay: 80,
+      valDelay: 3200,
+      valCharDelay: 80,
+      dingVolume: 0.7
+    },
+    {
+      key: 'TITLE:',
+      value: this.userData?.title || 'SYSTEMS ARCHITECT',
+      keyDelay: 4000,
+      keyCharDelay: 100,
+      valDelay: 4800,
+      valCharDelay: 80
+    },
+    {
+      key: 'CREATED:',
+      value: this.userData?.created || '04/20/2025',
+      keyDelay: 6000,
+      keyCharDelay: 100,
+      valDelay: 7000,
+      valCharDelay: 80
+    },
+    {
+      key: 'MODIFIED:',
+      value: this.userData?.modified || this.todayDate,
+      keyDelay: 8000,
+      keyCharDelay: 100,
+      valDelay: 9000,
+      valCharDelay: 80
+    }
+  ];
+
+  is12ColumnVisible = false;
+  is4ColumnVisible = false;
+  isSmallGridVisible = false;
+  isLargeGridVisible = false;
+
+  constructor(
+    private tileStateService: TileStateService
+  ) {
+    // Initialize with default order, will be updated from backend in ngAfterViewInit
+    this.tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
+  }
 
   ngAfterViewInit() {
     setTimeout(() => {
@@ -50,6 +102,19 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.showLayoutBorder = true;
     this.showContextBlock = true;
     this.showMetricsTile = true;
+
+    // Load tile order from backend
+    this.tileStateService.getTileOrder('user1').subscribe(res => {
+      if (res.order && res.order.length) {
+        this.tileOrder = res.order as TileType[];
+        
+        // Apply visibility settings if available
+        if (res.visibility) {
+          this.showMetricsTile = res.visibility['metrics'] !== false;
+          // Update other visibility flags as needed
+        }
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -356,14 +421,76 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.showLayoutBorder = !this.showLayoutBorder;
     this.showContextBlock = !this.showContextBlock;
     this.showMetricsTile = !this.showMetricsTile;
+    // Toggle overlays as well
+    this.is12ColumnVisible = !this.is12ColumnVisible;
+    this.is4ColumnVisible = !this.is4ColumnVisible;
+    this.isSmallGridVisible = !this.isSmallGridVisible;
+    this.isLargeGridVisible = !this.isLargeGridVisible;
   }
 
-  onTileDrop(event: Event) {
-    // Cast the generic event to CdkDragDrop<string[]>
-    const cdkEvent = event as unknown as CdkDragDrop<string[]>;
+  toggle12ColumnOverlay() {
+    this.is12ColumnVisible = !this.is12ColumnVisible;
+  }
+
+  toggle4ColumnOverlay() {
+    this.is4ColumnVisible = !this.is4ColumnVisible;
+  }
+
+  toggleSmallGridOverlay() {
+    this.isSmallGridVisible = !this.isSmallGridVisible;
+  }
+
+  toggleLargeGridOverlay() {
+    this.isLargeGridVisible = !this.isLargeGridVisible;
+  }
+
+  onTileDrop(event: CdkDragDrop<TileType[]>): void {
+    // First update the local array for immediate UI feedback
+    moveItemInArray(this.tileOrder, event.previousIndex, event.currentIndex);
     
-    // Use the parsed event to move items in array
-    moveItemInArray(this.tileOrder, cdkEvent.previousIndex, cdkEvent.currentIndex);
-    // Optionally, persist tileOrder to localStorage or service
+    // Then persist to backend with error handling
+    this.tileStateService.setTileOrder('user1', this.tileOrder)
+      .subscribe({
+        next: (response) => {
+          if (!response.success) {
+            // Optionally show a message that the save failed
+            console.warn('Failed to save tile order');
+          }
+        },
+        error: (err) => {
+          console.error('Error saving tile order:', err);
+          // Optionally show an error message to the user
+        }
+      });
+  }
+
+  // Method to toggle tile visibility
+  toggleTileVisibility(tileType: TileType): void {
+    // Update local state based on tile type
+    if (tileType === 'metrics') {
+      this.showMetricsTile = !this.showMetricsTile;
+    }
+    // Add similar toggles for other tile types as needed
+    
+    // Persist visibility settings
+    const visibility = {
+      metrics: this.showMetricsTile,
+      connection: true, // Update with actual visibility states
+      logs: true,
+      uptime: true,
+      activity: true
+    };
+    
+    this.tileStateService.setTileVisibility('user1', visibility)
+      .subscribe({
+        next: (response) => {
+          if (!response.success) {
+            console.warn('Failed to save tile visibility');
+          }
+        },
+        error: (err) => {
+          console.error('Error saving tile visibility:', err);
+        }
+      });
   }
 }

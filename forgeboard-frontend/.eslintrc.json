@@ -24,7 +24,14 @@
             "prefix": "app",
             "style": "kebab-case"
           }
-        ]
+        ],
+        "@angular-eslint/prefer-standalone": "off",
+        "@angular-eslint/no-standalone-components": "off",
+        "@angular-eslint/no-inputs-metadata-property": "error",
+        "@angular-eslint/no-outputs-metadata-property": "error",
+        "@angular-eslint/no-host-metadata-property": "off",
+        "require-socket-cleanup/ngondestroy-socket-disconnect": "warn",
+        "@typescript-eslint/no-inferrable-types": "off"
       }
     },
     {

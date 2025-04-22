@@ -50,7 +50,7 @@
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@nx/angular:dev-server",
+      "executor": "@angular-devkit/build-angular:dev-server",
       "options": {
         "buildTarget": "forgeboard-frontend:build:development"
       },
@@ -58,7 +58,8 @@
         "production": {
           "buildTarget": "forgeboard-frontend:build:production"
         }
-      }
+      },
+      "dependsOn": ["^build"]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
