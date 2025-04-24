@@ -1,0 +1,9 @@
+<mat-form-field appearance="outline" class="search-field">
+  <mat-label>Search logs</mat-label>
+  <input matInput [formControl]="searchControl" placeholder="Search messages" autocomplete="off">
+  <mat-icon matPrefix>search</mat-icon>
+  <button *ngIf="searchControl.value" matSuffix mat-icon-button aria-label="Clear" (click)="clearSearch()">
+    <mat-icon>close</mat-icon>
+  </button>
+  <mat-hint>Search by message content</mat-hint>
+</mat-form-field>

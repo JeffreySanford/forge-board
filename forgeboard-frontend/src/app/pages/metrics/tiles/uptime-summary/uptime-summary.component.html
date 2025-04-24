@@ -1,4 +1,30 @@
 <div class="uptime-summary-tile">
-  <h3>{{ title }}</h3>
-  <p>System has been up for: <strong>{{ getFormattedUptime() }}</strong></p>
+  <div class="uptime-header">
+    <mat-icon>timer</mat-icon>
+    <span class="uptime-title">{{ title }}</span>
+  </div>
+  
+  <div class="uptime-content">
+    <div class="uptime-display">
+      <div class="uptime-time">{{ getFormattedUptime() }}</div>
+      <div class="uptime-label">System Uptime</div>
+    </div>
+    
+    <div class="stats-container">
+      <div class="stat-row">
+        <span class="stat-label">Uptime %</span>
+        <span class="stat-value">{{ uptimePercent | number:'1.2-2' }}%</span>
+      </div>
+      
+      <div class="stat-row">
+        <span class="stat-label">Incidents</span>
+        <span class="stat-value">{{ incidents }}</span>
+      </div>
+      
+      <div class="stat-row">
+        <span class="stat-label">Started</span>
+        <span class="stat-value">{{ startTime | date:'HH:mm:ss' }}</span>
+      </div>
+    </div>
+  </div>
 </div>

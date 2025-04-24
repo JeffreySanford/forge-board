@@ -1,0 +1,24 @@
+<div class="filter-container">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Filter by Source</mat-label>
+    <mat-select [formControl]="sourcesControl" multiple (selectionChange)="onSourcesChange()">
+      <mat-select-trigger>
+        {{sourcesControl.value?.length ? sourcesControl.value[0] : ''}}
+        <span *ngIf="sourcesControl.value?.length > 1" class="additional-selection">
+          (+{{sourcesControl.value.length - 1}} {{sourcesControl.value.length === 2 ? 'other' : 'others'}})
+        </span>
+      </mat-select-trigger>
+      <mat-option *ngFor="let source of availableSources" [value]="source">{{source}}</mat-option>
+    </mat-select>
+    <mat-hint>Filter logs by their source</mat-hint>
+  </mat-form-field>
+
+  <div class="filter-actions">
+    <button mat-stroked-button color="primary" (click)="selectAllSources()" [disabled]="!availableSources.length">
+      Select All
+    </button>
+    <button mat-stroked-button color="warn" (click)="clearSources()" [disabled]="!sourcesControl.value?.length">
+      Clear
+    </button>
+  </div>
+</div>

@@ -5,43 +5,46 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { MatCardModule } from '@angular/material/card';
-import { MatSliderModule } from '@angular/material/slider';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { DragDropModule } from '@angular/cdk/drag-drop';
+import { SharedModule } from './shared/shared.module';
 
-import { LetterAnimatorDirective } from './letter-animator.directive';
+// Feature modules
 import { KablanBoardModule } from './pages/kablan-board/kablan-board.module';
 import { MetricsModule } from './pages/metrics/metrics.module';
 import { HomeModule } from './pages/home/home.module';
 import { NavigationModule } from './components/navigation/navigation.module';
 import { NotFoundModule } from './pages/not-found/not-found.module';
+import { FooterModule } from './components/footer/footer.module';
+import { LoggerPageModule } from './pages/logger/logger.module';
+
+// Services and interceptors
 import { ErrorService } from './services/error.service';
 import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
 
+// Status indicator
+import { ConnectionStatusIndicatorComponent } from './components/connection-status-indicator/connection-status-indicator.component';
+
 @NgModule({
   declarations: [
-    AppComponent,
-    LetterAnimatorDirective
+    AppComponent
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    AppRoutingModule,
     HttpClientModule,
-    MatCardModule,
-    MatSliderModule,
-    MatDividerModule,
-    MatIconModule,
-    MatToolbarModule,
-    DragDropModule,
+    AppRoutingModule,
+    SharedModule,
+    
+    // Feature modules
     KablanBoardModule,
     MetricsModule,
     HomeModule,
     NavigationModule,
-    NotFoundModule
+    NotFoundModule,
+    FooterModule,
+    LoggerPageModule, // Add Logger Page Module
+    
+    // Standalone components
+    ConnectionStatusIndicatorComponent
   ],
   providers: [
     ErrorService,

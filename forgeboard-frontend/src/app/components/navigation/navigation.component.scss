@@ -20,7 +20,7 @@
 .mat-toolbar.mat-primary {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 1;
   background-color: #0d1b2a;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
@@ -55,6 +55,8 @@
 }
 
 .active-link {
+  background-color: rgba(78, 255, 145, 0.15);
+  color: #4eff91;
   border-left: 4px solid #4eff91;
 }
 
@@ -68,7 +70,9 @@
 }
 
 .app-content {
+  padding: 1em;
   height: calc(100vh - 64px);
+  box-sizing: border-box;
   overflow: auto;
 }
 
@@ -86,6 +90,6 @@
 .brand-text {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   color: #4eff91;
 }

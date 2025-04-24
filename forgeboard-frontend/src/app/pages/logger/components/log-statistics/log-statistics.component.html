@@ -1,0 +1,23 @@
+<div class="statistics-container">
+  <div class="total-logs">
+    <div class="stats-number">{{ totalLogs }}</div>
+    <div class="stats-label">Total Logs</div>
+  </div>
+  
+  <div class="log-stats">
+    <div *ngFor="let level of ['debug', 'info', 'warn', 'error', 'fatal']" 
+         class="level-stat"
+         [attr.data-level]="level">
+      <div class="level-info">
+        <div class="level-name">{{ level | uppercase }}</div>
+        <div class="level-count">{{ stats[level] }}</div>
+      </div>
+      <div class="level-bar-container">
+        <div class="level-bar" 
+             [style.width.%]="getPercentage(level)" 
+             [style.background-color]="getLevelColor(level)">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

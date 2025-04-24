@@ -1,11 +1,12 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { SharedModule } from '../../shared/shared.module';
 import { KablanBoardComponent } from './kablan-board.component';
-import { DragDropModule } from '@angular/cdk/drag-drop';
 
 @NgModule({
   declarations: [KablanBoardComponent],
-  imports: [CommonModule, DragDropModule],
+  imports: [
+    SharedModule
+  ],
   exports: [KablanBoardComponent]
 })
 export class KablanBoardModule {}

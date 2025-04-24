@@ -1,0 +1,53 @@
+.level-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.level-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  h3 {
+    margin: 0;
+    font-weight: 500;
+  }
+  
+  .level-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.level-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.level-chip {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+  
+  &.selected {
+    font-weight: 500;
+  }
+  
+  .level-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+}

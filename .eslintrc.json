@@ -3,7 +3,8 @@
   "ignorePatterns": ["**/*"],
   "plugins": [
     "@nx",
-    "require-socket-cleanup"
+    "require-socket-cleanup",
+    "prefer-observable"
   ],
   "overrides": [
     {
@@ -28,7 +29,8 @@
       "files": ["*.ts", "*.tsx"],
       "extends": ["plugin:@nx/typescript"],
       "rules": {
-        "require-socket-cleanup/ngondestroy-socket-disconnect": "warn"
+        "require-socket-cleanup/ngondestroy-socket-disconnect": "warn",
+        "prefer-observable/prefer-observable": "warn"
       }
     },
     {

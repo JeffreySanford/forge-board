@@ -4,4 +4,106 @@
   border: 2px solid #ffffff;
   width: 100%;
   height: 100%;
+  padding: 0.5em;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  
+  mat-icon {
+    margin-right: 0.5em;
+  }
+  
+  .activity-title {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+}
+
+.activities-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  overflow-y: auto;
+  max-height: calc(100% - 2.5em);
+  scrollbar-width: thin;
+}
+
+.activity-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  animation: slideIn 0.3s ease-out;
+  
+  &:not(:last-child) {
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+}
+
+.activity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2em;
+  height: 2em;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  
+  mat-icon {
+    font-size: 1.2em;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+  }
+}
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-user {
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.activity-action {
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+
+.activity-time {
+  font-size: 0.7em;
+  opacity: 0.7;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.no-activities {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

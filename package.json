@@ -60,6 +60,7 @@
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-require-socket-cleanup": "file:eslint-plugin-require-socket-cleanup",
+    "eslint-plugin-prefer-observable": "file:eslint-plugin-prefer-observable",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-environment-node": "^29.7.0",
@@ -89,13 +90,17 @@
     "@nestjs/platform-express": "^10.0.2",
     "@nestjs/platform-socket.io": "^10.4.17",
     "@nestjs/websockets": "^10.4.17",
+    "@nestjs/config": "^3.1.1",
     "axios": "^1.6.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "d3": "^7.9.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.7.5",
     "uuid": "^9.0.1",
-    "zone.js": "~0.15.0"
+    "zone.js": "~0.15.0",
+    "winston": "^3.10.0"
   }
 }

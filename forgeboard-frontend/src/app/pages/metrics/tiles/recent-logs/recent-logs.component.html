@@ -1,9 +1,6 @@
-<div class="recent-logs-tile">
-  <!-- ...logs UI... -->
-  <h3>Recent Logs</h3>
-  <ul>
-    <li>Log Entry 1</li>
-    <li>Log Entry 2</li>
-    <!-- ...existing code... -->
-  </ul>
-</div>
+<app-logger-tile 
+  [logs$]="logs$"
+  [compact]="true"
+  [maxItems]="25"
+  source="metrics">
+</app-logger-tile>

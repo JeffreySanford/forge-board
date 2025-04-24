@@ -1,103 +1,59 @@
 <!-- Wrap the entire page in a black border container -->
 <div class="page-container" [class.hide-border]="!showLayoutBorder">
-
-  <mat-toolbar color="primary" class="header-containter" [class.hide-border]="!showLayoutBorder">
-      PROJECT: FORGEBOARD
-  </mat-toolbar>
-
-  <app-navigation></app-navigation>
-
   <!-- Content wrapper with router outlet -->
   <div class="content-wrapper blue-border" [class.hide-border]="!showLayoutBorder">
+
+    <mat-toolbar color="primary" class="header-containter" [class.hide-border]="!showLayoutBorder">
+      PROJECT: FORGEBOARD
+    </mat-toolbar>
+
+    <app-navigation></app-navigation>
+
     <div class="fieldset-label content-label" *ngIf="showLayoutBorder">content container</div>
-    
+
+    <!-- Connection status indicator -->
+    <app-connection-status-indicator position="top-right"></app-connection-status-indicator>
+
     <!-- Router outlet will display the current route component -->
     <router-outlet></router-outlet>
-    
-    <!-- Keep callout container inside content-wrapper -->
-    <div class="callout-container" 
-         [class.animating]="animationsStarted"
-         [class.visible]="showCallout && audioEnabled"
-         *ngIf="showContextBlock">
-      <div class="fieldset-label callout-label" *ngIf="showLayoutBorder">callout container</div>
-      <div (click)="startAnimations()">
-        <div class="callout-meta" [class.animating]="animationsStarted">
-          <div class="meta-line"
-               *ngFor="let line of calloutLines; let i = index">
-            <span class="key"
-                  [class.active-cursor]="isCursorActive('field', i)">
-              <span *ngIf="animationsStarted" class="typed-content">
-                <span letterAnimator
-                      [animationDelay]="line.keyDelay"
-                      [characterDelay]="line.keyCharDelay"
-                      fieldType="key"
-                      [playDingAtEnd]="true"
-                      [dingVolume]="line.dingVolume || 0.6">
-                  {{ line.key }}
-                </span>
-              </span>
-            </span>
-            <span class="val"
-                  [class.active-cursor]="isCursorActive('value', i)">
-              <span *ngIf="animationsStarted" class="typed-content">
-                <span letterAnimator
-                      [animationDelay]="line.valDelay"
-                      [characterDelay]="line.valCharDelay"
-                      fieldType="val"
-                      [playDingAtEnd]="true"
-                      [dingVolume]="line.dingVolume || 0.7">
-                  {{ line.value }}
-                </span>
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
-      <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
-      <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
-    </div>
-    
+
+    <!-- Add footer component here -->
+    <app-footer 
+      [showContextBlock]="showContextBlock"
+      [showLayoutBorder]="showLayoutBorder"
+      [animationsStarted]="animationsStarted"
+      [audioEnabled]="audioEnabled"
+      [userData]="userData">
+    </app-footer>
+
     <!-- Controls row stays in app component -->
     <div class="controls-row">
-      <div class="layout-icon mr-1"
-        [class.shake]="layoutWiggle"
-        (click)="toggleLayoutMode()"
+      <div class="layout-icon mr-1" [class.shake]="layoutWiggle" (click)="toggleLayoutMode()"
         title="Toggle layout border and context block">
         <mat-icon>grid_on</mat-icon>
       </div>
-      <div class="layout-icon mr-1"
-        (click)="toggle12ColumnOverlay()"
-        [class.active]="is12ColumnVisible"
+      <div class="layout-icon mr-1" (click)="toggle12ColumnOverlay()" [class.active]="is12ColumnVisible"
         title="Toggle 12-column overlay">
         <mat-icon>view_column</mat-icon>
         <span class="layout-indicator">12</span>
       </div>
-      <div class="layout-icon mr-1"
-        (click)="toggle4ColumnOverlay()"
-        [class.active]="is4ColumnVisible"
+      <div class="layout-icon mr-1" (click)="toggle4ColumnOverlay()" [class.active]="is4ColumnVisible"
         title="Toggle 4-column overlay">
         <mat-icon>view_column</mat-icon>
         <span class="layout-indicator">4</span>
       </div>
-      <div class="layout-icon mr-1"
-        (click)="toggleSmallGridOverlay()"
-        [class.active]="isSmallGridVisible"
+      <div class="layout-icon mr-1" (click)="toggleSmallGridOverlay()" [class.active]="isSmallGridVisible"
         title="Toggle small background grid">
         <mat-icon>grid_view</mat-icon>
         <span class="layout-indicator">S</span>
       </div>
-      <div class="layout-icon mr-1"
-        (click)="toggleLargeGridOverlay()"
-        [class.active]="isLargeGridVisible"
+      <div class="layout-icon mr-1" (click)="toggleLargeGridOverlay()" [class.active]="isLargeGridVisible"
         title="Toggle large background grid">
         <mat-icon>grid_view</mat-icon>
         <span class="layout-indicator">L</span>
       </div>
       <!-- Audio control (furthest right) -->
-      <div class="audio-icon"
-        [class.shake]="isShaking"
-        (click)="enableAudio()"
-        title="Enable/Disable Audio">
+      <div class="audio-icon" [class.shake]="isShaking" (click)="enableAudio()" title="Enable/Disable Audio">
         <mat-icon>{{ audioEnabled ? 'volume_up' : 'volume_off' }}</mat-icon>
       </div>
     </div>

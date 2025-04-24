@@ -13,6 +13,10 @@ import { TileStateService } from '../../../services/tile-state.service';
 export class DiagnosticsComponent implements OnInit, OnDestroy {
   showLayoutBorder = true;
   showMetricsTile = true;
+  showConnectionTile = true;
+  showLogsTile = true;
+  showUptimeTile = true;
+  showActivityTile = true;
   tileOrder: TileType[] = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
   private subscriptions = new Subscription();
 
@@ -27,7 +31,10 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
         // Apply visibility settings if available
         if (res.visibility) {
           this.showMetricsTile = res.visibility['metrics'] !== false;
-          // Update other visibility flags as needed
+          this.showConnectionTile = res.visibility['connection'] !== false;
+          this.showLogsTile = res.visibility['logs'] !== false;
+          this.showUptimeTile = res.visibility['uptime'] !== false;
+          this.showActivityTile = res.visibility['activity'] !== false;
         }
       }
     });
@@ -62,18 +69,31 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // Method to toggle tile visibility
   toggleTileVisibility(tileType: TileType): void {
     // Update local state based on tile type
-    if (tileType === 'metrics') {
-      this.showMetricsTile = !this.showMetricsTile;
+    switch(tileType) {
+      case 'metrics':
+        this.showMetricsTile = !this.showMetricsTile;
+        break;
+      case 'connection':
+        this.showConnectionTile = !this.showConnectionTile;
+        break;
+      case 'logs':
+        this.showLogsTile = !this.showLogsTile;
+        break;
+      case 'uptime':
+        this.showUptimeTile = !this.showUptimeTile;
+        break;
+      case 'activity':
+        this.showActivityTile = !this.showActivityTile;
+        break;
     }
-    // Add similar toggles for other tile types as needed
     
     // Persist visibility settings
     const visibility = {
       metrics: this.showMetricsTile,
-      connection: true, // Update with actual visibility states
-      logs: true,
-      uptime: true,
-      activity: true
+      connection: this.showConnectionTile,
+      logs: this.showLogsTile,
+      uptime: this.showUptimeTile,
+      activity: this.showActivityTile
     };
     
     this.tileStateService.setTileVisibility('user1', visibility)

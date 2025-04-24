@@ -1,34 +1,88 @@
-<div class="metric-container">
-  <h2>Metrics Dashboard</h2>
-  <p>View system metrics and diagnostics.</p>
-  
-  <!-- Router outlet will load the diagnostics component -->
-  <router-outlet></router-outlet>
-</div>
+<div class="metrics-dashboard">
+  <div class="dashboard-header">
+    <div class="title">
+      <h1>System Metrics Dashboard</h1>
+      <p>Real-time performance monitoring in blueprint style</p>
+    </div>
 
-<div class="indicator-frame">
-  <mat-card class="elevated-card">
-    <mat-card-header>
-      <span class="pulse-icon">
-        <mat-icon>memory</mat-icon></span>
-      <div class="update-bar-wrapper">
+    <!-- Mock data banner with enhanced animation -->
+    <div class="data-source-banner" [ngClass]="getDataSourceClass()">
+      <mat-icon *ngIf="usingMockData">sync_problem</mat-icon>
+      <mat-icon *ngIf="!usingMockData">sync</mat-icon>
+      <div class="banner-content">
+        <h3>{{usingMockData ? 'Using Simulated Data' : 'Live Data Connection'}}</h3>
+        <p *ngIf="usingMockData">Backend connection unavailable. Displaying mock metrics.</p>
+        <p *ngIf="!usingMockData">Connected to backend server. Displaying real-time metrics.</p>
+      </div>
+    </div>
+
+    <div class="refresh-controls">
+      <div class="refresh-label">
+        <div>Refresh Interval: <span>{{ refreshInterval }}ms</span></div>
         <input
           type="range"
-          class="update-bar"
-          min="20"
+          class="refresh-slider"
+          min="100"
           max="2000"
-          step="10"
+          step="100"
           [value]="refreshInterval"
           (input)="onIntervalChange($event)"
         />
       </div>
-    </mat-card-header>
-    <mat-card-content *ngIf="metrics$ | async as m">
-      <div class="metric">
-        CPU {{ m.cpu | number:'1.2-2' }}% • MEM {{ m.memory | number:'1.2-2' }}%
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <!-- Main metrics view with real-time charts -->
+    <div class="metrics-card" [ngClass]="getDataSourceClass()">
+      <h2>CPU & Memory Utilization</h2>
+      
+      <div class="live-stats" *ngIf="metrics$ | async as m">
+        <div class="stat-item">
+          <div class="stat-label">CPU</div>
+          <div class="stat-value cpu">{{ m.cpu | number:'1.1-1' }}%</div>
+          <div class="stat-bar">
+            <div class="stat-fill cpu" [style.width.%]="m.cpu"></div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-label">Memory</div>
+          <div class="stat-value memory">{{ m.memory | number:'1.1-1' }}%</div>
+          <div class="stat-bar">
+            <div class="stat-fill memory" [style.width.%]="m.memory"></div>
+          </div>
+        </div>
+        
+        <div class="stat-item" *ngIf="m.disk !== undefined">
+          <div class="stat-label">Disk</div>
+          <div class="stat-value disk">{{ m.disk | number:'1.1-1' }}%</div>
+          <div class="stat-bar">
+            <div class="stat-fill disk" [style.width.%]="m.disk"></div>
+          </div>
+        </div>
+        
+        <div class="stat-item" *ngIf="m.network !== undefined">
+          <div class="stat-label">Network</div>
+          <div class="stat-value network">{{ m.network | number:'1.1-1' }}%</div>
+          <div class="stat-bar">
+            <div class="stat-fill network" [style.width.%]="m.network"></div>
+          </div>
+        </div>
       </div>
-      <div class="timestamp">{{ m.time | date:'HH:mm:ss.SSS' }}</div>
-      <div #chart class="chart-container"></div>
-    </mat-card-content>
-  </mat-card>
+      
+      <div class="metrics-chart-container">
+        <div #chart class="chart-area"></div>
+        <div class="chart-timestamp" *ngIf="metrics$ | async as m">
+          <div class="timestamp-label">Last Updated:</div>
+          <div class="timestamp-value">{{ m.time | date:'HH:mm:ss.SSS' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagnostics Component -->
+    <div class="metrics-tiles">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
 </div>

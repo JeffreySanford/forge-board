@@ -1,0 +1,114 @@
+.logger-container {
+  padding: 24px;
+  background-color: #fafafa;
+  min-height: calc(100vh - 64px); // Account for app toolbar
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.logger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  
+  .title-section {
+    h1 {
+      margin: 0;
+      color: var(--md-sys-color-primary);
+      font-weight: 500;
+    }
+    
+    p {
+      margin: 8px 0 0 0;
+      color: var(--md-sys-color-on-surface-variant);
+      max-width: 600px;
+    }
+  }
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 14px;
+  gap: 8px;
+  
+  &.connected {
+    background-color: rgba(76, 175, 80, 0.12);
+    color: #2e7d32;
+    
+    mat-icon {
+      color: #2e7d32;
+    }
+  }
+  
+  &.disconnected {
+    background-color: rgba(255, 152, 0, 0.12);
+    color: #ef6c00;
+    
+    mat-icon {
+      color: #ef6c00;
+    }
+  }
+}
+
+.filters-and-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  
+  .filter-card {
+    flex: 3;
+    min-width: 300px;
+  }
+  
+  .stats-card {
+    flex: 1;
+    min-width: 300px;
+  }
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.logger-main {
+  flex: 1;
+  
+  .logs-card {
+    height: 100%;
+    
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .card-actions {
+      margin-left: auto;
+    }
+    
+    .logs-content {
+      height: calc(100% - 64px);
+      padding: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .filters-and-stats {
+    flex-direction: column;
+    
+    .filter-card, .stats-card {
+      width: 100%;
+    }
+  }
+}

@@ -1,0 +1,16 @@
+<div class="export-container">
+  <button mat-button [matMenuTriggerFor]="exportMenu" color="primary">
+    <mat-icon>file_download</mat-icon>
+    Export
+  </button>
+  <mat-menu #exportMenu="matMenu">
+    <button mat-menu-item (click)="onExportJson()">
+      <mat-icon>data_object</mat-icon>
+      <span>Export as JSON</span>
+    </button>
+    <button mat-menu-item (click)="onExportCsv()">
+      <mat-icon>grid_on</mat-icon>
+      <span>Export as CSV</span>
+    </button>
+  </mat-menu>
+</div>

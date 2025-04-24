@@ -1,0 +1,69 @@
+<div class="logger-container">
+  <div class="logger-header">
+    <div class="title-section">
+      <h1 class="mat-headline-5">System Logs</h1>
+      <p class="mat-body-1">Real-time log monitoring and analysis</p>
+    </div>
+    
+    <!-- Connection status indicator -->
+    <div class="connection-status" [ngClass]="{'connected': isConnected, 'disconnected': !isConnected}">
+      <mat-icon>{{ isConnected ? 'cloud_done' : 'cloud_off' }}</mat-icon>
+      <span>{{ isConnected ? 'Connected' : 'Using cached logs' }}</span>
+    </div>
+  </div>
+  
+  <div class="filters-and-stats">
+    <mat-card appearance="outlined" class="filter-card">
+      <mat-card-header>
+        <mat-card-title>Filters</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="filter-section">
+          <!-- Log search -->
+          <app-log-search 
+            (searchChanged)="onSearchChanged($event)">
+          </app-log-search>
+          
+          <!-- Log level selector -->
+          <app-log-level-selector 
+            [selectedLevels]="filter.levels"
+            (levelsChanged)="onLevelsChanged($event)">
+          </app-log-level-selector>
+          
+          <!-- Source filter -->
+          <app-log-filter 
+            [availableSources]="availableSources"
+            [selectedSources]="filter.sources"
+            (sourcesChanged)="onSourcesChanged($event)">
+          </app-log-filter>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    
+    <mat-card appearance="outlined" class="stats-card">
+      <mat-card-header>
+        <mat-card-title>Log Statistics</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-log-statistics [stats]="stats"></app-log-statistics>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  
+  <div class="logger-main">
+    <mat-card appearance="outlined" class="logs-card">
+      <mat-card-header>
+        <mat-card-title>Log Entries</mat-card-title>
+        <div class="card-actions">
+          <app-log-export
+            (exportJson)="exportLogsToJson()"
+            (exportCsv)="exportLogsToCsv()">
+          </app-log-export>
+        </div>
+      </mat-card-header>
+      <mat-card-content class="logs-content">
+        <app-log-viewer [logs]="logs"></app-log-viewer>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -35,22 +35,17 @@ export interface DiagnosticEvent {
   message: string;
   source: string;
   timestamp: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
  * Health status data
  */
 export interface HealthData {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: string;
   uptime: number;
   timestamp: string;
-  services: {
-    [key: string]: {
-      status: 'up' | 'down';
-      responseTime?: number;
-    };
-  };
+  details: Record<string, string>;
 }
 
 /**

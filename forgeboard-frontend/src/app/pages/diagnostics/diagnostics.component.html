@@ -7,23 +7,118 @@
     <div class="health-card">
       <div class="health-status" [ngClass]="health.status.toLowerCase()">
         <span class="status-pill">{{health.status}}</span>
-        <span class="uptime">Uptime: {{health.uptime | number}} seconds</span>
+        <span class="uptime">Uptime: {{formatUptime(health.uptime)}}</span>
       </div>
       <div class="health-details">
         <div class="timeline">
-          <div class="past">
-            <h4>Past</h4>
-            <p>{{health.details.past}}</p>
-          </div>
-          <div class="present">
-            <h4>Present</h4>
-            <p>{{health.details.present}}</p>
-          </div>
-          <div class="future">
-            <h4>Future</h4>
-            <p>{{health.details.future}}</p>
+          <!-- Timeline points with enhanced styling -->
+          <div class="timeline-point" *ngFor="let point of timelinePoints" [ngClass]="getStatusClass(point.status)">
+            <div class="timeline-header">
+              <h4><mat-icon>{{point.icon}}</mat-icon> {{point.title}}</h4>
+              <span class="timestamp">{{point.timestamp | date:'short'}}</span>
+            </div>
+            <div class="timeline-content">
+              <p>{{point.content}}</p>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket Metrics Section -->
+  <div class="socket-section">
+    <h3>Socket Diagnostics</h3>
+    <div class="socket-metrics">
+      <div class="metric-item">
+        <div class="metric-label">Total Connections</div>
+        <div class="metric-value">{{socketMetrics.totalConnections}}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-label">Active Connections</div>
+        <div class="metric-value">{{socketMetrics.activeConnections}}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-label">Disconnections</div>
+        <div class="metric-value">{{socketMetrics.disconnections}}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-label">Errors</div>
+        <div class="metric-value error">{{socketMetrics.errors}}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-label">Messages Sent</div>
+        <div class="metric-value">{{socketMetrics.messagesSent}}</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-label">Messages Received</div>
+        <div class="metric-value">{{socketMetrics.messagesReceived}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Sockets Section -->
+  <div class="active-sockets-section">
+    <h3>Active Socket Connections</h3>
+    
+    <table class="socket-table" *ngIf="activeSockets.length > 0">
+      <thead>
+        <tr>
+          <th>Socket ID</th>
+          <th>Namespace</th>
+          <th>Status</th>
+          <th>Duration</th>
+          <th>Client</th>
+          <th>Last Activity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let socket of activeSockets" [class]="getSocketStatusClass(socket)">
+          <td class="socket-id">{{socket.id}}</td>
+          <td>{{socket.namespace}}</td>
+          <td class="status">{{socket.disconnectTime ? 'Disconnected' : 'Connected'}}</td>
+          <td>{{formatSocketDuration(socket)}}</td>
+          <td class="client-info">{{socket.clientIp}}</td>
+          <td>{{socket.lastActivity | date:'HH:mm:ss'}}</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="no-sockets" *ngIf="activeSockets.length === 0">
+      No active socket connections
+    </div>
+  </div>
+
+  <!-- Socket Event Logs -->
+  <div class="socket-logs-section">
+    <h3>Socket Event Log</h3>
+    
+    <div class="log-filters">
+      <select class="filter-dropdown">
+        <option value="all">All Events</option>
+        <option value="connect">Connect Events</option>
+        <option value="disconnect">Disconnect Events</option>
+        <option value="error">Error Events</option>
+      </select>
+      
+      <input type="text" placeholder="Filter by socket ID" class="filter-input">
+    </div>
+    
+    <div class="log-entries">
+      <div *ngFor="let log of socketLogs" class="log-entry" [class]="getEventTypeClass(log.eventType)">
+        <div class="log-header">
+          <span class="log-time">{{log.timestamp | date:'HH:mm:ss'}}</span>
+          <span class="log-type">{{log.eventType}}</span>
+          <span class="log-socket">{{log.socketId}}</span>
+        </div>
+        <div class="log-message">{{log.message}}</div>
+        <div class="log-details" *ngIf="log.data">
+          <pre>{{log.data | json}}</pre>
+        </div>
+      </div>
+      
+      <div class="no-logs" *ngIf="socketLogs.length === 0">
+        No socket events logged
       </div>
     </div>
   </div>
@@ -81,7 +176,8 @@
 
   <!-- Socket Connection Status -->
   <div class="socket-status">
-    Socket Status: <span [ngClass]="socketStatus">{{socketStatus}}</span>
+    <h4>Socket Diagnostics Connection Status</h4>
+    <span [ngClass]="socketStatus">{{socketStatus}}</span>
   </div>
   
   <!-- For debugging purposes - can be removed in production -->

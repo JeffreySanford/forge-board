@@ -16,7 +16,7 @@
       [cdkDropListData]="tileOrder"
       (cdkDropListDropped)="onTileDrop($event)"
     >
-      <!-- Metrics tile -->
+      <!-- Metrics tile - updated selector -->
       <div
         *ngIf="showMetricsTile"
         cdkDrag
@@ -29,7 +29,6 @@
             <mat-icon>{{ showMetricsTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
-        <app-metrics-infographic></app-metrics-infographic>
         <!-- Placeholder for drag preview -->
         <div *cdkDragPlaceholder class="tile-placeholder">
           <div class="placeholder-content">Metrics</div>
@@ -44,6 +43,9 @@
       >
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Connection
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('connection')">
+            <mat-icon>visibility</mat-icon>
+          </button>
         </div>
         <app-connection-status></app-connection-status>
         <!-- Placeholder for drag preview -->
@@ -52,29 +54,62 @@
         </div>
       </div>
       
-      <!-- Other tiles commented out until components are created -->
-      <!--
-      <div cdkDrag class="tile-drag">
+      <!-- Logs tile -->
+      <div 
+        cdkDrag 
+        class="tile-drag"
+        [cdkDragData]="'logs'"
+      >
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Logs
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('logs')">
+            <mat-icon>visibility</mat-icon>
+          </button>
         </div>
         <app-recent-logs></app-recent-logs>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Logs</div>
+        </div>
       </div>
       
-      <div cdkDrag class="tile-drag">
+      <!-- Uptime tile -->
+      <div 
+        cdkDrag 
+        class="tile-drag"
+        [cdkDragData]="'uptime'"
+      >
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Uptime
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('uptime')">
+            <mat-icon>visibility</mat-icon>
+          </button>
         </div>
         <app-uptime-summary></app-uptime-summary>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Uptime</div>
+        </div>
       </div>
       
-      <div cdkDrag class="tile-drag">
+      <!-- Activity tile -->
+      <div 
+        cdkDrag 
+        class="tile-drag"
+        [cdkDragData]="'activity'"
+      >
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Activity
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('activity')">
+            <mat-icon>visibility</mat-icon>
+          </button>
         </div>
         <app-activity-feed></app-activity-feed>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Activity</div>
+        </div>
       </div>
-      -->
     </div>
   </div>
 </div>

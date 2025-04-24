@@ -1,0 +1,67 @@
+<div class="status-indicator-container" [ngClass]="position">
+  <div class="indicator-badge" 
+       [ngClass]="getStatusClass()"
+       [class.reconnecting]="reconnecting"
+       (click)="toggleExpanded()">
+    
+    <ng-container *ngIf="!reconnecting; else reconnectingIcon">
+      <div *ngIf="status?.anyMockData" class="pulse-ring"></div>
+      <ng-container [ngSwitch]="getStatusClass()">
+        <mat-icon *ngSwitchCase="'connected'" class="status-icon">check_circle</mat-icon>
+        <mat-icon *ngSwitchCase="'disconnected'" class="status-icon">cancel</mat-icon>
+        <mat-icon *ngSwitchCase="'mock'" class="status-icon animate-icon">sync_problem</mat-icon>
+        <mat-icon *ngSwitchDefault class="status-icon">help</mat-icon>
+      </ng-container>
+    </ng-container>
+    
+    <ng-template #reconnectingIcon>
+      <mat-icon class="status-icon animate-icon">sync</mat-icon>
+    </ng-template>
+
+    <span class="status-text">
+      <ng-container *ngIf="reconnecting; else normalStatus">
+        Reconnecting...
+      </ng-container>
+      <ng-template #normalStatus>
+        <ng-container [ngSwitch]="getStatusClass()">
+          <ng-container *ngSwitchCase="'connected'">Connected</ng-container>
+          <ng-container *ngSwitchCase="'disconnected'">Disconnected</ng-container>
+          <ng-container *ngSwitchCase="'mock'">Using Mock Data</ng-container>
+          <ng-container *ngSwitchDefault>Unknown Status</ng-container>
+        </ng-container>
+      </ng-template>
+    </span>
+  </div>
+
+  <!-- Details panel that shows when expanded -->
+  <div class="details-panel" *ngIf="expanded && status">
+    <h3>Connection Status</h3>
+    
+    <!-- Show each gateway status -->
+    <div class="gateway-statuses">
+      <div class="gateway-status" *ngFor="let gateway of status.gateways">
+        <span class="gateway-name">{{ gateway.name | titlecase }}</span>
+        <span class="gateway-indicator" [ngClass]="gateway.usingMockData ? 'mock' : (gateway.connected ? 'connected' : 'disconnected')">
+          {{ gateway.usingMockData ? 'Mock' : (gateway.connected ? 'Connected' : 'Disconnected') }}
+        </span>
+      </div>
+    </div>
+    
+    <!-- Manual reconnect button -->
+    <div class="details-footer">
+      <p *ngIf="status.anyMockData" class="mock-warning">
+        Using simulated data due to backend connection issues.
+      </p>
+      <button 
+        mat-button 
+        *ngIf="status.anyMockData" 
+        [disabled]="reconnecting" 
+        color="primary"
+        (click)="forceReconnect(); $event.stopPropagation()">
+        
+        <mat-icon>sync</mat-icon>
+        {{ reconnecting ? 'Reconnecting...' : 'Try Reconnect' }}
+      </button>
+    </div>
+  </div>
+</div>

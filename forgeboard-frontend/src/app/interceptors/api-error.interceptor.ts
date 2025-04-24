@@ -8,25 +8,32 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
+import { ErrorService } from '../services/error.service';
 
 @Injectable()
 export class ApiErrorInterceptor implements HttpInterceptor {
-  constructor() {}
+
+  constructor(private errorService: ErrorService) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Add retry logic for idempotent requests
-    const isIdempotent = request.method === 'GET' || request.method === 'HEAD';
-    
     return next.handle(request).pipe(
-      // Only retry idempotent requests to avoid side effects
-      isIdempotent ? retry(1) : retry(0),
+      // Retry the request up to 2 times if it fails
+      retry(1),
       catchError((error: HttpErrorResponse) => {
-        // Log the error for debugging
-        console.error('API Error:', error);
+        // Only log critical errors or server errors
+        if (error.status === 0 || error.status >= 500) {
+          console.error('API Error:', error);
+          
+          // For critical server errors, redirect to the error page
+          if (error.status >= 500) {
+            this.errorService.handleApiError(error);
+          }
+        } else if (error.status === 404) {
+          // For 404 errors, log but don't redirect (the services handle fallbacks)
+          console.error('API Error:', error);
+        }
         
-        // You could add notification service here to show user-friendly messages
-        
-        // Rethrow the error for downstream handling
+        // Always pass the error along to the component for handling
         return throwError(() => error);
       })
     );

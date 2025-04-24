@@ -4,4 +4,71 @@
   border: 2px solid #ffffff;
   width: 100%;
   height: 100%;
+  padding: 0.5em;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.uptime-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  
+  mat-icon {
+    margin-right: 0.5em;
+  }
+  
+  .uptime-title {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+}
+
+.uptime-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.uptime-display {
+  text-align: center;
+  margin: 0.5em 0 1em;
+  
+  .uptime-time {
+    font-size: 1.8em;
+    font-weight: bold;
+    font-family: 'Roboto Mono', monospace;
+  }
+  
+  .uptime-label {
+    font-size: 0.8em;
+    opacity: 0.8;
+    text-transform: uppercase;
+  }
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .stat-label {
+    opacity: 0.8;
+    font-size: 0.9em;
+  }
+  
+  .stat-value {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+  }
 }

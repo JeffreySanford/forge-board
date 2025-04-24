@@ -10,12 +10,24 @@ export interface SocketResponse<T> {
 /**
  * Create a standardized response object
  */
-export function createSocketResponse<T>(data: T): SocketResponse<T> {
-  return {
-    status: 'success',
-    data,
-    timestamp: new Date().toISOString(),
-  };
+export function createSocketResponse<T>(event: string, data: T): SocketResponse<T>;
+export function createSocketResponse<T>(data: T): SocketResponse<T>;
+export function createSocketResponse<T>(eventOrData: string | T, data?: T): SocketResponse<T> {
+  if (typeof eventOrData === 'string' && data !== undefined) {
+    // Called with event name and data
+    return {
+      status: 'success',
+      data,
+      timestamp: new Date().toISOString(),
+    };
+  } else {
+    // Called with just data
+    return {
+      status: 'success',
+      data: eventOrData as T,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 /**
@@ -44,19 +56,54 @@ export enum SocketEvent {
 }
 
 /**
- * Metrics data interface
+ * Socket connection information
  */
-export interface MetricData {
-  cpu: number;
-  memory: number;
-  time: string;
-  [key: string]: number | string; // Allow for extension
+export interface SocketInfo {
+  id: string;
+  namespace: string;
+  clientIp: string;
+  userAgent: string;
+  connectTime: string | Date;
+  disconnectTime?: string | Date;
+  lastActivity: string | Date;
+  events: {
+    type: string;
+    timestamp: string | Date;
+    data?: Record<string, unknown>;
+  }[];
 }
 
 /**
- * HTTP API response for metrics operations
+ * Socket metrics data
  */
-export interface MetricResponse {
-  success: boolean;
-  message?: string;
+export interface SocketMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  disconnections: number;
+  errors: number;
+  messagesSent: number;
+  messagesReceived: number;
+}
+
+/**
+ * Socket log event interface
+ */
+export interface SocketLogEvent {
+  socketId: string;
+  namespace: string;
+  eventType: string;
+  timestamp: string | Date;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+/**
+ * Socket filter for log events
+ */
+export interface SocketLogFilter {
+  socketId?: string;
+  eventType?: string;
+  startTime?: string;
+  endTime?: string;
+  limit?: number;
 }

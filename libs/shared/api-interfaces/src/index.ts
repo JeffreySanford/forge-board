@@ -10,12 +10,24 @@ export interface SocketResponse<T> {
 /**
  * Create a standardized response object
  */
-export function createSocketResponse<T>(event: string, data: T): SocketResponse<T> {
-  return {
-    status: 'success',
-    data,
-    timestamp: new Date().toISOString(),
-  };
+export function createSocketResponse<T>(event: string, data: T): SocketResponse<T>;
+export function createSocketResponse<T>(data: T): SocketResponse<T>;
+export function createSocketResponse<T>(eventOrData: string | T, data?: T): SocketResponse<T> {
+  if (typeof eventOrData === 'string' && data !== undefined) {
+    // Called with event name and data
+    return {
+      status: 'success',
+      data,
+      timestamp: new Date().toISOString(),
+    };
+  } else {
+    // Called with just data
+    return {
+      status: 'success',
+      data: eventOrData as T,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 /**
@@ -42,16 +54,37 @@ export interface TileDragEvent {
   currentIndex: number;
 }
 
-// Export other interfaces from their respective files
+// Export directly from socket-types and tile-types (these don't have conflicts)
 export * from './lib/api-interfaces';
-export * from './lib/socket-types';
 export * from './lib/tile-types';
 
-// Explicitly re-export to resolve ambiguity issues
+// Logger-related exports
 export { 
-  MetricData, 
-  MetricResponse, 
-  DiagnosticEvent, 
-  HealthData, 
-  MetricEvent 
+  LogLevel,
+  LogLevelType,
+  LogEntry,
+  LogFilter,
+  LogResponse,
+  LogStreamUpdate,
+  LoggerConfig
+} from './lib/logger-types';
+
+// Socket-related exports
+export {
+  SocketEvent,
+  SocketInfo,
+  SocketMetrics,
+  SocketLogEvent,
+  SocketLogFilter,
+  createSocketErrorResponse
+} from './lib/socket-types';
+
+// Metrics-related exports
+export {
+  MetricData,
+  MetricResponse,
+  MetricUpdateResponse,
+  DiagnosticEvent,
+  HealthData,
+  MetricEvent
 } from './lib/metric-types';

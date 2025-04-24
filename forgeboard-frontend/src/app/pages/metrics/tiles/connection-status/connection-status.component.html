@@ -1,5 +1,45 @@
 <div class="connection-status-tile">
-  <!-- ...connection status UI... -->
-  <h3>Connection Status</h3>
-  <p>Status: <strong>Online</strong></p>
+  <div class="status-header">
+    <div class="status-indicator">
+      <span class="status-dot" [ngClass]="getStatusClass()"></span>
+      <mat-icon>wifi</mat-icon>
+      <span class="status-text">{{ status | titlecase }}</span>
+    </div>
+    <div class="ping-display" *ngIf="status === 'connected'">
+      <span class="ping-value">{{ pingTime }}ms</span>
+    </div>
+  </div>
+  
+  <div class="connection-details">
+    <div class="quality-meter">
+      <div class="quality-label">Connection Quality</div>
+      <div class="quality-bar-container">
+        <div class="quality-bar" 
+             [ngClass]="getQualityClass(connectionQuality)" 
+             [style.width.%]="connectionQuality">
+          {{ connectionQuality | number:'1.0-0' }}%
+        </div>
+      </div>
+    </div>
+    
+    <div class="last-connected" *ngIf="lastConnected">
+      <div class="connected-label">Last Connected</div>
+      <div class="connected-time">{{ lastConnected | date:'shortTime' }}</div>
+    </div>
+    
+    <!-- Add CORS error message -->
+    <div class="cors-error" *ngIf="hasCorsError">
+      <div class="error-title">
+        <mat-icon color="warn">error_outline</mat-icon>
+        <span>Connection Error</span>
+      </div>
+      <div class="error-message">
+        CORS policy is blocking connection to the server. Please ensure the backend server has CORS configured to allow requests from this origin.
+      </div>
+      <div class="error-detail">
+        Server: http://localhost:3000<br>
+        Origin: http://localhost:4200
+      </div>
+    </div>
+  </div>
 </div>

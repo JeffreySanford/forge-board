@@ -1,0 +1,28 @@
+<div class="callout-container" [class.animating]="animationsStarted" [class.visible]="showContextBlock && audioEnabled"
+  *ngIf="showContextBlock">
+  <div class="fieldset-label callout-label" *ngIf="showLayoutBorder">callout container</div>
+  <div>
+    <div class="callout-meta" [class.animating]="animationsStarted">
+      <div class="meta-line" *ngFor="let line of calloutLines; let i = index">
+        <span class="key" [class.active-cursor]="isCursorActive('field', i)">
+          <span *ngIf="animationsStarted" class="typed-content">
+            <span letterAnimator [animationDelay]="line.keyDelay" [characterDelay]="line.keyCharDelay"
+              fieldType="key" [playDingAtEnd]="true" [dingVolume]="line.dingVolume || 0.6">
+              {{ line.key }}
+            </span>
+          </span>
+        </span>
+        <span class="val" [class.active-cursor]="isCursorActive('value', i)">
+          <span *ngIf="animationsStarted" class="typed-content">
+            <span letterAnimator [animationDelay]="line.valDelay" [characterDelay]="line.valCharDelay"
+              fieldType="val" [playDingAtEnd]="true" [dingVolume]="line.dingVolume || 0.7">
+              {{ line.value }}
+            </span>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
+  <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
+</div>

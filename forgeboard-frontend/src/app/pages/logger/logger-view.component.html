@@ -1,0 +1,13 @@
+<div class="logger-view-container">
+  <div class="logger-header">
+    <h1>System Logs</h1>
+    <p>Real-time system log monitoring and analysis</p>
+  </div>
+  
+  <div class="logger-content">
+    <app-logger-tile 
+      [logs$]="logs$" 
+      [maxItems]="100">
+    </app-logger-tile>
+  </div>
+</div>

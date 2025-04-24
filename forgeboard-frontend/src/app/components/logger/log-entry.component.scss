@@ -1,0 +1,74 @@
+.log-entry {
+  padding: 0.3em 0.5em;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  font-size: 0.8em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  margin-bottom: 0.2em;
+  animation: fadeInLog 0.3s ease-out;
+
+  &.log-info {
+    border-left: 3px solid #3498db;
+  }
+  &.log-warning {
+    border-left: 3px solid #f39c12;
+  }
+  &.log-error {
+    border-left: 3px solid #e74c3c;
+  }
+  &.log-debug {
+    border-left: 3px solid #7f8c8d;
+  }
+}
+
+.log-meta {
+  display: flex;
+  gap: 0.5em;
+  opacity: 0.8;
+  font-size: 0.9em;
+}
+
+.log-time {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.log-level {
+  font-weight: bold;
+  min-width: 40px;
+}
+
+.log-source {
+  opacity: 0.7;
+}
+
+.log-message {
+  font-family: 'Roboto Mono', monospace;
+  word-break: break-all;
+}
+
+.log-details {
+  background: #f8f9fa;
+  padding: 0.3em 0.5em;
+  border-radius: 3px;
+  font-size: 0.8em;
+  margin-top: 0.2em;
+  color: #333;
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

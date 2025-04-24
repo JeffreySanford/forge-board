@@ -1,0 +1,51 @@
+<div class="logger-tile" [class.compact-mode]="compact">
+  <!-- Filter Controls -->
+  <div class="filter-controls">
+    <!-- Level filters -->
+    <div class="level-filters">
+      <div 
+        *ngFor="let level of logLevels" 
+        class="level-filter"
+        [class]="getLevelClass(level)"
+        [class.selected]="isLevelSelected(level)"
+        (click)="toggleLevel(level)">
+        {{ level }}
+      </div>
+    </div>
+    
+    <!-- Search filter -->
+    <mat-form-field class="search-filter">
+      <mat-label>Search Logs</mat-label>
+      <input matInput [formControl]="searchControl" placeholder="Filter messages">
+      <button 
+        *ngIf="searchControl.value"
+        matSuffix mat-icon-button aria-label="Clear" 
+        (click)="clearSearch()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+  
+  <!-- Log Entries -->
+  <div class="log-entries" [class.compact-mode]="compact">
+    <ng-container *ngIf="filteredLogs$ | async as logs">
+      <div class="no-logs" *ngIf="logs.length === 0">
+        No matching logs found
+      </div>
+      
+      <ng-container *ngFor="let log of logs">
+        <div class="log-entry" [class]="getLevelClass(log.level)">
+          <div class="log-header">
+            <div class="log-time">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</div>
+            <div class="log-type">{{ log.level }}</div>
+            <div class="log-source">{{ log.source }}</div>
+          </div>
+          <div class="log-message">{{ log.message }}</div>
+          <div class="log-data" *ngIf="log.data">
+            <pre>{{ log.data | json }}</pre>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

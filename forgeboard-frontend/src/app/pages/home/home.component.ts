@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -21,13 +22,30 @@ export class HomeComponent implements OnInit {
       icon: 'dashboard',
       route: '/kablan',
       color: '#ffe066'
+    },
+    {
+      title: 'Diagnostics',
+      description: 'System health monitoring and detailed diagnostics reporting',
+      icon: 'healing',
+      route: '/diagnostics',  // Updated to the dedicated diagnostics route
+      color: '#3498db'
+    },
+    {
+      title: 'Logger',
+      description: 'Real-time log monitoring with filtering and search capabilities',
+      icon: 'receipt_long',
+      route: '/logs',  // Updated to the dedicated logs route
+      color: '#e74c3c'
     }
   ];
   
-  constructor() {
-    // Initialization logic can go here if needed
-  }
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
-    console.log('HomeComponent initialized');}
+    console.log('HomeComponent initialized');
   }
+  
+  navigateTo(route: string): void {
+    this.router.navigate([route]);
+  }
+}

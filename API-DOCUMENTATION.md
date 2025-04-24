@@ -158,14 +158,59 @@ Each health endpoint returns a simple status response:
 }
 ```
 
-## Frontend Error Handling
+## Status Endpoints
 
-The frontend application handles API errors by:
+### GET /api/status
 
-1. Displaying appropriate error messages to users
-2. Redirecting to the error page with details for 500-level errors
-3. Showing service status on the error page
-4. Providing fallback UI when API data is unavailable
-5. Implementing retry mechanisms with exponential backoff
+Check API availability and health status.
 
-This approach ensures the application remains usable even when backend services experience partial failures.
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2023-07-15T12:34:56Z",
+  "version": "1.0.0"
+}
+```
+
+## Frontend Error Handling & Auto-Reconnection
+
+### Real-time Data Fallback System
+
+ForgeBoard implements a sophisticated fallback and auto-reconnection system:
+
+1. **Connectivity Monitoring**: Constantly monitors backend service availability
+2. **Graceful Degradation**: Seamlessly switches to mock data generation when backend becomes unavailable
+3. **Visual Indication**: Displays connection status indicator showing when mock data is in use
+4. **Periodic Health Checks**: Regularly checks if backend has become available again
+5. **Auto-Reconnection**: Automatically reconnects and switches back to live data when backend is restored
+6. **Manual Override**: Provides button to force reconnection attempt when using mock data
+
+### Reconnection Flow
+
+The reconnection system follows this workflow:
+
+1. When a service loses connection to the backend, it:
+   - Activates mock data generation for uninterrupted UI updates
+   - Updates connection status via the BackendStatusService
+   - Shows visual indicator that mock data is being used
+
+2. While using mock data:
+   - Backend health is checked every 5 seconds
+   - Connection status indicator displays "Using Mock Data"
+   - Expanded connection panel shows which services are using mock data
+
+3. When backend becomes available:
+   - BackendStatusService detects available backend and dispatches 'backend-available' event
+   - Each service receives the event and initiates reconnection sequence
+   - Services verify backend availability with direct health check
+   - New socket connections are established
+   - Mock data generation is stopped when real data starts flowing
+   - Connection status updates to reflect live connection
+
+4. Manual reconnection:
+   - User can click connection status indicator to expand details
+   - "Try Reconnect" button forces immediate reconnection attempt
+   - Visual feedback provided during reconnection process
+
+This approach ensures the application remains usable even during backend outages and provides a seamless transition back to real-time data when services are restored.

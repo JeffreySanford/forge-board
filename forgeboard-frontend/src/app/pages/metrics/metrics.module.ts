@@ -1,35 +1,33 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { SharedModule } from '../../shared/shared.module';
 import { MetricComponent } from './metric.component';
 import { DiagnosticsComponent } from './diagnostics/diagnostics.component';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
-import { FormsModule } from '@angular/forms';
-import { DragDropModule } from '@angular/cdk/drag-drop';
-import { RouterModule } from '@angular/router';
 import { MetricsService } from '../../services/metrics.service';
 
-// Import components from correct paths
-import { MetricsInfographicComponent } from './components/metrics-infographic.component';
-import { ConnectionStatusComponent } from './components/connection-status.component';
+// Import components from their tile folders
+import { ConnectionStatusComponent } from './tiles/connection-status/connection-status.component';
+import { RecentLogsComponent } from './tiles/recent-logs/recent-logs.component';
+import { UptimeSummaryComponent } from './tiles/uptime-summary/uptime-summary.component';
+import { ActivityFeedComponent } from './tiles/activity-feed/activity-feed.component';
+
+// Import LoggerModule for LoggerTileComponent
+import { LoggerModule } from '../../components/logger/logger.module';
 
 @NgModule({
   declarations: [
     MetricComponent,
     DiagnosticsComponent,
-    // Include components
-    MetricsInfographicComponent,
+    // Only include non-standalone components here
+    RecentLogsComponent,
+    UptimeSummaryComponent,
+    ActivityFeedComponent,
     ConnectionStatusComponent
   ],
   imports: [
-    CommonModule,
-    MatCardModule,
-    MatIconModule,
-    MatDividerModule,
-    FormsModule,
-    DragDropModule,
-    RouterModule.forChild([
+    SharedModule,
+    LoggerModule, // Add LoggerModule here
+    // Route configuration
+    SharedModule.forChild([
       { path: '', component: DiagnosticsComponent }
     ])
   ],

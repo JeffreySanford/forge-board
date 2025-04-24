@@ -1,162 +1,260 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { io, Socket } from 'socket.io-client';
 import { SocketResponse } from '@forge-board/shared/api-interfaces';
 
-// Define proper interfaces
-interface Health {
+// Socket Information Types
+export interface SocketInfo {
+  id: string;
+  namespace: string;
+  clientIp: string;
+  userAgent: string;
+  connectTime: string | Date;
+  disconnectTime?: string | Date;
+  lastActivity: string | Date;
+  events: {
+    type: string;
+    timestamp: string | Date;
+    data?: any;
+  }[];
+}
+
+export interface SocketMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  disconnections: number;
+  errors: number;
+  messagesSent: number;
+  messagesReceived: number;
+}
+
+export interface SocketStatusUpdate {
+  activeSockets: SocketInfo[];
+  metrics: SocketMetrics;
+}
+
+export interface SocketLogEvent {
+  socketId: string;
+  namespace: string;
+  eventType: string;
+  timestamp: string | Date;
+  message: string;
+  data?: any;
+}
+
+export interface HealthData {
   status: string;
   uptime: number;
-  details: {
-    past: string;
-    present: string;
-    future: string;
-    [key: string]: string;
-  };
-}
-
-interface ServicesData {
-  services: string[];
-  controllers: string[];
-  gateways: string[];
-}
-
-interface EventResponse {
-  success: boolean;
-  message?: string;
-}
-
-interface MetricData {
-  cpu: number;
-  memory: number;
-  time: string;
+  timestamp: string;
+  details: Record<string, string>;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class DiagnosticsService implements OnDestroy {
-  private apiUrl = 'http://localhost:3000/api/diagnostics';
+  // API URLs
+  private readonly apiUrl = 'http://localhost:3000/api/diagnostics';
+  private readonly socketUrl = 'http://localhost:3000';
+  
+  // Socket connection
   private socket: Socket | null = null;
-  private connectionStatusSubject = new Subject<'connected' | 'disconnected' | 'error'>();
+  
+  // Socket data subjects
+  private socketStatusSubject = new Subject<SocketStatusUpdate>();
+  private socketLogsSubject = new Subject<SocketLogEvent[]>();
+  private healthSubject = new BehaviorSubject<HealthData>({
+    status: 'unknown',
+    uptime: 0,
+    timestamp: new Date().toISOString(),
+    details: {}
+  });
+  
+  // Connection status
+  private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
   constructor(private http: HttpClient) {
     this.initSocket();
   }
 
   ngOnDestroy(): void {
+    console.log('DiagnosticsService: Cleaning up resources');
+    
     // Clean up socket connection
+    this.cleanupSocket();
+    
+    // Complete all subjects
+    this.socketStatusSubject.complete();
+    this.socketLogsSubject.complete();
+    this.healthSubject.complete();
+    this.connectionStatusSubject.complete();
+  }
+  
+  /**
+   * Properly clean up socket connection
+   */
+  private cleanupSocket(): void {
     if (this.socket) {
-      this.socket.disconnect();
+      console.log('DiagnosticsService: Disconnecting socket');
+      
+      // Remove all event listeners
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('socket-status');
+      this.socket.off('socket-logs');
+      this.socket.off('health-update');
+      this.socket.off('connect_error');
+      
+      // Disconnect if connected
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
       this.socket = null;
     }
+  }
+  
+  /**
+   * Initialize socket connection to diagnostics namespace
+   */
+  private initSocket(): void {
+    try {
+      console.log('DiagnosticsService: Initializing socket connection');
+      
+      // Clean up any existing socket first to prevent duplicate connections
+      this.cleanupSocket();
+      
+      // Create new socket connection with proper options
+      this.socket = io(`${this.socketUrl}/diagnostics`, {
+        withCredentials: false,
+        transports: ['websocket', 'polling'],
+        timeout: 5000,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        forceNew: true // Force new connection to avoid conflicts
+      });
+      
+      // Setup socket event handlers
+      this.setupSocketEvents();
+    } catch (err) {
+      console.error('Failed to connect to diagnostics socket:', err);
+      this.connectionStatusSubject.next(false);
+    }
+  }
+  
+  /**
+   * Set up all socket event handlers
+   */
+  private setupSocketEvents(): void {
+    if (!this.socket) return;
     
-    // Complete any subjects if they exist
-    // Add any other cleanup needed
+    this.socket.on('connect', () => {
+      console.log('Connected to diagnostics socket');
+      this.connectionStatusSubject.next(true);
+    });
+    
+    this.socket.on('disconnect', () => {
+      console.log('Disconnected from diagnostics socket');
+      this.connectionStatusSubject.next(false);
+    });
+    
+    this.socket.on('connect_error', (err) => {
+      console.error('Diagnostics socket connection error:', err);
+      this.connectionStatusSubject.next(false);
+    });
+    
+    this.socket.on('socket-status', (response: SocketResponse<SocketStatusUpdate>) => {
+      if (response.status === 'success') {
+        this.socketStatusSubject.next(response.data);
+      }
+    });
+    
+    this.socket.on('socket-logs', (response: SocketResponse<SocketLogEvent[]>) => {
+      if (response.status === 'success') {
+        this.socketLogsSubject.next(response.data);
+      }
+    });
+    
+    this.socket.on('health-update', (response: SocketResponse<HealthData>) => {
+      if (response.status === 'success') {
+        this.healthSubject.next(response.data);
+      }
+    });
   }
-
-  getServicesAndControllers(): Observable<ServicesData> {
-    return this.http.get<ServicesData>(`${this.apiUrl}/services`).pipe(
-      catchError(() => of({ services: [], controllers: [], gateways: [] }))
-    );
+  
+  /**
+   * Get socket status updates as an observable
+   */
+  getSocketStatus(): Observable<SocketStatusUpdate> {
+    // Request latest socket status
+    if (this.socket?.connected) {
+      this.socket.emit('get-socket-status');
+    }
+    return this.socketStatusSubject.asObservable();
   }
-
-  getHealth(): Observable<Health> {
-    return this.http.get<Health>(`${this.apiUrl}/health`).pipe(
+  
+  /**
+   * Get socket logs as an observable
+   */
+  getSocketLogs(): Observable<SocketLogEvent[]> {
+    // Request latest logs
+    if (this.socket?.connected) {
+      this.socket.emit('get-socket-logs');
+    }
+    return this.socketLogsSubject.asObservable();
+  }
+  
+  /**
+   * Get health data as an observable
+   */
+  getHealthUpdates(): Observable<HealthData> {
+    // Request latest health data
+    if (this.socket?.connected) {
+      this.socket.emit('get-health');
+    }
+    return this.healthSubject.asObservable();
+  }
+  
+  /**
+   * Get connection status as an observable
+   */
+  getConnectionStatus(): Observable<boolean> {
+    return this.connectionStatusSubject.asObservable();
+  }
+  
+  /**
+   * Get health data via HTTP API
+   */
+  getHealth(): Observable<HealthData> {
+    return this.http.get<HealthData>(`${this.apiUrl}/health`).pipe(
       catchError(() => of({
-        status: 'Unknown',
+        status: 'error',
         uptime: 0,
+        timestamp: new Date().toISOString(),
         details: {
-          past: 'Connection Error',
-          present: 'Unable to connect to API',
-          future: 'Try again later'
+          message: 'Failed to fetch health data'
         }
       }))
     );
   }
-
-  registerEvent(event: string): Observable<EventResponse> {
-    return this.http.post<EventResponse>(`${this.apiUrl}/event`, { event }).pipe(
-      catchError(() => of({ success: false }))
-    );
-  }
-
-  healthUpdates(): Observable<Health> {
-    // Implementation for real-time health updates via socket connection
-    return new Observable<Health>(observer => {
-      if (!this.socket) {
-        observer.error(new Error('Socket not initialized'));
-        return;
-      }
-      
-      this.socket.on('health-update', (response: SocketResponse<Health>) => {
-        if (response.status === 'success') {
-          observer.next(response.data);
-        } else {
-          observer.error(new Error(response.data.toString()));
+  
+  /**
+   * Get socket information via HTTP API
+   */
+  getSocketInfo(): Observable<SocketStatusUpdate> {
+    return this.http.get<SocketStatusUpdate>(`${this.apiUrl}/sockets`).pipe(
+      catchError(() => of({
+        activeSockets: [],
+        metrics: {
+          totalConnections: 0,
+          activeConnections: 0,
+          disconnections: 0,
+          errors: 0,
+          messagesSent: 0,
+          messagesReceived: 0
         }
-      });
-      
-      return () => {
-        this.socket?.off('health-update');
-      };
-    });
-  }
-  
-  getMetricsUpdates(): Observable<SocketResponse<MetricData>> {
-    return new Observable<SocketResponse<MetricData>>(observer => {
-      if (!this.socket) {
-        observer.error(new Error('Socket not initialized'));
-        return;
-      }
-      
-      this.socket.on('system-metrics', (response: SocketResponse<MetricData>) => {
-        observer.next(response);
-      });
-      
-      return () => {
-        this.socket?.off('system-metrics');
-      };
-    });
-  }
-  
-  connectionStatus(): Observable<'connected' | 'disconnected' | 'error'> {
-    return this.connectionStatusSubject.asObservable();
-  }
-
-  // Add a method to disconnect all sockets
-  disconnectAll(): void {
-    // Clean up socket connection
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-    
-    // Complete the connection status subject
-    this.connectionStatusSubject.complete();
-  }
-
-  private initSocket() {
-    try {
-      this.socket = io('http://localhost:3000');
-      
-      this.socket.on('connect', () => {
-        this.connectionStatusSubject.next('connected');
-      });
-      
-      this.socket.on('disconnect', () => {
-        this.connectionStatusSubject.next('disconnected');
-      });
-      
-      this.socket.on('connect_error', () => {
-        this.connectionStatusSubject.next('error');
-      });
-      
-    } catch (error) {
-      console.error('Socket connection error:', error);
-      this.connectionStatusSubject.next('error');
-    }
+      }))
+    );
   }
 }

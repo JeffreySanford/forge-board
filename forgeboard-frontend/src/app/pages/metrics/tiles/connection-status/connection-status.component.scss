@@ -1,7 +1,254 @@
-.connection-status-tile {
-  background: #1a237e;
-  color: #ffffff;
-  border: 2px solid #ffffff;
+.connection-container {
   width: 100%;
   height: 100%;
+  padding: 0.5em;
+  box-sizing: border-box;
+}
+
+.connection-card {
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa;
+  border-radius: 0.25em;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.connection-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5em 1em;
+  background-color: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.connection-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5em;
+  
+  &.status-connected {
+    color: #2ecc71;
+  }
+  
+  &.status-disconnected {
+    color: #e74c3c;
+  }
+  
+  &.status-connecting {
+    color: #f39c12;
+    animation: rotate 2s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.connection-title {
+  font-weight: bold;
+  flex: 1;
+}
+
+.connection-content {
+  padding: 1em;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-row, .timestamp-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+}
+
+.status-label, .timestamp-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.status-value, .timestamp-value {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.status-value {
+  &.status-connected {
+    color: #2ecc71;
+    font-weight: bold;
+  }
+  
+  &.status-disconnected {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+  
+  &.status-connecting {
+    color: #f39c12;
+    font-weight: bold;
+  }
+}
+
+.timestamp-value {
+  color: #6c757d;
+}
+
+.connection-status-tile {
+  height: 100%;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d1b2a;
+  color: white;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  
+  &.status-connected {
+    background-color: #4eff91;
+    box-shadow: 0 0 8px #4eff91;
+  }
+  
+  &.status-disconnected {
+    background-color: #e74c3c;
+    box-shadow: 0 0 8px #e74c3c;
+  }
+  
+  &.status-connecting {
+    background-color: #ffe066;
+    box-shadow: 0 0 8px #ffe066;
+    animation: blink 1s infinite alternate;
+  }
+}
+
+@keyframes blink {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+.ping-display {
+  font-size: 0.9em;
+  color: #ffe066;
+}
+
+.connection-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quality-meter {
+  margin-bottom: 10px;
+}
+
+.quality-label {
+  font-size: 0.85em;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.quality-bar-container {
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.quality-bar {
+  height: 100%;
+  border-radius: 5px;
+  text-align: right;
+  padding-right: 5px;
+  font-size: 8px;
+  line-height: 10px;
+  color: rgba(0, 0, 0, 0.7);
+  transition: width 0.5s ease;
+  
+  &.quality-high {
+    background-color: #4eff91;
+  }
+  
+  &.quality-medium {
+    background-color: #ffe066;
+  }
+  
+  &.quality-low {
+    background-color: #e74c3c;
+  }
+}
+
+.last-connected {
+  font-size: 0.85em;
+}
+
+.connected-label {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2px;
+}
+
+.connected-time {
+  color: white;
+}
+
+/* CORS Error Message Styling */
+.cors-error {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(231, 76, 60, 0.2);
+  border-left: 3px solid #e74c3c;
+  border-radius: 3px;
+}
+
+.error-title {
+  display: flex;
+  align-items: center;
+  color: #e74c3c;
+  font-weight: bold;
+  margin-bottom: 8px;
+  
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    margin-right: 5px;
+  }
+}
+
+.error-message {
+  font-size: 0.85em;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.error-detail {
+  font-size: 0.75em;
+  color: rgba(255, 255, 255, 0.7);
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  line-height: 1.5;
 }

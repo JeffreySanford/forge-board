@@ -1,0 +1,248 @@
+.logger-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d1b2a;
+  border-radius: 4px;
+  overflow: hidden;
+  color: white;
+  font-family: 'IBM Plex Mono', monospace;
+  
+  &.compact {
+    font-size: 0.85em;
+    
+    .filter-controls {
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .search-filter {
+        width: 100%;
+        margin-top: 0.5em;
+      }
+    }
+    
+    .log-entry {
+      padding: 0.3em 0.5em;
+    }
+    
+    .log-header {
+      font-size: 0.8em;
+    }
+  }
+}
+
+.logger-header {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.level-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.level-filter {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85em;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  opacity: 0.5;
+  transition: all 0.2s;
+  
+  &.selected {
+    opacity: 1;
+  }
+  
+  &.log-level-debug {
+    color: #64b5f6;
+    border-left: 3px solid #64b5f6;
+    
+    &.selected {
+      background-color: rgba(100, 181, 246, 0.2);
+    }
+  }
+  
+  &.log-level-info {
+    color: #4eff91;
+    border-left: 3px solid #4eff91;
+    
+    &.selected {
+      background-color: rgba(78, 255, 145, 0.2);
+    }
+  }
+  
+  &.log-level-warning {
+    color: #ffe066;
+    border-left: 3px solid #ffe066;
+    
+    &.selected {
+      background-color: rgba(255, 224, 102, 0.2);
+    }
+  }
+  
+  &.log-level-error {
+    color: #e74c3c;
+    border-left: 3px solid #e74c3c;
+    
+    &.selected {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+  }
+}
+
+.search-filter {
+  flex: 1;
+  max-width: 250px;
+  
+  .search-field {
+    width: 100%;
+    font-size: 0.9em;
+  }
+}
+
+.logs-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+}
+
+.log-entry {
+  margin: 4px 0;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.05);
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  &.log-level-debug {
+    border-left: 3px solid #64b5f6;
+  }
+  
+  &.log-level-info {
+    border-left: 3px solid #4eff91;
+  }
+  
+  &.log-level-warning {
+    border-left: 3px solid #ffe066;
+  }
+  
+  &.log-level-error {
+    border-left: 3px solid #e74c3c;
+  }
+}
+
+.log-header {
+  display: flex;
+  gap: 8px;
+  font-size: 0.85em;
+  margin-bottom: 4px;
+  align-items: center;
+}
+
+.log-timestamp {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.log-level {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+  
+  .log-level-debug & {
+    background-color: rgba(100, 181, 246, 0.2);
+    color: #64b5f6;
+  }
+  
+  .log-level-info & {
+    background-color: rgba(78, 255, 145, 0.2);
+    color: #4eff91;
+  }
+  
+  .log-level-warning & {
+    background-color: rgba(255, 224, 102, 0.2);
+    color: #ffe066;
+  }
+  
+  .log-level-error & {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+}
+
+.log-source {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.log-message {
+  color: white;
+}
+
+.log-data {
+  margin-top: 4px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 120px;
+  overflow-y: auto;
+  
+  pre {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: pre-wrap;
+  }
+}
+
+.no-logs {
+  padding: 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Material overrides for dark theme */
+::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+::ng-deep .mat-mdc-text-field-wrapper {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+::ng-deep .mat-mdc-form-field-focus-overlay {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+::ng-deep .mat-mdc-form-field-flex {
+  background-color: transparent !important;
+}
+
+::ng-deep .mat-mdc-input-element {
+  color: white !important;
+}
+
+::ng-deep .mat-mdc-form-field-label {
+  color: rgba(255, 255, 255, 0.6) !important;
+}

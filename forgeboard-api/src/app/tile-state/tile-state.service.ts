@@ -1,14 +1,73 @@
 import { Injectable } from '@nestjs/common';
+import { TileType, TileLayoutResponse } from '@forge-board/shared/api-interfaces';
 
 @Injectable()
 export class TileStateService {
-  private userTileOrder: Record<string, string[]> = {};
+  // In-memory storage for tile states
+  private tileStates: Record<string, TileLayoutResponse> = {};
 
-  getTileOrder(userId: string): string[] {
-    return this.userTileOrder[userId] || [];
+  constructor() {
+    // Initialize with default state
+    this.tileStates['user1'] = {
+      userId: 'user1',
+      order: ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[],
+      visibility: {
+        metrics: true,
+        connection: true,
+        logs: true,
+        uptime: true,
+        activity: true
+      },
+      lastModified: new Date().toISOString()
+    };
   }
 
-  setTileOrder(userId: string, order: string[]) {
-    this.userTileOrder[userId] = order;
+  getTileOrder(userId: string): TileLayoutResponse {
+    // Return existing state or create a new one with defaults
+    if (!this.tileStates[userId]) {
+      this.tileStates[userId] = {
+        userId,
+        order: ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[],
+        visibility: {
+          metrics: true,
+          connection: true,
+          logs: true,
+          uptime: true,
+          activity: true
+        },
+        lastModified: new Date().toISOString()
+      };
+    }
+    
+    return this.tileStates[userId];
+  }
+
+  setTileOrder(userId: string, order: TileType[]): TileLayoutResponse {
+    // Ensure user state exists
+    if (!this.tileStates[userId]) {
+      this.getTileOrder(userId);
+    }
+    
+    // Update the order
+    this.tileStates[userId].order = order;
+    this.tileStates[userId].lastModified = new Date().toISOString();
+    
+    return this.tileStates[userId];
+  }
+
+  setTileVisibility(userId: string, visibility: Record<TileType, boolean>): TileLayoutResponse {
+    // Ensure user state exists
+    if (!this.tileStates[userId]) {
+      this.getTileOrder(userId);
+    }
+    
+    // Update visibility
+    this.tileStates[userId].visibility = {
+      ...this.tileStates[userId].visibility,
+      ...visibility
+    };
+    this.tileStates[userId].lastModified = new Date().toISOString();
+    
+    return this.tileStates[userId];
   }
 }

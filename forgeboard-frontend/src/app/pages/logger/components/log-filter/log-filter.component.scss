@@ -1,0 +1,21 @@
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.additional-selection {
+  opacity: 0.75;
+  font-size: 0.75em;
+  margin-left: 5px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

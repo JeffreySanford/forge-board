@@ -1,57 +1,41 @@
-import { Controller, Get, Post, Body, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Logger } from '@nestjs/common';
 import { DiagnosticsService } from './diagnostics.service';
 import { DiagnosticsGateway } from '../gateways/diagnostics.gateway';
+import { HealthData, DiagnosticEvent } from '@forge-board/shared/api-interfaces';
 
-// Centralized Health type
-export interface Health {
-  status: string;
-  uptime: number;
-  details: {
-    past: string;
-    present: string;
-    future: string;
-    [key: string]: unknown;
-  };
-}
-
-// Add a more specific event response type
+// Define DiagnosticEventResponse interface
 export interface DiagnosticEventResponse {
   success: boolean;
   timestamp: string;
-  id: string; // Unique event ID
+  id: string;
   eventType: string;
 }
 
-@Controller('api/diagnostics')
+@Controller('diagnostics')
 export class DiagnosticsController {
+  private readonly logger = new Logger(DiagnosticsController.name);
+  
   constructor(
     private readonly diagnosticsService: DiagnosticsService,
     @Inject(DiagnosticsGateway) private readonly diagnosticsGateway: DiagnosticsGateway
   ) {}
-
-  @Get('services')
-  getServicesAndControllers() {
-    return this.diagnosticsService.getServicesAndControllers();
-  }
-
+  
   @Get('health')
-  getHealth(): Health {
+  getHealth(): HealthData {
+    this.logger.log('GET /diagnostics/health');
     return this.diagnosticsService.getHealth();
   }
-
+  
+  @Get('services')
+  getServicesAndControllers() {
+    this.logger.log('GET /diagnostics/services');
+    return this.diagnosticsService.getServicesAndControllers();
+  }
+  
   @Post('event')
-  registerEvent(@Body() body: { event: string }): DiagnosticEventResponse {
-    // Register the event with the service
-    const eventResponse = this.diagnosticsService.registerEvent(body.event);
-    
-    // Emit the event to all connected clients via socket
-    this.diagnosticsGateway.emitDiagnosticEvent({
-      event: body.event,
-      timestamp: eventResponse.timestamp,
-      id: eventResponse.id
-    });
-    
-    // Return detailed response to HTTP caller
-    return eventResponse;
+  registerDiagnosticEvent(@Body() event: DiagnosticEvent) {
+    this.logger.log(`Diagnostic event registered: ${event.eventType} - ${event.message}`);
+    this.diagnosticsGateway.emitDiagnosticEvent(event);
+    return { success: true, message: 'Event registered' };
   }
 }
