@@ -1,60 +1,80 @@
-/**
- * Core metric data interface for system metrics
- */
+/** Metric event types */
+export enum MetricEvent {
+  HEALTH_UPDATE = 'health-update',
+  CPU_UPDATE = 'cpu-update',
+  MEMORY_UPDATE = 'memory-update',
+  DISK_UPDATE = 'disk-update',
+  NETWORK_UPDATE = 'network-update'
+}
+
+/** Metric data interface */
 export interface MetricData {
-  cpu: number;
-  memory: number;
+  /** ISO timestamp */
   time: string;
-  disk?: number;
-  network?: number;
-  [key: string]: number | string | undefined;
-}
-
-/**
- * Metric response interface for API calls
- */
-export interface MetricResponse {
-  success: boolean;
-  message?: string;
-}
-
-/**
- * Metric update response with included data
- */
-export interface MetricUpdateResponse {
-  success: boolean;
-  data?: MetricData;
-  message?: string;
-}
-
-/**
- * Diagnostic event data
- */
-export interface DiagnosticEvent {
-  eventType: 'info' | 'warning' | 'error';
-  message: string;
-  source: string;
-  timestamp: string;
+  /** CPU usage percentage */
+  cpu: number;
+  /** Memory usage percentage */
+  memory: number;
+  /** Disk usage percentage */
+  disk: number;
+  /** Network usage percentage */
+  network: number;
+  /** Additional details */
   details?: Record<string, unknown>;
 }
 
-/**
- * Health status data
- */
+/** Health status type */
+export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+
+/** Health data interface */
 export interface HealthData {
-  status: string;
+  /** System status */
+  status: HealthStatus;
+  /** Uptime in seconds */
   uptime: number;
+  /** ISO timestamp */
   timestamp: string;
-  details: Record<string, string>;
+  /** Additional health details */
+  details?: {
+    /** Past health status description */
+    past?: string;
+    /** Present health status description */
+    present?: string;
+    /** Future health prediction */
+    future?: string;
+    /** Service-specific health status */
+    services?: Record<string, { status: string; message?: string }>;
+  };
 }
 
-/**
- * Socket event names for metrics
- */
-export enum MetricEvent {
-  SUBSCRIBE = 'subscribe-metrics',
-  UPDATE = 'metrics-update',
-  SYSTEM = 'system-metrics',
-  DIAGNOSTICS = 'diagnostics-event',
-  HEALTH = 'health-status'
+/** Diagnostic event interface */
+export interface DiagnosticEvent {
+  /** Event ID */
+  id?: string;
+  /** Event type */
+  type?: string;
+  /** Event type (alternative name) */
+  eventType?: string;
+  /** Event message */
+  message: string;
+  /** ISO timestamp */
+  timestamp?: string;
+  /** Event severity */
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  /** Event source */
+  source?: string;
+  /** Additional details */
+  details?: Record<string, unknown>;
+}
+
+/** Metric response interface */
+export interface MetricResponse {
+  /** Success status */
+  success: boolean;
+  /** Metric data */
+  data: MetricData | null; // Ensure this property is included and nullable
+  /** Response timestamp */
+  timestamp: string; // Ensure this property is included
+  /** Optional message providing more information */
+  message?: string;
 }

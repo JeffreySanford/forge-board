@@ -5,61 +5,51 @@ export interface SocketResponse<T> {
   status: 'success' | 'error';
   data: T;
   timestamp: string;
+  error?: string;
 }
 
 /**
- * Create a standardized response object
+ * Constants for socket event names to ensure consistency
  */
-export function createSocketResponse<T>(event: string, data: T): SocketResponse<T>;
-export function createSocketResponse<T>(data: T): SocketResponse<T>;
-export function createSocketResponse<T>(eventOrData: string | T, data?: T): SocketResponse<T> {
-  if (typeof eventOrData === 'string' && data !== undefined) {
-    // Called with event name and data
-    return {
-      status: 'success',
-      data,
-      timestamp: new Date().toISOString(),
-    };
-  } else {
-    // Called with just data
-    return {
-      status: 'success',
-      data: eventOrData as T,
-      timestamp: new Date().toISOString(),
-    };
-  }
-}
+export const SOCKET_EVENTS = {
+  CONNECT: 'connect',
+  DISCONNECT: 'disconnect',
+  METRICS_UPDATE: 'metrics-update',
+  HEALTH_UPDATE: 'health-update',
+  LOG_STREAM: 'log-stream',
+  FILTER_LOGS: 'filter-logs',
+  SOCKET_STATUS: 'socket-status',
+  SOCKET_LOGS: 'socket-logs',
+  SET_INTERVAL: 'set-interval',
+  SUBSCRIBE_METRICS: 'subscribe-metrics',
+  SUBSCRIBE_LOGS: 'subscribe-logs',
+  ERROR: 'error'
+} as const;
 
 /**
- * Tile interface for dashboard components
+ * Socket event types derived from SOCKET_EVENTS constants
  */
-export interface Tile {
-  id: string;
-  type: TileType;
-  title: string;
-  order: number;
-  visible: boolean;
-}
+export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS];
 
 /**
- * Available tile types
+ * Export all types
  */
-export type TileType = 'uptime' | 'metrics' | 'connection' | 'logs' | 'activity';
+// Socket types
+export {
+  SocketMetrics,
+  SocketStatusUpdate,
+  SocketInfo,
+  SocketEvent,
+  SocketStatus,
+  SocketLogEvent,
+  createSocketResponse,
+  createSocketErrorResponse,
+  isSocketResponse,
+  isSuccessResponse,
+  isErrorResponse
+} from './lib/socket-types';
 
-/**
- * Drag event for tile reordering
- */
-export interface TileDragEvent {
-  previousIndex: number;
-  currentIndex: number;
-}
-
-// Export directly from socket-types and tile-types (these don't have conflicts)
-export * from './lib/api-interfaces';
-export * from './lib/tile-types';
-
-// Logger-related exports
-export { 
+export {
   LogLevel,
   LogLevelType,
   LogEntry,
@@ -69,22 +59,60 @@ export {
   LoggerConfig
 } from './lib/logger-types';
 
-// Socket-related exports
 export {
-  SocketEvent,
-  SocketInfo,
-  SocketMetrics,
-  SocketLogEvent,
-  SocketLogFilter,
-  createSocketErrorResponse
-} from './lib/socket-types';
-
-// Metrics-related exports
-export {
+  MetricEvent,
   MetricData,
-  MetricResponse,
-  MetricUpdateResponse,
-  DiagnosticEvent,
+  HealthStatus,
   HealthData,
-  MetricEvent
+  MetricResponse,
+  DiagnosticEvent
 } from './lib/metric-types';
+
+export {
+  TileType,
+  TileVisibility,
+  TileLayoutResponse,
+  TileLayoutRequest,
+  TileResponse,
+  Tile,
+  TileDragEvent
+} from './lib/tile-types';
+
+// Helper functions
+import { MetricData, HealthStatus, HealthData } from './lib/metric-types';
+
+/**
+ * Validates metric data to ensure it has all required fields
+ */
+export function validateMetricData(data: Partial<MetricData>): MetricData {
+  const now = new Date().toISOString();
+  return {
+    time: data.time || now,
+    cpu: data.cpu ?? 0,
+    memory: data.memory ?? 0,
+    disk: data.disk ?? 0,
+    network: data.network ?? 0,
+    details: data.details || {}
+  };
+}
+
+/**
+ * Creates a health data object with consistent formatting
+ */
+export function createHealthData(status: string, details?: Partial<Record<string, unknown>>, uptimeValue?: number): HealthData {
+  // Remove or guard process.uptime usage for browser compatibility
+  // const uptime = uptimeValue ?? process.uptime();
+  const uptime = uptimeValue ?? 0;
+  
+  return {
+    status: status as HealthStatus,
+    uptime,
+    timestamp: new Date().toISOString(),
+    details: {
+      services: details?.['services'] as Record<string, { status: string; message?: string }> || {},
+      past: details?.['past'] as string,
+      present: details?.['present'] as string,
+      future: details?.['future'] as string
+    }
+  };
+}

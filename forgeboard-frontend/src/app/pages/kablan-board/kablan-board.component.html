@@ -1,7 +1,106 @@
 <div class="kablan-board">
-  <!-- Toolbar and filters will go here -->
-  <div class="kablan-columns">
-    <!-- Columns and tiles will be rendered here -->
-    <!-- Example: <section *ngFor="let col of board?.columns"> ... </section> -->
+  <!-- Toolbar and filters -->
+  <div class="kablan-toolbar">
+    <h2>{{ board?.name || 'Planning Board' }}</h2>
+    <div class="connection-status" [class.connected]="isConnected">
+      {{ isConnected ? 'Connected' : 'Using Demo Data' }}
+    </div>
+  </div>
+  
+  <!-- Project Phases -->
+  <div class="project-phases">
+    <div class="phase-title">Project Phases:</div>
+    <div class="phases-container">
+      <div *ngFor="let phase of allPhases" 
+           class="project-phase-indicator" 
+           [class.active]="isCurrentPhase(phase)"
+           [class.completed]="isPhaseComplete(phase)"
+           [class.in-progress]="isPhaseActive(phase) && !isPhaseComplete(phase)"
+           (click)="switchPhase(phase)">
+        <div class="phase-marker"></div>
+        <div class="phase-label">{{ phaseLabels[phase] }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Board navigation -->
+  <div class="board-navigation">
+    <button class="nav-arrow left" (click)="navigateCards('left')" [disabled]="currentCardIndex === 0">
+      <span class="material-icons">chevron_left</span>
+    </button>
+    
+    <div class="workflow-indicator">
+      <div class="workflow-step" [class.active]="isStepActive('backlog')">Backlog</div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step" [class.active]="isStepActive('todo')">To Do</div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step" [class.active]="isStepActive('complete')">Complete</div>
+    </div>
+    
+    <button class="nav-arrow right" (click)="navigateCards('right')" [disabled]="currentCardIndex + cardsToShow >= totalCards">
+      <span class="material-icons">chevron_right</span>
+    </button>
+  </div>
+  
+  <!-- Current phase title -->
+  <div class="phase-header">
+    <h3>{{ phaseLabels[currentPhase] }} Phase</h3>
+  </div>
+  
+  <!-- Columns and cards -->
+  <div class="kablan-columns" #columnsContainer>
+    <section class="kablan-column" *ngFor="let column of visibleColumns; trackBy: trackByFn">
+      <div class="column-header">
+        <h3>{{ column.name }}</h3>
+        <span class="card-count">{{ column.cards.length }}</span>
+      </div>
+      
+      <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
+        <div class="kablan-card" 
+             *ngFor="let card of column.cards; trackBy: trackCardByFn"
+             cdkDrag
+             [cdkDragData]="card"
+             [@cardAnimation]="'default'">
+          <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
+          <div class="card-header">
+            <span class="card-title">{{ card.title }}</span>
+            <span class="card-priority-indicator" [ngClass]="'priority-' + card.priority">
+              {{ card.priority }}
+            </span>
+          </div>
+          
+          <div class="card-description">
+            {{ card.description }}
+          </div>
+          
+          <div class="card-footer">
+            <div class="card-tags">
+              <span class="tag" *ngFor="let tag of card.tags">{{ tag }}</span>
+            </div>
+            <div class="card-meta" *ngIf="card.assignee">
+              <span class="assignee">
+                <span class="material-icons avatar">person</span>
+                {{ card.assignee }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty state for columns with no cards -->
+        <div class="empty-column-message" *ngIf="column.cards.length === 0">
+          <span class="material-icons">info</span>
+          <p>No cards in this column</p>
+          <p>Drag cards here or add new ones</p>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <!-- Card pagination indicator -->
+  <div class="pagination-indicator">
+    <div *ngFor="let i of paginationIndicators" 
+         class="pagination-dot"
+         [class.active]="currentCardIndex === i * cardsToShow"
+         (click)="goToPage(i)"></div>
   </div>
 </div>

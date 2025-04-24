@@ -1,86 +1,94 @@
 /**
- * Log level enum
+ * Log level enum for categorizing log messages
  */
 export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARNING = 'warning',
-  WARN = 'warn', // Add WARN as an alias for WARNING
   ERROR = 'error',
-  FATAL = 'fatal' // Add FATAL level
+  CRITICAL = 'critical',
+  FATAL = 'fatal'  // Add FATAL level
 }
 
-/**
- * Log level as a string literal type for easier use in interfaces
- */
-export type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal';
+/** Log level type (string literal union type) */
+export type LogLevelType = 'debug' | 'info' | 'warning' | 'error' | 'critical' | 'fatal';
 
-/**
- * Log entry interface
- */
+/** Log entry interface */
 export interface LogEntry {
   id: string;
   level: LogLevelType;
   message: string;
   source: string;
   timestamp: string;
+  // Optional fields
   data?: Record<string, unknown>;
-  // Add missing properties that are being used in the code
   context?: string;
   tags?: string[];
   stackTrace?: string;
-  details?: Record<string, unknown>; // Add details property
+  details?: Record<string, unknown>;
+  totalCount?: number; // Added missing property
 }
 
-/**
- * Log filter options
- */
+/** Log filter options */
 export interface LogFilter {
-  level?: LogLevelType | LogLevelType[];
-  source?: string;
-  startDate?: string;
-  endDate?: string;
-  search?: string;
-  limit?: number;
-  skip?: number;
-  // Add missing properties that are being used in the code
+  /** Filter by log levels */
   levels?: LogLevelType[];
+  /** Filter by source */
   sources?: string[];
+  /** Filter by context */
   contexts?: string[];
+  /** Filter by tags */
   tags?: string[];
+  /** Filter by start date (ISO string) */
+  startDate?: string;
+  /** Filter by start time (alias for startDate) */
+  startTime?: string; 
+  /** Filter by end date (ISO string) */
+  endDate?: string;
+  /** Filter by end time (alias for endDate) */
+  endTime?: string;
+  /** Text search term */
+  search?: string;
+  /** Pagination offset */
   offset?: number;
-  startTime?: string; // Add startTime property
-  endTime?: string; // Add endTime property
+  /** Pagination limit */
+  limit?: number;
 }
 
-/**
- * Log response from API
- */
+/** Log response interface */
 export interface LogResponse {
+  /** Success status */
+  status: boolean;
+  /** Log entries */
   logs: LogEntry[];
-  totalCount: number;
-  filtered: boolean;
-  success?: boolean; // Add success property
+  /** Total log count (for pagination) */
+  total: number;
+  /** Response timestamp */
+  timestamp: string;
+  /** Optional filtered status */
+  filtered?: boolean; // Added missing property
 }
 
-/**
- * Log stream update for real-time log streaming
- */
+/** Log stream update interface */
 export interface LogStreamUpdate {
-  log: LogEntry;
-  logs?: LogEntry[]; // Add logs property for batched updates
-  totalCount: number;
-  append?: boolean; // Add append property
-  stats?: Record<LogLevel, number>; // Add stats property
+  /** Whether to append or replace logs */
+  append: boolean; // Ensure this property is required
+  /** Log entries (multiple) */
+  logs?: LogEntry[];
+  /** Single log entry */
+  log?: LogEntry;
+  /** Log statistics */
+  stats?: Record<LogLevel, number>;
+  /** Total count of logs */
+  totalCount?: number;
 }
 
-/**
- * Logger configuration options
- */
+/** Logger configuration */
 export interface LoggerConfig {
+  /** Maximum logs to keep in memory */
   maxLogs?: number;
-  autoFlush?: boolean;
-  flushInterval?: number;
-  persistToDisk?: boolean;
-  logPath?: string;
+  /** Default log level */
+  defaultLevel?: LogLevelType;
+  /** Default log source */
+  defaultSource?: string;
 }
