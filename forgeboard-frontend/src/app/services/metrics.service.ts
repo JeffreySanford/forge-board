@@ -302,7 +302,9 @@ export class MetricsService implements OnDestroy {
       catchError(() => {
         return this.handleError<MetricResponse>({
           success: false,
-          message: 'Failed to update interval'
+          message: 'Failed to update interval',
+          data: null,
+          timestamp: new Date().toISOString()
         });
       })
     );
@@ -313,7 +315,12 @@ export class MetricsService implements OnDestroy {
     return this.http.post<MetricResponse>(`${this.apiUrl}/register`, data)
       .pipe(
         catchError(error => {
-          return this.handleError<MetricResponse>({ success: false, message: error.message });
+          return this.handleError<MetricResponse>({ 
+            success: false, 
+            message: error.message,
+            data: null,
+            timestamp: new Date().toISOString()
+          });
         })
       );
   }

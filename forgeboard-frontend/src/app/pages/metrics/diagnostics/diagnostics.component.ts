@@ -93,7 +93,8 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       connection: this.showConnectionTile,
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
-      activity: this.showActivityTile
+      activity: this.showActivityTile,
+      kablan: true // Add the missing property
     };
     
     this.tileStateService.setTileVisibility('user1', visibility)

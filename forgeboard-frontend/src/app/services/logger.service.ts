@@ -57,7 +57,14 @@ export class LoggerService {
       }),
       catchError(error => {
         console.error('Error fetching logs:', error);
-        return of({ logs: [], totalCount: 0, filtered: false });
+        return of({ 
+          logs: [], 
+          totalCount: 0, 
+          filtered: false,
+          status: false, // Change from 'error' string to false boolean
+          total: 0,
+          timestamp: new Date().toISOString()
+        } as LogResponse);
       })
     );
   }

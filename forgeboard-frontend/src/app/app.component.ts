@@ -396,7 +396,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       connection: true, // Update with actual visibility states
       logs: true,
       uptime: true,
-      activity: true
+      activity: true,
+      kablan: true // Add the missing property
     };
     
     this.tileStateService.setTileVisibility('user1', visibility)
