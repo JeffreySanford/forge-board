@@ -20,7 +20,14 @@ export class SocketController {
 
   @Get('logs')
   getSocketLogs(): SocketLogEvent[] {
-    return this.socketLogger.getLogs(100); // Provide the required limit parameter
+    return this.socketLogger.getLogs(100).map(log => ({
+      socketId: log.socketId,
+      namespace: log.namespace,
+      type: log.eventType, // map eventType to type
+      timestamp: typeof log.timestamp === 'string' ? log.timestamp : log.timestamp.toISOString(),
+      message: log.message,
+      data: log.data
+    }));
   }
 
   @Get(':id')

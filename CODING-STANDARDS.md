@@ -85,7 +85,10 @@
   5. Unsubscribing from all subscriptions
 - Define DTOs for all socket messages and API payloads.
 - Use enums or string literal types for event names.
-- **Centralize shared types:** For diagnostics and metrics, define interfaces (e.g., `Health`, `DiagnosticInfo`, `MetricData`) in a shared location and import them in both frontend and backend.
+- **Centralize shared types:** All shared interfaces are defined in `libs/shared/api-interfaces/src/lib/`:
+  - `logger-types.ts`: Contains `LogLevel`, `LogEntry`, `LogFilter`, etc.
+  - `metric-types.ts`: Contains `MetricData`, `MetricEvent`, `DiagnosticEvent`, etc.
+  - `socket-types.ts`: Contains `SocketResponse`, `SocketInfo`, `SocketMetrics`, etc.
 - **Use standard response format:** All socket responses should follow the `SocketResponse<T>` pattern:
   ```typescript
   interface SocketResponse<T> {

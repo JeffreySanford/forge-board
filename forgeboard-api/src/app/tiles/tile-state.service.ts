@@ -17,7 +17,8 @@ export class TileStateService {
       connection: true,
       logs: true,
       uptime: true,
-      activity: true
+      activity: true,
+      kablan: true // Added missing property
     };
   }
 

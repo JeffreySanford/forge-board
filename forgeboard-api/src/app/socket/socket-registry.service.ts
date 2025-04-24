@@ -37,9 +37,11 @@ export class SocketRegistryService {
       namespace: namespace,
       clientIp: socket.handshake.address,
       userAgent: socket.handshake.headers['user-agent'] || 'Unknown',
-      connectTime: new Date(),
-      lastActivity: new Date(),
-      events: []
+      connectTime: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      events: [],
+      connected: new Date().toISOString(), // Added missing property
+      status: 'connected' // Added missing property
     };
     
     // Store socket info
@@ -66,12 +68,12 @@ export class SocketRegistryService {
     // Update socket info
     const socketInfo = this.socketInfo.get(socketId);
     if (socketInfo) {
-      socketInfo.disconnectTime = new Date();
+      socketInfo.disconnectTime = new Date().toISOString();
       
       // Add to connection history
       const historyEntry = this.connectionHistory.find(h => h.id === socketId);
       if (historyEntry) {
-        historyEntry.disconnectTime = new Date();
+        historyEntry.disconnectTime = new Date().toISOString();
       }
     }
     
@@ -93,12 +95,12 @@ export class SocketRegistryService {
     // Update last activity time
     const socketInfo = this.socketInfo.get(socketId);
     if (socketInfo) {
-      socketInfo.lastActivity = new Date();
+      socketInfo.lastActivity = new Date().toISOString();
       
       // Add event to socket history
       socketInfo.events.push({
         type: eventType,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         data: data
       });
     }
@@ -107,8 +109,8 @@ export class SocketRegistryService {
     const logEvent: SocketLogEvent = {
       socketId,
       namespace: socketInfo?.namespace || 'unknown',
-      eventType,
-      timestamp: new Date(),
+      type: eventType, // Corrected property name
+      timestamp: new Date().toISOString(),
       message,
       data
     };

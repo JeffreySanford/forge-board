@@ -26,32 +26,29 @@ export class MetricsController {
   @Get('set-interval')
   setInterval(@Query('interval') intervalStr: string): MetricResponse {
     const interval = parseInt(intervalStr, 10);
-    this.logger.log(`GET /metrics/set-interval?interval=${interval}`);
-    
     if (isNaN(interval) || interval < 20) {
-      return { 
-        success: false, 
+      return {
+        success: false,
+        data: null,
+        timestamp: new Date().toISOString(),
         message: 'Invalid interval. Must be at least 20ms.'
       };
     }
-    
     this.metricsService.setUpdateInterval(interval);
-    return { 
-      success: true, 
+    return {
+      success: true,
+      data: null,
+      timestamp: new Date().toISOString(),
       message: `Interval updated to ${interval}ms`
     };
   }
-  
-  @Post('register')
+
   registerMetric(@Body() metric: MetricData): MetricResponse {
-    this.logger.log('POST /metrics/register');
-    this.logger.debug(`Received metric data: ${JSON.stringify(metric)}`);
-    
-    // We're just accepting the data in this demo
     // In a real application, you'd validate and store it
-    
     return {
       success: true,
+      data: metric,
+      timestamp: new Date().toISOString(),
       message: 'Metric data received'
     };
   }

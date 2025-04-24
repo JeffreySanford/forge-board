@@ -214,3 +214,116 @@ The reconnection system follows this workflow:
    - Visual feedback provided during reconnection process
 
 This approach ensures the application remains usable even during backend outages and provides a seamless transition back to real-time data when services are restored.
+
+## Shared Type Interfaces
+
+ForgeBoard uses a set of shared interfaces between frontend and backend to ensure type safety.
+
+### Logger Types
+
+Located in `libs/shared/api-interfaces/src/lib/logger-types.ts`
+
+```typescript
+// Log level enum
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARNING = 'warning',
+  WARN = 'warn', // Alias for WARNING
+  ERROR = 'error',
+  FATAL = 'fatal'
+}
+
+// Log entry interface
+export interface LogEntry {
+  id: string;
+  level: LogLevelType;
+  message: string;
+  source: string;
+  timestamp: string;
+  // Optional fields
+  data?: Record<string, unknown>;
+  context?: string;
+  tags?: string[];
+  stackTrace?: string;
+  details?: Record<string, unknown>;
+}
+
+// Additional interfaces: LogFilter, LogResponse, LogStreamUpdate, LoggerConfig
+```
+
+### Metric Types
+
+Located in `libs/shared/api-interfaces/src/lib/metric-types.ts`
+
+```typescript
+// Metric event enum
+export enum MetricEvent {
+  HEALTH_UPDATE = 'health-update',
+  CPU_UPDATE = 'cpu-update',
+  MEMORY_UPDATE = 'memory-update',
+  DISK_UPDATE = 'disk-update',
+  NETWORK_UPDATE = 'network-update',
+  // ...other events
+}
+
+// Core metric data interface
+export interface MetricData {
+  time: string;
+  cpu: number;
+  memory: number;
+  disk: number;
+  network: number;
+  details?: Record<string, unknown>;
+}
+
+// Diagnostic event data
+export interface DiagnosticEvent {
+  id?: string;
+  type?: string;
+  eventType?: string;
+  message: string;
+  timestamp?: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  source?: string;
+  details?: Record<string, unknown>;
+}
+
+// Health data
+export interface HealthData {
+  status: 'healthy' | 'degraded' | 'unhealthy' | string;
+  uptime: number;
+  timestamp: string;
+  details?: {
+    services?: Record<string, { status: string; message?: string }>;
+    past?: string;
+    present?: string;
+    future?: string;
+  };
+}
+
+// Additional interfaces: MetricResponse, MetricUpdateResponse
+```
+
+### Socket Types
+
+Located in `libs/shared/api-interfaces/src/lib/socket-types.ts`
+
+```typescript
+// Standard socket response
+export interface SocketResponse<T> {
+  status: 'success' | 'error';
+  data: T;
+  timestamp: string;
+}
+
+// Socket event names enum
+export enum SocketEvent {
+  CONNECT = 'connect',
+  DISCONNECT = 'disconnect',
+  METRICS_UPDATE = 'metrics-update',
+  // ...other events
+}
+
+// Additional interfaces: SocketInfo, SocketMetrics, SocketLogEvent, SocketLogFilter
+```

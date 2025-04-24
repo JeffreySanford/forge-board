@@ -65,6 +65,30 @@ ForgeBoard is a dashboard experience inspired by 1970s Boeing engineering docume
 - Use NgModules for proper organization
 - Maintain consistent blueprint styling across all components
 
+### Shared Interface Types
+
+ForgeBoard uses a centralized type system to ensure consistency between frontend and backend:
+
+1. **Logger Types** (`libs/shared/api-interfaces/src/lib/logger-types.ts`)
+   - `LogLevel`: Enum for log severity levels
+   - `LogEntry`: Interface for structured log entries
+   - `LogFilter`: Interface for log filtering options
+   - `LogResponse`: Interface for API responses with logs
+
+2. **Metric Types** (`libs/shared/api-interfaces/src/lib/metric-types.ts`)
+   - `MetricEvent`: Enum for metric event types
+   - `MetricData`: Interface for metric data points
+   - `HealthData`: Interface for system health information
+   - `DiagnosticEvent`: Interface for system diagnostic events
+
+3. **Socket Types** (`libs/shared/api-interfaces/src/lib/socket-types.ts`)
+   - `SocketResponse<T>`: Generic interface for standardized socket responses
+   - `SocketEvent`: Enum for socket event names
+   - `SocketInfo`: Interface for socket connection information
+   - `SocketMetrics`: Interface for socket performance metrics
+
+These shared types ensure type safety, self-documenting code, and prevent mismatches between frontend and backend implementations.
+
 ### Navigation Structure
 - Material-based side navigation
 - Consistent layout across all routes

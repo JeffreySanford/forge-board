@@ -190,12 +190,53 @@ System Event → Service → Gateway → Socket.IO → Client
 
 ## Type Safety & Shared DTOs
 
-ForgeBoard achieves type safety through:
+ForgeBoard achieves type safety through a comprehensive shared type system:
 
-1. **Shared Interfaces**: DTOs defined in shared library (`@forge-board/shared/api-interfaces`)
-2. **Generic Types**: Socket responses use generics (`SocketResponse<T>`)
-3. **Enums**: Consistent string literals using TypeScript enums
-4. **ESLint Rules**: Custom ESLint rules enforce socket cleanup and typed responses
+1. **Shared Interfaces Library**: All shared types are defined in `libs/shared/api-interfaces/src/lib/`:
+   - `logger-types.ts`: Logging-related interfaces (`LogLevel`, `LogEntry`, etc.)
+   - `metric-types.ts`: Metrics and health interfaces (`MetricData`, `HealthData`, etc.)
+   - `socket-types.ts`: Socket communication interfaces (`SocketResponse`, `SocketInfo`, etc.)
+
+2. **Type Structure**:
+   - **Enums** define constant values (e.g., `LogLevel`, `MetricEvent`, `SocketEvent`)
+   - **Interfaces** define object structures (e.g., `LogEntry`, `DiagnosticEvent`, `SocketInfo`)
+   - **Type Aliases** define string literals (e.g., `LogLevelType`)
+   - **Generic Types** provide flexibility (e.g., `SocketResponse<T>`)
+
+3. **Usage Pattern**:
+   ```typescript
+   // Import shared types
+   import { 
+     LogEntry, 
+     SocketResponse, 
+     MetricData 
+   } from '@forge-board/shared/api-interfaces';
+
+   // Use in components/services
+   @Component({...})
+   export class LogViewerComponent {
+     logs$: Observable<LogEntry[]>;
+     
+     processSocketResponse(response: SocketResponse<LogEntry[]>) {
+       if (response.status === 'success') {
+         // Type-safe access to data
+         this.logs$ = of(response.data);
+       }
+     }
+   }
+   ```
+
+4. **Backend Integration**:
+   - NestJS controllers/services import the same interfaces
+   - DTOs automatically validated against shared interfaces
+   - Socket gateways emit strongly-typed responses
+
+5. **Benefits**:
+   - Compile-time type checking
+   - Automatic IDE completion
+   - Self-documenting code
+   - Prevention of type mismatches between frontend/backend
+   - Centralized type definitions (change once, applied everywhere)
 
 ## Testing & Debugging
 

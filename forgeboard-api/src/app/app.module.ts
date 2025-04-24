@@ -18,6 +18,7 @@ import { LoggerModule } from './logger/logger.module'; // Import LoggerModule
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { TileStateModule } from './tile-state/tile-state.module';
 import { ConfigModule } from '@nestjs/config';
+import { LogsController } from './logs/logs.controller';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { ConfigModule } from '@nestjs/config';
     DiagnosticsController,
     StatusController,
     MetricsController,
-    TileStateController
+    TileStateController,
+    LogsController
   ],
   providers: [
     AppService,
@@ -50,8 +52,4 @@ import { ConfigModule } from '@nestjs/config';
     }
   ],
 })
-export class AppModule {
-  constructor(private readonly logger: Logger) {
-    this.logger.log('Application modules initialized');
-  }
-}
+export class AppModule {}

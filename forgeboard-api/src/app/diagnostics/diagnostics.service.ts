@@ -58,18 +58,16 @@ export class DiagnosticsService {
 
   getHealth(): HealthData {
     const uptime = Math.floor((Date.now() - this.startTime) / 1000);
-    let status = 'unknown';
-    
+    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' = 'unknown';
     if (uptime > 0) {
-      status = uptime > 60 ? 'healthy' : 'starting';
+      status = uptime > 60 ? 'healthy' : 'unknown';
     }
-
     return {
       status,
       uptime,
       timestamp: new Date().toISOString(),
       details: {
-        past: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'starting'}".`,
+        past: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'unknown'}".`,
         present: `Server is currently "${status}" with uptime of ${uptime} seconds.`,
         future: `If current trends continue, the server is expected to remain "${status}" and stable.`
       }

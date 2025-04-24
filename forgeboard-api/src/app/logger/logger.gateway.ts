@@ -59,7 +59,16 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     const logs = this.loggerService.getLogs(filter);
     const totalCount = this.loggerService.getLogs().length;
     
-    return { event: 'logs', data: { logs, totalCount, filtered: true } };
+    return {
+      event: 'logs',
+      data: {
+        status: true,
+        logs,
+        total: totalCount,
+        timestamp: new Date().toISOString(),
+        filtered: true
+      }
+    };
   }
   
   @SubscribeMessage('subscribe-logs')
@@ -134,7 +143,8 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         if (client) {
           const update: LogStreamUpdate = {
             log: logEntry,
-            totalCount
+            totalCount,
+            append: true // Add required property
           };
           client.emit('log-update', update);
         }
