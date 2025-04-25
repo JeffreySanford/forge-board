@@ -1,262 +1,190 @@
 # ForgeBoard: Frontend-API Architecture Documentation
 
-## Overview
+## Architecture Overview
 
-ForgeBoard uses a client-server architecture with a robust communication system built on both HTTP and WebSocket protocols. This document explains how the frontend and API components interact, how the build system works, and the role of the socket management system.
+ForgeBoard implements a modern, real-time reactive architecture:
 
-## Architecture Components
-
-### 1. Frontend (Angular)
-
-The frontend is built with Angular and communicates with the backend through:
-
-- **HTTP Requests**: For CRUD operations, retrieving static data, and actions
-- **WebSockets**: For real-time metrics, diagnostics, and live updates
-
-The frontend implements clean resource management with proper lifecycle hooks to avoid memory leaks and zombie connections.
-
-### 2. Backend (NestJS)
-
-The API is built with NestJS and exposes:
-
-- **REST Endpoints**: Standard HTTP endpoints for CRUD operations
-- **WebSocket Gateways**: Socket.IO based gateways for real-time communication
-- **Shared Types**: Types shared between frontend and backend for type safety
-
-### 3. Build & Bundling
-
-#### Frontend Bundling
-- Angular CLI/Webpack bundles the frontend
-- Assets, styles, and code are processed and optimized
-- Core dependencies are included in bundle
-
-#### API Bundling
-- The API is bundled using Webpack via Nx tooling
-- Node.js is targeted as the execution environment
-- External dependencies are not bundled (nodeExternals)
-- Source maps are included in development mode
-
-## Communication Patterns
-
-### HTTP Communication
-- REST endpoints with typed responses
-- Error handling with interceptors
-- Backend status monitoring
-
-### WebSocket Communication
-- Namespace-based socket connections (`/metrics`, `/diagnostics`)
-- Real-time data streams using Socket.IO
-- RxJS Observables to manage data flow
-- Standardized response format:
-
-```typescript
-interface SocketResponse<T> {
-  status: 'success' | 'error';
-  data: T;
-  timestamp: string;
-}
+```
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│                 │     │                   │     │                 │
+│   Backend       │────▶│    Socket.IO      │────▶│   Angular       │
+│   Events        │     │    Gateway        │     │   Services      │
+│                 │     │                   │     │                 │
+└─────────────────┘     └───────────────────┘     └────────┬────────┘
+                                                           │
+                                                           │
+                                                           ▼
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│                 │     │                   │     │                 │
+│   Angular       │◀────┤    Observable     │◀────┤   RxJS          │
+│   Components    │     │    Streams        │     │   Operators     │
+│                 │     │                   │     │                 │
+└─────────────────┘     └───────────────────┘     └─────────────────┘
 ```
 
-## Socket Connection Management
+## Key Components
 
-### Socket Lifecycle
+### Frontend Services
+
+The application features these core services:
+
+1. **MetricsService**: Manages real-time system metrics
+   - Uses Socket.IO for live metric updates
+   - Implements mock data generation when backend is unavailable
+   - Handles automatic reconnection
+
+2. **KablanService**: Provides project management functionality
+   - Manages board data through WebSockets
+   - Implements card move operations with optimistic updates
+   - Supports phase-based workflow visualization
+
+3. **DiagnosticsService**: Monitors system health
+   - Tracks WebSocket connections and status
+   - Provides health metrics and timeline data
+   - Surfaces connection errors and statistics
+
+4. **LoggerService**: Manages application logs
+   - Collects and categorizes log entries
+   - Supports filtering and exporting capabilities
+   - Allows batch sending of logs to backend
+
+5. **BackendStatusService**: Coordinates connection management
+   - Tracks status of all backend gateways
+   - Manages reconnection attempts
+   - Provides unified status monitoring
+
+### Socket Connection Management
+
+#### Socket Lifecycle
 Each socket connection follows a lifecycle pattern:
 
 1. **Initialization**: Socket connects to specific namespaces
-2. **Event Subscription**: Register event handlers for specific data
-3. **Error Handling**: Connection errors trigger fallback mechanisms
+2. **Event Subscription**: Registers event handlers for specific data
+3. **Error Handling**: Connection errors trigger mock data generation
 4. **Reconnection**: Automatic reconnection with backoff strategy
 5. **Cleanup**: Proper disconnection and removal of event listeners
 
-### Socket Initialization Pattern
-```typescript
-private initSocket(): void {
-  try {
-    // Clean up any existing socket first
-    this.cleanupSocket();
-    
-    // Create new socket connection with proper options
-    this.socket = io(`${this.socketUrl}/namespace`, {
-      withCredentials: false,
-      transports: ['websocket', 'polling'],
-      timeout: 5000,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 1000,
-      forceNew: true
-    });
-    
-    // Setup socket event handlers
-    this.setupSocketEvents();
-  } catch (err) {
-    console.error('Failed to connect to socket:', err);
-    this.connectionStatusSubject.next(false);
-    this.startMockDataGeneration(); // Fallback to mock data
-  }
-}
+#### Mock Data Strategy
+When backend connections fail:
+
+1. Services detect disconnection events
+2. Mock data generation begins at appropriate intervals
+3. UI indicates simulated data status
+4. Periodic reconnection attempts are made
+5. Seamless transition back to real data when backend returns
+
+#### Connection Status Monitoring
+The system provides comprehensive connection status tracking:
+
+- Real-time status indicators on the UI
+- Visual differentiation between live and mock data
+- Connection metrics (duration, active sessions)
+- Animated status transitions
+
+## Module Structure
+
+### Metrics Module
+
+Provides real-time system performance monitoring with:
+
+- Live metric charts for CPU, memory, disk, and network
+- Customizable refresh rates
+- Automatic fallback to simulated data
+- Visual indicators for connection status
+
+### Kablan Board Module
+
+Implements a Kanban-style project management system with:
+
+- Phase-based workflow visualization
+- Drag-and-drop card management
+- Visual indicators for task priority
+- Timeline-based phase progression
+
+### Diagnostics Module
+
+Offers comprehensive system monitoring tools:
+
+- Health timeline with past, present, and future status
+- Socket connection metrics and active session monitoring
+- Event logging with filtering capabilities
+- Status indicators with visual differentiation
+
+### Logger Module
+
+Provides detailed logging functionality:
+
+- Log collection and categorization
+- Filtering by level, source, and content
+- Statistics and visualization
+- CSV export capability
+
+## Data Flow Patterns
+
+### Service Pattern
+
+```
+┌─────────────────┐     ┌───────────────────────────────────────┐
+│                 │     │                                       │
+│  Socket.IO      │────▶│  Service Layer                        │
+│  Events         │     │                                       │
+│                 │     │  ┌───────────────┐  ┌───────────────┐ │
+└─────────────────┘     │  │ BehaviorSubj/ │  │ Public        │ │
+                        │  │ Subject       │──▶ Observable    │ │
+┌─────────────────┐     │  └───────────────┘  └───────────────┘ │
+│                 │     │                                       │
+│  HTTP           │────▶│                                       │
+│  Responses      │     │                                       │
+│                 │     └───────────────────────────────────────┘
+└─────────────────┘                       │
+                                          │
+                                          ▼
+                        ┌───────────────────────────────────────┐
+                        │                                       │
+                        │  Component Layer                      │
+                        │                                       │
+                        │  ┌───────────────┐  ┌───────────────┐ │
+                        │  │ Subscribe to  │  │ Update UI     │ │
+                        │  │ Observables   │──▶ State         │ │
+                        │  └───────────────┘  └───────────────┘ │
+                        │                                       │
+                        └───────────────────────────────────────┘
 ```
 
-### Socket Cleanup Pattern
-```typescript
-private cleanupSocket(): void {
-  if (this.socket) {
-    // Remove all event listeners
-    this.socket.off('connect');
-    this.socket.off('disconnect');
-    this.socket.off('data-event');
-    this.socket.off('connect_error');
-    
-    // Disconnect if connected
-    if (this.socket.connected) {
-      this.socket.disconnect();
-    }
-    
-    this.socket = null;
-  }
-}
+### Mock Data & Reconnection Strategy
+
+```
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│                 │     │                   │     │                 │
+│  Connection     │────▶│  Error            │────▶│  Mock Data      │
+│  Failure        │     │  Detection        │     │  Generation     │
+│                 │     │                   │     │                 │
+└─────────────────┘     └───────────────────┘     └────────┬────────┘
+                                                           │
+                                                           │
+                                                           ▼
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│                 │     │                   │     │                 │
+│  Backend        │◀────┤  Reconnection     │◀────┤  Status         │
+│  Connection     │     │  Logic            │     │  Indicator      │
+│                 │     │                   │     │                 │
+└─────────────────┘     └───────────────────┘     └─────────────────┘
 ```
 
-### Reconnection Strategy
-ForgeBoard implements a robust reconnection strategy that:
+## API Integration
 
-1. Detects when the backend becomes available
-2. Performs a connection test to verify availability
-3. Establishes a new socket connection
-4. Requests initial data to populate UI components
+### Socket Namespaces
 
-```typescript
-private reconnectToBackend(): void {
-  // Test backend availability first
-  this.http.get<{status: string}>(`${this.apiUrl}/status`)
-    .pipe(catchError(() => of({ status: 'error' })))
-    .subscribe(response => {
-      if (response.status !== 'error') {
-        // Clean up old socket and create new connection
-        this.cleanupSocket();
-        this.initSocket();
-        
-        // Request initial data
-        this.socket?.emit('get-initial-data');
-      }
-    });
-}
-```
+- `/metrics`: Real-time system performance metrics
+- `/diagnostics`: System health and connection monitoring
+- `/kablan`: Project management board updates and interactions
+- `/logger`: Log events and statistics
 
-### Offline Mode / Mock Data Generation
-When socket connections fail, ForgeBoard automatically switches to generating mock data:
+### REST Endpoints
 
-1. Detect connection failure
-2. Start mock data generation at specified intervals
-3. Emit mock data through the same Subjects/Observables
-4. Update UI to indicate mock data mode
-5. Listen for backend availability events to reconnect
-
-## Component Architecture
-
-### Diagnostic Components
-The diagnostics module provides comprehensive system monitoring:
-
-- **Socket Status**: Real-time connection status monitoring
-- **Health Data**: System health information with past/current/future predictions
-- **Timeline**: Historical events with status indicators
-- **Logs**: Event log monitoring and filtering
-
-### Metrics Components
-The metrics module visualizes system performance data:
-
-- **Real-time Charts**: CPU and memory utilization
-- **Status Indicators**: Connection quality and health
-- **Mock Data Banner**: Indicates when using simulated data
-- **Interactive Controls**: Adjustable refresh intervals
-
-### Tile-based Dashboard
-The dashboard uses a drag-and-drop tile system:
-
-1. **Tile Definition**: Components are wrapped in draggable tile containers
-2. **Layout Persistence**: Tile order and visibility stored via API
-3. **Grid System**: Responsive layout with automatic column adjustment
-4. **Visibility Toggle**: Individual tiles can be hidden/shown
-
-## Data Flow
-
-### Frontend Service Pattern
-```
-Socket Event → Socket.IO → Service Subject → Component Observable → UI Update
-```
-
-### Backend Gateway Pattern
-```
-System Event → Service → Gateway → Socket.IO → Client
-```
-
-## Type Safety & Shared DTOs
-
-ForgeBoard achieves type safety through a comprehensive shared type system:
-
-1. **Shared Interfaces Library**: All shared types are defined in `libs/shared/api-interfaces/src/lib/`:
-   - `logger-types.ts`: Logging-related interfaces (`LogLevel`, `LogEntry`, etc.)
-   - `metric-types.ts`: Metrics and health interfaces (`MetricData`, `HealthData`, etc.)
-   - `socket-types.ts`: Socket communication interfaces (`SocketResponse`, `SocketInfo`, etc.)
-
-2. **Type Structure**:
-   - **Enums** define constant values (e.g., `LogLevel`, `MetricEvent`, `SocketEvent`)
-   - **Interfaces** define object structures (e.g., `LogEntry`, `DiagnosticEvent`, `SocketInfo`)
-   - **Type Aliases** define string literals (e.g., `LogLevelType`)
-   - **Generic Types** provide flexibility (e.g., `SocketResponse<T>`)
-
-3. **Usage Pattern**:
-   ```typescript
-   // Import shared types
-   import { 
-     LogEntry, 
-     SocketResponse, 
-     MetricData 
-   } from '@forge-board/shared/api-interfaces';
-
-   // Use in components/services
-   @Component({...})
-   export class LogViewerComponent {
-     logs$: Observable<LogEntry[]>;
-     
-     processSocketResponse(response: SocketResponse<LogEntry[]>) {
-       if (response.status === 'success') {
-         // Type-safe access to data
-         this.logs$ = of(response.data);
-       }
-     }
-   }
-   ```
-
-4. **Backend Integration**:
-   - NestJS controllers/services import the same interfaces
-   - DTOs automatically validated against shared interfaces
-   - Socket gateways emit strongly-typed responses
-
-5. **Benefits**:
-   - Compile-time type checking
-   - Automatic IDE completion
-   - Self-documenting code
-   - Prevention of type mismatches between frontend/backend
-   - Centralized type definitions (change once, applied everywhere)
-
-## Testing & Debugging
-
-### Socket Debugging
-- Connection diagnostic components show real-time socket status
-- Detailed error messages for CORS and connection issues
-- Automatic fallback to mock data generation
-- Connection quality metrics
-
-### Backend Logging
-- Comprehensive logging with different levels (debug, info, warning, error)
-- Log context for easy filtering
-- Real-time log streaming to frontend
-- Timestamp-based log retrieval
-
-## Best Practices
-
-1. **Always Clean Up**: Every component with socket connections must implement `OnDestroy` pattern
-2. **Fallback Mechanisms**: Services should have offline/mock data modes
-3. **Typed Everything**: All data exchanges must use explicitly defined interfaces
-4. **Centralized Error Handling**: Socket errors handled consistently
-5. **Event Documentation**: All socket events must be documented for integrating teams
+- `/api/metrics`: Configuration and initial metrics
+- `/api/diagnostics`: System diagnostics and health checks
+- `/api/kablan`: Board configuration and card management
+- `/api/logs`: Log retrieval, filtering, and management
+- `/api/status`: System status and availability checks
 

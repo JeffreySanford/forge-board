@@ -1,166 +1,134 @@
 # ForgeBoard API Documentation
 
-## Overview
-
-ForgeBoard uses a REST API for data operations and WebSockets for real-time metrics. This document outlines the available endpoints, expected responses, and error handling.
-
-## Base URL
+## API Architecture Overview
 
 ```
-http://localhost:3000/api
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────┐  │
+│  │               │  │               │  │               │  │           │  │
+│  │ Metrics API   │  │ Diagnostics   │  │ Kablan Board  │  │ Logger    │  │
+│  │               │  │               │  │               │  │           │  │
+│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
+│          │                  │                  │                │        │
+│    REST  │                  │                  │                │        │
+│  Endpnts │                  │                  │                │        │
+│          │                  │                  │                │        │
+│  ┌───────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐  ┌─────▼─────┐  │
+│  │               │  │               │  │               │  │           │  │
+│  │ Metrics       │  │ Diagnostics   │  │ Kablan        │  │ Logger    │  │
+│  │ Gateway       │  │ Gateway       │  │ Gateway       │  │ Gateway   │  │
+│  │               │  │               │  │               │  │           │  │
+│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
+│          │                  │                  │                │        │
+│  WebSckt │                  │                  │                │        │
+│  Events  │                  │                  │                │        │
+│          ▼                  ▼                  ▼                ▼        │
+└──────────────────────────────────────────────────────────────────────────┘
+                              │
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  Frontend Service Layer                                                  │
+│                                                                          │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────┐  │
+│  │               │  │               │  │               │  │           │  │
+│  │ MetricsService│  │ Diagnostics   │  │ KablanService │  │ Logger    │  │
+│  │               │  │ Service       │  │               │  │ Service   │  │
+│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
+│          │                  │                  │                │        │
+│          │                  │                  │                │        │
+│          ▼                  ▼                  ▼                ▼        │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
+
+## API Overview
+
+ForgeBoard uses a combination of REST APIs and WebSocket connections for real-time data exchange. This document describes both API types.
+
+## Base URLs
+
+- REST API: `http://localhost:3000/api`
+- WebSocket: `http://localhost:3000`
 
 ## Authentication
 
-Authentication endpoints manage user sessions.
+Authentication is not yet implemented in the current version.
 
-### GET /api/auth/status
+## WebSocket Namespaces
 
-Check authentication status.
+### Metrics Namespace
 
-**Response:**
-```json
-{
-  "status": "authenticated",
-  "user": {
-    "username": "jeffrey.sanford",
-    "role": "admin"
-  }
-}
-```
+**Endpoint**: `/metrics`
 
-## Metrics
+This namespace provides real-time system performance metrics.
 
-Metrics endpoints provide system performance data.
+#### Events
 
-### GET /api/metrics/stream
+**Server → Client:**
 
-Get current system metrics.
+| Event | Description | Data Structure |
+|-------|-------------|----------------|
+| `system-metrics` | Real-time system metrics update | `MetricData` |
 
-**Response:**
-```json
-{
-  "cpu": 45.2,
-  "memory": 68.7,
-  "time": "2023-07-15T12:34:56Z"
-}
-```
+**Client → Server:**
 
-### GET /api/metrics/set-interval?interval={ms}
+| Event | Description | Expected Response |
+|-------|-------------|-------------------|
+| `subscribe-metrics` | Start receiving metric updates | Stream of `system-metrics` events |
+| `set-interval` | Set the metrics update interval | Acknowledgment |
 
-Set the polling interval for metrics.
+### Diagnostics Namespace
 
-**Parameters:**
-- `interval`: Polling interval in milliseconds
+**Endpoint**: `/diagnostics`
 
-**Response:**
-```json
-{
-  "success": true,
-  "interval": 1000
-}
-```
+This namespace provides system diagnostic information.
 
-### POST /api/metrics/register
+#### Events
 
-Register metrics data point.
+**Server → Client:**
 
-**Request Body:**
-```json
-{
-  "cpu": 45.2,
-  "memory": 68.7,
-  "time": "2023-07-15T12:34:56Z"
-}
-```
+| Event | Description | Data Structure |
+|-------|-------------|----------------|
+| `socket-status` | Current status of socket connections | `SocketStatusUpdate` |
+| `socket-logs` | Socket connection events log | `SocketLogEvent[]` |
+| `health-update` | System health information | `HealthData` |
 
-**Response:**
-```json
-{
-  "success": true
-}
-```
+**Client → Server:**
 
-## Users
+| Event | Description | Expected Response |
+|-------|-------------|-------------------|
+| `get-socket-status` | Request current socket status | `socket-status` event |
+| `get-socket-logs` | Request socket log history | `socket-logs` event |
+| `get-health` | Request system health data | `health-update` event |
 
-User management endpoints.
+### Kablan Namespace
 
-### GET /api/users/status
+**Endpoint**: `/kablan`
 
-Get user service status.
+This namespace provides project board data and interactions.
 
-**Response:**
-```json
-{
-  "status": "online",
-  "version": "1.0.0"
-}
-```
+#### Events
 
-## WebSockets
+**Server → Client:**
 
-Real-time communication.
+| Event | Description | Data Structure |
+|-------|-------------|----------------|
+| `boards-update` | Current state of all boards | `KablanBoard[]` |
 
-### Socket: /api/socket-health
+**Client → Server:**
 
-WebSocket health check endpoint.
+| Event | Description | Expected Response |
+|-------|-------------|-------------------|
+| `get-boards` | Request all available boards | `boards-update` event |
+| `move-card` | Move a card to a new position | Acknowledgment + `boards-update` |
 
-**Emitted Events:**
-- `health`: Regular health pulse with timestamp
+## REST API Endpoints
 
-## Error Handling
+### Status Endpoints
 
-### Error Responses
-
-All API endpoints use standard HTTP status codes:
-
-- **200 OK**: Successful request
-- **400 Bad Request**: Invalid parameters
-- **401 Unauthorized**: Authentication required
-- **403 Forbidden**: Insufficient permissions
-- **404 Not Found**: Resource not found
-- **500 Internal Server Error**: Server error
-
-### Error Response Format
-
-```json
-{
-  "status": "error",
-  "code": 404,
-  "message": "Resource not found",
-  "path": "/api/unknown",
-  "timestamp": "2023-07-15T12:34:56Z"
-}
-```
-
-## Service Health Endpoints
-
-These endpoints are used by the error page to check system status.
-
-### GET /api/auth/status
-Authentication service health check.
-
-### GET /api/metrics/status
-Metrics service health check.
-
-### GET /api/users/status
-User service health check.
-
-### GET /api/socket-health
-WebSocket connection health check.
-
-Each health endpoint returns a simple status response:
-
-```json
-{
-  "status": "online",
-  "timestamp": "2023-07-15T12:34:56Z"
-}
-```
-
-## Status Endpoints
-
-### GET /api/status
+#### GET /api/status
 
 Check API availability and health status.
 
@@ -169,161 +137,340 @@ Check API availability and health status.
 {
   "status": "ok",
   "timestamp": "2023-07-15T12:34:56Z",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "services": {
+    "metrics": { "available": true, "status": "online" },
+    "diagnostics": { "available": true, "status": "online" }
+  }
 }
 ```
 
-## Frontend Error Handling & Auto-Reconnection
+#### GET /api/status/service/:name
 
-### Real-time Data Fallback System
+Check status of a specific service.
 
-ForgeBoard implements a sophisticated fallback and auto-reconnection system:
-
-1. **Connectivity Monitoring**: Constantly monitors backend service availability
-2. **Graceful Degradation**: Seamlessly switches to mock data generation when backend becomes unavailable
-3. **Visual Indication**: Displays connection status indicator showing when mock data is in use
-4. **Periodic Health Checks**: Regularly checks if backend has become available again
-5. **Auto-Reconnection**: Automatically reconnects and switches back to live data when backend is restored
-6. **Manual Override**: Provides button to force reconnection attempt when using mock data
-
-### Reconnection Flow
-
-The reconnection system follows this workflow:
-
-1. When a service loses connection to the backend, it:
-   - Activates mock data generation for uninterrupted UI updates
-   - Updates connection status via the BackendStatusService
-   - Shows visual indicator that mock data is being used
-
-2. While using mock data:
-   - Backend health is checked every 5 seconds
-   - Connection status indicator displays "Using Mock Data"
-   - Expanded connection panel shows which services are using mock data
-
-3. When backend becomes available:
-   - BackendStatusService detects available backend and dispatches 'backend-available' event
-   - Each service receives the event and initiates reconnection sequence
-   - Services verify backend availability with direct health check
-   - New socket connections are established
-   - Mock data generation is stopped when real data starts flowing
-   - Connection status updates to reflect live connection
-
-4. Manual reconnection:
-   - User can click connection status indicator to expand details
-   - "Try Reconnect" button forces immediate reconnection attempt
-   - Visual feedback provided during reconnection process
-
-This approach ensures the application remains usable even during backend outages and provides a seamless transition back to real-time data when services are restored.
-
-## Shared Type Interfaces
-
-ForgeBoard uses a set of shared interfaces between frontend and backend to ensure type safety.
-
-### Logger Types
-
-Located in `libs/shared/api-interfaces/src/lib/logger-types.ts`
-
-```typescript
-// Log level enum
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARNING = 'warning',
-  WARN = 'warn', // Alias for WARNING
-  ERROR = 'error',
-  FATAL = 'fatal'
+**Response:**
+```json
+{
+  "available": true,
+  "status": "online",
+  "lastUpdated": "2023-07-15T12:34:56Z"
 }
+```
 
-// Log entry interface
-export interface LogEntry {
+### Metrics Endpoints
+
+#### GET /api/metrics/status
+
+Check metrics service health.
+
+**Response:**
+```json
+{
+  "status": "online",
+  "timestamp": "2023-07-15T12:34:56Z"
+}
+```
+
+#### GET /api/metrics/set-interval
+
+Set the interval for metrics updates.
+
+**Query Parameters:**
+- `interval`: Update interval in milliseconds
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Interval updated",
+  "data": { "interval": 500 },
+  "timestamp": "2023-07-15T12:34:56Z"
+}
+```
+
+#### POST /api/metrics/register
+
+Register new metrics data.
+
+**Request Body:**
+```json
+{
+  "cpu": 45.2,
+  "memory": 62.8,
+  "disk": 55.1,
+  "network": 32.5,
+  "time": "2023-07-15T12:34:56Z"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Metrics registered",
+  "data": null,
+  "timestamp": "2023-07-15T12:34:56Z"
+}
+```
+
+### Diagnostics Endpoints
+
+#### GET /api/diagnostics/health
+
+Get system health information.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "uptime": 3600,
+  "timestamp": "2023-07-15T12:34:56Z",
+  "details": {
+    "past": "Server started 3600 seconds ago. Initial status was 'healthy'.",
+    "present": "Server is currently 'healthy' with uptime of 3600 seconds.",
+    "future": "If current trends continue, the server is expected to remain 'healthy' and stable."
+  }
+}
+```
+
+#### GET /api/diagnostics/sockets
+
+Get information about socket connections.
+
+**Response:**
+```json
+{
+  "activeSockets": [
+    {
+      "id": "socket123",
+      "namespace": "/metrics",
+      "clientIp": "127.0.0.1",
+      "userAgent": "Mozilla/5.0...",
+      "connectTime": "2023-07-15T12:30:00Z",
+      "lastActivity": "2023-07-15T12:34:56Z"
+    }
+  ],
+  "metrics": {
+    "totalConnections": 5,
+    "activeConnections": 1,
+    "disconnections": 4,
+    "errors": 0,
+    "messagesSent": 120,
+    "messagesReceived": 30
+  }
+}
+```
+
+### Logs Endpoints
+
+#### GET /api/logs
+
+Get log entries with optional filtering.
+
+**Query Parameters:**
+- `level`: Filter by log level (debug, info, warning, error)
+- `source`: Filter by log source
+- `from`: Filter by start date/time
+- `to`: Filter by end date/time
+- `limit`: Maximum number of logs to return
+
+**Response:**
+```json
+{
+  "logs": [
+    {
+      "id": "log123",
+      "level": "info",
+      "message": "Server started",
+      "source": "app",
+      "timestamp": "2023-07-15T12:30:00Z",
+      "data": { "pid": 1234 }
+    }
+  ],
+  "totalCount": 150,
+  "filtered": true,
+  "status": true,
+  "timestamp": "2023-07-15T12:34:56Z"
+}
+```
+
+#### POST /api/logs/batch
+
+Send multiple log entries in a batch.
+
+**Request Body:**
+```json
+{
+  "logs": [
+    {
+      "level": "info",
+      "message": "User login",
+      "source": "auth",
+      "timestamp": "2023-07-15T12:34:56Z",
+      "data": { "userId": "user123" }
+    },
+    {
+      "level": "error",
+      "message": "API error",
+      "source": "api",
+      "timestamp": "2023-07-15T12:34:58Z",
+      "data": { "status": 500, "path": "/api/users" }
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 2,
+  "timestamp": "2023-07-15T12:34:59Z"
+}
+```
+
+### Tiles Endpoints
+
+#### GET /api/tiles/:userId/order
+
+Get the tile order for a user's dashboard.
+
+**Response:**
+```json
+{
+  "userId": "user123",
+  "order": ["metrics", "connection", "logs", "uptime", "activity"],
+  "visibility": {
+    "metrics": true,
+    "connection": true,
+    "logs": true,
+    "uptime": true,
+    "activity": true
+  },
+  "lastModified": "2023-07-15T12:34:56Z",
+  "success": true
+}
+```
+
+#### POST /api/tiles/:userId/order
+
+Update the tile order for a user's dashboard.
+
+**Request Body:**
+```json
+{
+  "order": ["connection", "metrics", "logs", "activity", "uptime"]
+}
+```
+
+**Response:**
+```json
+{
+  "userId": "user123",
+  "order": ["connection", "metrics", "logs", "activity", "uptime"],
+  "visibility": {
+    "metrics": true,
+    "connection": true,
+    "logs": true,
+    "uptime": true,
+    "activity": true
+  },
+  "lastModified": "2023-07-15T12:35:00Z",
+  "success": true
+}
+```
+
+## Type Definitions
+
+### MetricData
+```typescript
+interface MetricData {
+  cpu: number;      // CPU usage percentage
+  memory: number;   // Memory usage percentage
+  disk?: number;    // Optional disk usage percentage
+  network?: number; // Optional network usage percentage
+  time: string;     // ISO timestamp
+}
+```
+
+### SocketInfo
+```typescript
+interface SocketInfo {
   id: string;
-  level: LogLevelType;
-  message: string;
-  source: string;
-  timestamp: string;
-  // Optional fields
-  data?: Record<string, unknown>;
-  context?: string;
-  tags?: string[];
-  stackTrace?: string;
-  details?: Record<string, unknown>;
+  namespace: string;
+  clientIp: string;
+  userAgent: string;
+  connectTime: string | Date;
+  disconnectTime?: string | Date;
+  lastActivity: string | Date;
+  events: {
+    type: string;
+    timestamp: string | Date;
+    data?: any;
+  }[];
 }
-
-// Additional interfaces: LogFilter, LogResponse, LogStreamUpdate, LoggerConfig
 ```
 
-### Metric Types
-
-Located in `libs/shared/api-interfaces/src/lib/metric-types.ts`
-
+### SocketMetrics
 ```typescript
-// Metric event enum
-export enum MetricEvent {
-  HEALTH_UPDATE = 'health-update',
-  CPU_UPDATE = 'cpu-update',
-  MEMORY_UPDATE = 'memory-update',
-  DISK_UPDATE = 'disk-update',
-  NETWORK_UPDATE = 'network-update',
-  // ...other events
+interface SocketMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  disconnections: number;
+  errors: number;
+  messagesSent: number;
+  messagesReceived: number;
 }
+```
 
-// Core metric data interface
-export interface MetricData {
-  time: string;
-  cpu: number;
-  memory: number;
-  disk: number;
-  network: number;
-  details?: Record<string, unknown>;
-}
-
-// Diagnostic event data
-export interface DiagnosticEvent {
-  id?: string;
-  type?: string;
-  eventType?: string;
-  message: string;
-  timestamp?: string;
-  severity?: 'info' | 'warning' | 'error' | 'critical';
-  source?: string;
-  details?: Record<string, unknown>;
-}
-
-// Health data
-export interface HealthData {
-  status: 'healthy' | 'degraded' | 'unhealthy' | string;
+### HealthData
+```typescript
+interface HealthData {
+  status: string;
   uptime: number;
   timestamp: string;
-  details?: {
-    services?: Record<string, { status: string; message?: string }>;
+  details: {
     past?: string;
     present?: string;
     future?: string;
+    [key: string]: string | undefined;
   };
 }
-
-// Additional interfaces: MetricResponse, MetricUpdateResponse
 ```
 
-### Socket Types
-
-Located in `libs/shared/api-interfaces/src/lib/socket-types.ts`
-
+### KablanBoard
 ```typescript
-// Standard socket response
-export interface SocketResponse<T> {
-  status: 'success' | 'error';
-  data: T;
+interface KablanBoard {
+  id: string;
+  name: string;
+  columns: KablanColumn[];
+  currentPhase: ProjectPhase;
+  phases: {
+    [key in ProjectPhase]: {
+      active: boolean;
+      startDate?: string;
+      completionDate?: string;
+    }
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### LogEntry
+```typescript
+interface LogEntry {
+  id: string;
+  level: 'debug' | 'info' | 'warning' | 'error';
+  message: string;
+  source: string;
   timestamp: string;
+  data?: Record<string, unknown>;
 }
+```
 
-// Socket event names enum
-export enum SocketEvent {
-  CONNECT = 'connect',
-  DISCONNECT = 'disconnect',
-  METRICS_UPDATE = 'metrics-update',
-  // ...other events
-}
-
-// Additional interfaces: SocketInfo, SocketMetrics, SocketLogEvent, SocketLogFilter
+### TileType
+```typescript
+type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
 ```

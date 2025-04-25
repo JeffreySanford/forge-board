@@ -1,125 +1,200 @@
 # ForgeBoard Coding Standards
 
-## Angular
+This document outlines the coding standards and best practices for the ForgeBoard project.
 
-- Use Renderer2 for DOM manipulation.
-- Always use explicit Angular decorators.
-- Organize imports: Angular, third-party, internal, local.
-- Use snake-case for services, kebab-case for components.
-- No direct DOM access.
-- Keep functions small and focused.
-- Avoid unnecessary comments.
-- Use Angular CLI for scaffolding.
-- Components: `standalone: false` for NgModule-based architecture.
-  *Reason: This project uses traditional NgModule architecture - never create standalone components as they cannot be declared in NgModules.*
-- **Do not use inline styles in HTML templates.**  
-  *Reason: Inline styles make code harder to maintain, override, and audit. Use SCSS/CSS classes for all styling to ensure separation of concerns, theming consistency, and easier refactoring.*
-- Use proper route management with the RouterModule.
-- Apply lazy loading for feature modules when possible.
-- **Never use `any`.**  
-  *Reason: All data, including socket payloads, API responses, and DTOs, must use explicit TypeScript types or interfaces. If a type is missing, define it.*
+## Angular Best Practices
 
-## RxJS
+### Component Architecture
 
-- Prefer hot observables for real-time data.
-- Avoid Promises/async-await unless necessary.
-- Always handle errors in observables with catchError.
-- Implement retry strategies for API calls.
-- Clean up subscriptions with ngOnDestroy.
-- **Always unsubscribe from Observables and disconnect sockets in ngOnDestroy.**
-- Use appropriate operators:
-  - switchMap for requests that should cancel previous ones
-  - mergeMap for concurrent operations
-  - concatMap for sequential operations
+1. **Smart & Presentational Components**
+   - Smart components handle data and logic
+   - Presentational components focus on UI rendering
+   - Example:
 
-## Error Handling
+   ```typescript
+   // Smart Component (container)
+   @Component({
+     selector: 'app-metrics-container',
+     template: '<app-metrics-display [data]="metrics$ | async" (intervalChange)="updateInterval($event)"></app-metrics-display>'
+   })
+   export class MetricsContainerComponent {
+     metrics$: Observable<MetricData>;
+     
+     constructor(private metricsService: MetricsService) {
+       this.metrics$ = this.metricsService.getMetricsStream();
+     }
+     
+     updateInterval(interval: number): void {
+       this.metricsService.setMetricsInterval(interval).subscribe();
+     }
+   }
 
-- Services should never throw uncaught errors.
-- API errors must be caught and transformed into user-friendly messages.
-- Implement retry mechanisms for transient failures.
-- Log detailed error information for debugging.
-- Use the ErrorService for centralized error management.
+   // Presentational Component
+   @Component({
+     selector: 'app-metrics-display',
+     templateUrl: './metrics-display.component.html'
+   })
+   export class MetricsDisplayComponent {
+     @Input() data: MetricData;
+     @Output() intervalChange = new EventEmitter<number>();
+   }
+   ```
 
-## Sound System
+2. **Component Lifecycle Management**
+   - Always implement `OnDestroy` for cleanup
+   - Use the appropriate lifecycle hooks
+   - Example:
 
-- All audio elements must include fallbacks for unavailable files.
-- Respect user preferences for audio settings.
-- Never autoplay sounds without explicit user action.
-- Keep audio files small and optimized.
-- Include volume controls for all audio features.
+   ```typescript
+   @Component({/* ... */})
+   export class ExampleComponent implements OnInit, OnDestroy {
+     private subscription = new Subscription();
+     
+     ngOnInit(): void {
+       this.subscription.add(
+         this.someService.getData().subscribe(data => {
+           // Handle data
+         })
+       );
+     }
+     
+     ngOnDestroy(): void {
+       this.subscription.unsubscribe();
+     }
+   }
+   ```
 
-## Styling
+### Service Design
 
-- Follow the blueprint design language.
-- Use SCSS for all styling.
-- Maintain the color scheme defined in LAYOUT.md.
-- Implement responsive designs using flexible layouts.
-- Use BEM methodology for CSS class naming.
+1. **Single Responsibility Principle**
+   - Each service should have a clear, focused purpose
+   - Break down complex services into smaller ones
 
-## Documentation
+2. **Injectable Services**
+   - Always use the `@Injectable()` decorator
+   - Provide services at the appropriate level
 
-- Document all public methods and properties.
-- Add JSDoc comments for complex functions.
-- Keep README.md and other documentation updated.
-- Include examples for non-obvious code patterns.
-- Document error handling strategies in services.
+   ```typescript
+   @Injectable({
+     providedIn: 'root' // Application-wide singleton
+   })
+   export class CoreService { /* ... */ }
 
-## General
+   @Injectable() // Component-specific instance
+   export class FeatureService { /* ... */ }
+   ```
 
-- No "crap code": prioritize clarity, performance, security, testability.
-- All code must be maintainable and consistent.
-- Ensure accessibility compliance.
-- Write unit tests for critical functionality.
-- Optimize for performance where needed.
+3. **Service State Management**
+   - Use RxJS subjects to maintain service state
+   - Expose state as observables for components
+
+   ```typescript
+   @Injectable({
+     providedIn: 'root'
+   })
+   export class DataService {
+     private dataSubject = new BehaviorSubject<Data[]>([]);
+     
+     getData(): Observable<Data[]> {
+       return this.dataSubject.asObservable();
+     }
+     
+     updateData(newData: Data[]): void {
+       this.dataSubject.next(newData);
+     }
+   }
+   ```
 
 ## WebSockets & Real-Time
 
-- All socket events and payloads must use explicit TypeScript types or interfaces.
-- Never use `any` for socket data or events.
-- Use RxJS Observables for all socket event streams.
-- **Always disconnect sockets and unsubscribe in `ngOnDestroy` by:**
-  1. Removing all event listeners with `socket.off()` for each event
-  2. Disconnecting with `socket.disconnect()` if connected
-  3. Setting the socket reference to null
-  4. Completing any related subjects
-  5. Unsubscribing from all subscriptions
-- Define DTOs for all socket messages and API payloads.
-- Use enums or string literal types for event names.
-- **Centralize shared types:** All shared interfaces are defined in `libs/shared/api-interfaces/src/lib/`:
-  - `logger-types.ts`: Contains `LogLevel`, `LogEntry`, `LogFilter`, etc.
-  - `metric-types.ts`: Contains `MetricData`, `MetricEvent`, `DiagnosticEvent`, etc.
-  - `socket-types.ts`: Contains `SocketResponse`, `SocketInfo`, `SocketMetrics`, etc.
-- **Use standard response format:** All socket responses should follow the `SocketResponse<T>` pattern:
-  ```typescript
-  interface SocketResponse<T> {
-    status: 'success' | 'error';
-    data: T;
-    timestamp: string;
+### Service Pattern - Detailed Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  @Injectable() MetricsService                                   │
+│                                                                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌───────────────────────┐   │
+│  │             │  │             │  │                       │   │
+│  │ Socket.IO   │──▶ Subject/    │──▶ Public Observable     │   │
+│  │ Connection  │  │ BehaviorSubj│  │ interface getMetrics()│   │
+│  │             │  │             │  │                       │   │
+│  └─────────────┘  └─────────────┘  └───────────────────────┘   │
+│        │                                      │                │
+│        │                                      │                │
+│        ▼                                      │                │
+│  ┌─────────────────────┐                      │                │
+│  │                     │                      │                │
+│  │ Error Handler with  │                      │                │
+│  │ Mock Data Fallback  │                      │                │
+│  │                     │                      │                │
+│  └─────────────────────┘                      │                │
+│                                               │                │
+└───────────────────────────────────────────────┼────────────────┘
+                                                │
+                                                │
+                                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  @Component() MetricsComponent                                  │
+│                                                                 │
+│  ┌─────────────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │                     │  │             │  │                  │ │
+│  │ ngOnInit():         │──▶ Subscribe   │──▶ Update UI State  │ │
+│  │ metrics$.subscribe()│  │ to Stream   │  │ this.chartData   │ │
+│  │                     │  │             │  │                  │ │
+│  └─────────────────────┘  └─────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                                                         │   │
+│  │ ngOnDestroy(): this.subscription.unsubscribe()          │   │
+│  │                                                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Socket Connection Pattern
+
+Services that use WebSockets should follow this pattern:
+
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class SocketService implements OnDestroy {
+  private socket: Socket | null = null;
+  private connectionStatusSubject = new BehaviorSubject<boolean>(false);
+  private dataSubject = new Subject<DataType>();
+  
+  constructor() {
+    this.initSocket();
   }
-  ```
-- **Utility functions:** Use the `createSocketResponse` helper to standardize response creation:
-  ```typescript
-  function createSocketResponse<T>(event: string, data: T): SocketResponse<T> {
-    return {
-      status: 'success',
-      data,
-      timestamp: new Date().toISOString(),
-    };
-  }
-  ```
-- **Error handling:** Check `response.status === 'success'` before accessing data to ensure proper error handling.
-- **Socket cleanup example:**
-  ```typescript
+  
   ngOnDestroy(): void {
-    // Clean up subscriptions
-    this.subscriptions.unsubscribe();
-    
-    // Clean up socket connections
+    this.cleanupSocket();
+    this.connectionStatusSubject.complete();
+    this.dataSubject.complete();
+  }
+  
+  getConnectionStatus(): Observable<boolean> {
+    return this.connectionStatusSubject.asObservable();
+  }
+  
+  getData(): Observable<DataType> {
+    return this.dataSubject.asObservable();
+  }
+  
+  private initSocket(): void {
+    // Initialize socket with proper error handling
+  }
+  
+  private cleanupSocket(): void {
     if (this.socket) {
-      // Remove all event listeners
+      // Remove all listeners
       this.socket.off('connect');
       this.socket.off('disconnect');
-      this.socket.off('metrics-update');
+      this.socket.off('data-event');
       
       // Disconnect if connected
       if (this.socket.connected) {
@@ -127,162 +202,328 @@
       }
       this.socket = null;
     }
-    
-    // Complete any subjects
-    this.metricsSubject.complete();
   }
-  ```
-- **Socket reconnection pattern:** All socket-enabled services should:
-  1. Listen for the `backend-available` custom event
-  2. Implement a `reconnectToBackend` method to attempt reconnection
-  3. Properly handle transitioning from mock data to live data
-  4. Update the `BackendStatusService` on connection status changes
-  
-  Example:
+}
+```
 
-  ```typescript
-  // Add reconnection properties
-  private reconnecting = false;
-  private backendAvailableListener: () => void;
+### Mock Data Strategy
+
+When backend is unavailable, implement mock data generation:
+
+```typescript
+private startMockDataGeneration(): void {
+  if (this.mockDataInterval) return;
   
-  constructor() {
-    // Listen for backend availability to reconnect
-    this.backendAvailableListener = () => {
-      if (this.mockDataActive && !this.reconnecting) {
-        this.reconnectToBackend();
-      }
+  this.mockDataInterval = setInterval(() => {
+    const mockData: DataType = {
+      value: Math.random() * 100,
+      timestamp: new Date().toISOString()
     };
-    
-    window.addEventListener('backend-available', this.backendAvailableListener);
-  }
-
-  ngOnDestroy(): void {
-    // Remove event listener
-    window.removeEventListener('backend-available', this.backendAvailableListener);
-    
-    // ... other cleanup
-  }
+    this.dataSubject.next(mockData);
+  }, this.updateInterval);
   
-  private reconnectToBackend(): void {
-    // Implement reconnection logic
+  this.backendStatusService.updateGatewayStatus('serviceName', false, true);
+}
+
+private stopMockDataGeneration(): void {
+  if (this.mockDataInterval) {
+    clearInterval(this.mockDataInterval);
+    this.mockDataInterval = null;
+    
+    this.backendStatusService.updateGatewayStatus('serviceName', true, false);
   }
-  ```
+}
+```
 
 ### Socket Reconnection Pattern
 
 All socket-enabled services should implement a robust reconnection pattern:
 
-1. **Detect Connection Loss**:
-   - Handle socket disconnect and connect_error events
-   - Update connection status via BackendStatusService
-   - Implement fallback to mock data generation
+```typescript
+// Add reconnection properties
+private reconnecting = false;
+private backendAvailableListener: () => void;
 
-2. **Listen for Backend Availability**:
+constructor() {
+  // Listen for backend availability to reconnect
+  this.backendAvailableListener = () => {
+    if (this.mockDataActive && !this.reconnecting) {
+      this.reconnectToBackend();
+    }
+  };
+  
+  window.addEventListener('backend-available', this.backendAvailableListener);
+}
+
+ngOnDestroy(): void {
+  // Remove event listener
+  window.removeEventListener('backend-available', this.backendAvailableListener);
+  // ... other cleanup
+}
+
+private reconnectToBackend(): void {
+  if (this.reconnecting) return;
+  this.reconnecting = true;
+  
+  // Validate backend is truly available with direct health check
+  this.http.get(`${this.apiUrl}/status`)
+    .pipe(catchError(() => of({ status: 'error' })))
+    .subscribe(response => {
+      if (response?.status !== 'error') {
+        // Clean up existing socket connection
+        this.cleanupSocket();
+        
+        // Create new socket with proper error handling
+        this.initSocket();
+        
+        // Stop mock data when real data is flowing
+        this.stopMockDataGeneration();
+        
+        // Update status via BackendStatusService
+        this.backendStatusService.updateGatewayStatus('serviceName', true, false);
+      }
+      
+      // Reset reconnection flag after delay
+      setTimeout(() => {
+        this.reconnecting = false;
+      }, 5000);
+    });
+}
+```
+
+## RxJS Guidelines
+
+### Subscription Management
+
+1. **Always clean up subscriptions**:
    ```typescript
-   // Add reconnection properties
-   private reconnecting = false;
-   private backendAvailableListener: () => void;
+   private subscription = new Subscription();
    
-   constructor() {
-     // Listen for backend availability to reconnect
-     this.backendAvailableListener = () => {
-       if (this.mockDataActive && !this.reconnecting) {
-         this.reconnectToBackend();
-       }
-     };
-     
-     window.addEventListener('backend-available', this.backendAvailableListener);
+   ngOnInit(): void {
+     this.subscription.add(
+       this.service.getData().subscribe(/* ... */)
+     );
+     this.subscription.add(
+       this.otherService.getStatus().subscribe(/* ... */)
+     );
    }
    
    ngOnDestroy(): void {
-     // Remove event listener
-     window.removeEventListener('backend-available', this.backendAvailableListener);
-     
-     // ... other cleanup
+     this.subscription.unsubscribe();
    }
    ```
 
-3. **Implement Reconnection Logic**:
+2. **Use the `takeUntil` pattern for multiple subscriptions**:
    ```typescript
-   private reconnectToBackend(): void {
-     if (this.reconnecting) return;
-     this.reconnecting = true;
+   private destroy$ = new Subject<void>();
+   
+   ngOnInit(): void {
+     this.service.getData().pipe(
+       takeUntil(this.destroy$)
+     ).subscribe(/* ... */);
      
-     // Validate backend is truly available with direct health check
-     this.http.get(`${this.apiUrl}/status`)
-       .pipe(catchError(() => of({ status: 'error' })))
-       .subscribe(response => {
-         if (response?.status !== 'error') {
-           // Clean up existing socket connection
-           this.cleanupSocket();
-           
-           // Create new socket with proper error handling
-           this.initializeNewSocket();
-           
-           // Stop mock data when real data is flowing
-           this.stopMockDataGeneration();
-           
-           // Update status via BackendStatusService
-           this.backendStatusService.updateGatewayStatus('serviceName', true, false);
-         }
-         
-         // Reset reconnection flag after delay
-         setTimeout(() => {
-           this.reconnecting = false;
-         }, 5000);
-       });
-   }
-   ```
-
-4. **Proper Socket Cleanup**:
-   ```typescript
-   private cleanupSocket(): void {
-     if (this.socket) {
-       // Remove all event listeners
-       this.socket.off('connect');
-       this.socket.off('disconnect');
-       this.socket.off('your-event-name');
-       
-       // Disconnect if connected
-       if (this.socket.connected) {
-         this.socket.disconnect();
-       }
-       this.socket = null;
-     }
-   }
-   ```
-
-5. **Mock Data Management**:
-   ```typescript
-   private startMockDataGeneration(): void {
-     if (this.mockDataInterval) return;
-     
-     this.mockDataInterval = setInterval(() => {
-       // Generate mock data
-       const mockData = this.generateMockData();
-       
-       // Push to same subject as real data
-       this.dataSubject.next(mockData);
-     }, this.intervalMs);
-     
-     // Update BackendStatusService
-     this.backendStatusService.updateGatewayStatus('serviceName', false, true);
+     this.otherService.getStatus().pipe(
+       takeUntil(this.destroy$)
+     ).subscribe(/* ... */);
    }
    
-   private stopMockDataGeneration(): void {
-     if (this.mockDataInterval) {
-       clearInterval(this.mockDataInterval);
-       this.mockDataInterval = null;
-       
-       // Update BackendStatusService
-       this.backendStatusService.updateGatewayStatus('serviceName', true, false);
+   ngOnDestroy(): void {
+     this.destroy$.next();
+     this.destroy$.complete();
+   }
+   ```
+
+### Error Handling
+
+Use proper error handling in RxJS streams:
+
+```typescript
+this.http.get<DataType>('/api/data').pipe(
+  retry(3),
+  catchError(error => {
+    console.error('Error fetching data:', error);
+    return of(fallbackData);
+  }),
+  finalize(() => {
+    this.loading = false;
+  })
+).subscribe({
+  next: data => this.handleData(data),
+  error: err => this.handleError(err)
+});
+```
+
+## CSS/SCSS Standards
+
+1. **BEM-inspired naming**:
+   ```scss
+   .kablan-board {
+     // Block
+     
+     &__column {
+       // Element
+     }
+     
+     &--active {
+       // Modifier
      }
    }
    ```
 
-This pattern ensures robust handling of:
-- Socket disconnection and reconnection
-- Automatic fallback to mock data
-- Clear indication of connection status to users
-- Smooth transition from mock data back to real-time data
-- Proper resource cleanup to prevent memory leaks
+2. **Consistent color variables**:
+   ```scss
+   $color-primary: #3498db;
+   $color-success: #4eff91;
+   $color-warning: #ffe066;
+   $color-error: #e74c3c;
+   ```
+
+3. **Mobile-first responsive design**:
+   ```scss
+   .container {
+     width: 100%;
+     
+     @media (min-width: 768px) {
+       width: 750px;
+     }
+     
+     @media (min-width: 992px) {
+       width: 970px;
+     }
+   }
+   ```
+
+## Testing Guidelines
+
+1. **Component Tests**:
+   ```typescript
+   describe('AppComponent', () => {
+     let component: AppComponent;
+     let fixture: ComponentFixture<AppComponent>;
+     
+     beforeEach(async () => {
+       await TestBed.configureTestingModule({
+         declarations: [AppComponent],
+         providers: [
+           { provide: MetricsService, useValue: mockMetricsService }
+         ]
+       }).compileComponents();
+       
+       fixture = TestBed.createComponent(AppComponent);
+       component = fixture.componentInstance;
+     });
+     
+     it('should create the component', () => {
+       expect(component).toBeTruthy();
+     });
+     
+     it('should show metrics data', () => {
+       component.metrics = mockMetrics;
+       fixture.detectChanges();
+       const compiled = fixture.nativeElement;
+       expect(compiled.querySelector('.metric-value').textContent).toContain('50%');
+     });
+   });
+   ```
+
+2. **Service Tests**:
+   ```typescript
+   describe('MetricsService', () => {
+     let service: MetricsService;
+     let httpMock: HttpTestingController;
+     
+     beforeEach(() => {
+       TestBed.configureTestingModule({
+         imports: [HttpClientTestingModule],
+         providers: [MetricsService]
+       });
+       
+       service = TestBed.inject(MetricsService);
+       httpMock = TestBed.inject(HttpTestingController);
+     });
+     
+     it('should fetch metrics', () => {
+       const mockMetrics = { cpu: 50, memory: 60, time: '2023-01-01T00:00:00Z' };
+       
+       service.getMetrics().subscribe(metrics => {
+         expect(metrics).toEqual(mockMetrics);
+       });
+       
+       const req = httpMock.expectOne('/api/metrics');
+       expect(req.request.method).toBe('GET');
+       req.flush(mockMetrics);
+     });
+   });
+   ```
+
+## Documentation Standards
+
+1. **Component and Service Documentation**:
+   ```typescript
+   /**
+    * Metrics service responsible for managing real-time system metrics.
+    * 
+    * Features:
+    * - Real-time metric updates via WebSockets
+    * - Automatic reconnection with backoff strategy
+    * - Fallback to mock data generation when backend is unavailable
+    */
+   @Injectable({
+     providedIn: 'root'
+   })
+   export class MetricsService {
+     /**
+      * Subscribe to the metrics stream
+      * @returns Observable that emits MetricData
+      */
+     getMetricsStream(): Observable<MetricData> {
+       // Implementation...
+     }
+   }
+   ```
+
+2. **Interface Documentation**:
+   ```typescript
+   /**
+    * System metric data structure
+    */
+   export interface MetricData {
+     /** CPU usage percentage (0-100) */
+     cpu: number;
+     
+     /** Memory usage percentage (0-100) */
+     memory: number;
+     
+     /** ISO timestamp of the metric reading */
+     time: string;
+     
+     /** Optional disk usage percentage (0-100) */
+     disk?: number;
+     
+     /** Optional network usage percentage (0-100) */
+     network?: number;
+   }
+   ```
+
+## Git Workflow
+
+1. **Branch naming conventions**:
+   - `feature/short-feature-description`
+   - `bugfix/issue-description`
+   - `chore/maintenance-task`
+
+2. **Commit message format**:
+   ```
+   type(scope): Short summary
+
+   Detailed explanation if needed
+   ```
+
+   Where `type` is one of:
+   - feat: New feature
+   - fix: Bug fix
+   - docs: Documentation changes
+   - style: Formatting changes
+   - refactor: Code refactoring
+   - test: Adding or updating tests
+   - chore: Maintenance tasks
