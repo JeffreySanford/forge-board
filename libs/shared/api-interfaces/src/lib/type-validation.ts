@@ -41,9 +41,9 @@ export const typeValidators: TypeValidatorRegistry = {};
 /**
  * Register a type validator in the global registry
  */
-export function registerTypeValidator(
+export function registerTypeValidator<T>(
   typeName: string, 
-  validator: TypeValidator
+  validator: TypeValidator<T>
 ): void {
   typeValidators[typeName] = validator as TypeValidator<unknown>;
 }

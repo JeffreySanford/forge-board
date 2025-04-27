@@ -1,25 +1,20 @@
 module.exports = {
-  // ...existing code...
+  // Keep existing configurations
   
   plugins: [
-    // ...existing plugins...
-    'eslint-rules'
+    // ...existing plugins
+    'eslint-plugin-forge' // Use the full plugin name
   ],
   
   rules: {
-    // ...existing code...
+    // ...existing rules
     
-    // Use our custom rules with the correct plugin prefix
-    'eslint-rules/socket-cleanup-rule': 'error',
-    'eslint-rules/require-non-standalone-components': 'error',
+    // Use the correct rule names with plugin prefix
+    'eslint-plugin-forge/socket-cleanup-rule': 'error',
+    'eslint-plugin-forge/require-non-standalone-components': 'error',
     
-    // Disable the old plugin-based rule if it exists
-    'require-socket-cleanup/ngondestroy-socket-disconnect': 'off'
-  },
-  
-  settings: {
-    'eslint-rules': {
-      directory: './eslint-rules'
-    }
+    // Disable the old rule
+    'require-socket-cleanup/ngondestroy-socket-disconnect': 'off',
+    'socket-cleanup-rule': 'off'
   }
 };

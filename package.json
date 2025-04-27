@@ -75,7 +75,8 @@
     "typescript": "~5.7.2",
     "webpack-cli": "^5.1.4",
     "webpack-node-externals": "^3.0.0",
-    "eslint-plugin-eslint-rules": "file:eslint-rules"
+    "eslint-plugin-eslint-rules": "file:eslint-rules",
+    "eslint-plugin-forge": "file:eslint-plugin-forge"
   },
   "dependencies": {
     "@angular/animations": "^19.2.7",

@@ -22,14 +22,16 @@ module.exports = {
         return {
           // Find decorator expressions that look like @Component(...)
           "Decorator[expression.callee.name='Component']": function(node) {
-            const decoratorArgument = node.expression.arguments[0];
+            var decoratorArgument = node.expression.arguments[0];
             
             // Only check object literals
             if (decoratorArgument && decoratorArgument.type === "ObjectExpression") {
-              const standaloneProperty = decoratorArgument.properties.find(
-                property => 
-                  property.key && property.key.type === "Identifier" && 
-                  property.key.name === "standalone"
+              var standaloneProperty = decoratorArgument.properties.find(
+                function(property) {
+                  return property.key && 
+                    property.key.type === "Identifier" && 
+                    property.key.name === "standalone";
+                }
               );
               
               // If standalone property doesn't exist
@@ -39,8 +41,8 @@ module.exports = {
                   message: "Component must have standalone: false explicitly set",
                   fix: function(fixer) {
                     // Add standalone: false to the component decorator
-                    const lastProp = decoratorArgument.properties[decoratorArgument.properties.length - 1];
-                    const insertionPoint = lastProp ? lastProp.range[1] : decoratorArgument.range[0] + 1;
+                    var lastProp = decoratorArgument.properties[decoratorArgument.properties.length - 1];
+                    var insertionPoint = lastProp ? lastProp.range[1] : decoratorArgument.range[0] + 1;
                     return fixer.insertTextAfterRange(
                       [insertionPoint, insertionPoint],
                       decoratorArgument.properties.length > 0 
