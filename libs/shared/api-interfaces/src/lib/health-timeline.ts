@@ -1,31 +1,26 @@
 /**
- * Represents a point in time with health information
+ * Health timeline types for tracking system health over time
  */
-export interface HealthTimePoint {
-  status: string;
+
+/**
+ * Health timeline point
+ */
+export interface HealthTimelinePoint {
   timestamp: string;
+  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   message: string;
-  metrics?: Record<string, number>;
-  events?: HealthEvent[];
 }
 
 /**
- * Represents a health-related event
+ * Health timeline data structure
  */
-export interface HealthEvent {
-  type: 'info' | 'warning' | 'error';
-  timestamp: string;
-  message: string;
-  details?: any;
-}
-
-/**
- * Complete health timeline data structure
- */
-export interface HealthTimelineData {
-  past: HealthTimePoint;
-  present: HealthTimePoint;
-  future: HealthTimePoint;
-  trend: 'improving' | 'stable' | 'degrading';
-  predictedUptime: number; // in seconds
+export interface HealthTimeline {
+  points: HealthTimelinePoint[];
+  currentStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+  predictions: {
+    timestamp: string;
+    predictedStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+    confidence: number;
+    metadata: Record<string, unknown>;
+  }[];
 }

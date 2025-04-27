@@ -16,9 +16,11 @@ export class TileStateService {
         connection: true,
         logs: true,
         uptime: true,
-        activity: true
+        activity: true,
+        kablan: true
       },
-      lastModified: new Date().toISOString()
+      lastModified: new Date().toISOString(),
+      success: true  // Add success property
     };
   }
 
@@ -33,9 +35,11 @@ export class TileStateService {
           connection: true,
           logs: true,
           uptime: true,
-          activity: true
+          activity: true,
+          kablan: true
         },
-        lastModified: new Date().toISOString()
+        lastModified: new Date().toISOString(),
+        success: true  // Add success property
       };
     }
     

@@ -1,43 +1,54 @@
 /**
- * Tile type enum representing various dashboard tile types
+ * Available tile types
  */
 export type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
 
+/**
+ * Tile visibility settings
+ */
+export type TileVisibility = Record<TileType, boolean>;
+
+/**
+ * Tile layout response
+ */
 export interface TileLayoutResponse {
   userId: string;
   order: TileType[];
-  visibility: Record<TileType, boolean>;
+  visibility: Partial<TileVisibility>;
   lastModified: string;
   success: boolean;
 }
 
+/**
+ * Tile layout request
+ */
 export interface TileLayoutRequest {
+  userId: string;
   order: TileType[];
-  visibility?: TileVisibility;
-}
-
-// Add the missing TileVisibility type
-export type TileVisibility = Record<TileType, boolean>;
-
-export interface TileResponse {
-  success: boolean;
-  message?: string;
-  data?: any;
+  visibility?: Partial<TileVisibility>;
 }
 
 /**
- * Interface for tile components to implement for consistency
+ * API response for tile operations
+ */
+export interface TileResponse {
+  success: boolean;
+  message?: string;
+  data?: string;
+}
+
+/**
+ * Tile configuration
  */
 export interface Tile {
   id: string;
   type: TileType;
-  title: string;
-  order: number;
   visible: boolean;
+  position: number;
 }
 
 /**
- * Interface for drag events on tiles
+ * Event for tile drag operations
  */
 export interface TileDragEvent {
   previousIndex: number;

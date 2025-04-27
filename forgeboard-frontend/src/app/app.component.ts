@@ -1,10 +1,11 @@
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { from, of, interval, Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { UserData } from './services/user-data.service';
+import { UserDataService, UserData } from './services/user-data.service';
 import { TileType, TileDragEvent } from './models/tile.model';
 import { TileStateService } from './services/tile-state.service';
+import { SoundHelperService, SoundType } from './services/sound-helper.service';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +14,7 @@ import { TileStateService } from './services/tile-state.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements AfterViewInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'forgeboard-frontend';
   currentDate = new Date().toLocaleDateString();
   todayDate = new Date().toLocaleDateString();
@@ -23,6 +24,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   isShaking = false;
   isMuted = false;
   userData: UserData | null = null;
+  private userDataSubscription: Subscription | null = null;
   
   // Remove callout-specific cursor and lines
   private shakeInterval: Subscription | null = null;
@@ -41,12 +43,26 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   is4ColumnVisible = false;
   isSmallGridVisible = false;
   isLargeGridVisible = false;
+  private subscription = new Subscription(); // Add this line to declare the subscription property
 
   constructor(
-    private tileStateService: TileStateService
+    private tileStateService: TileStateService,
+    private soundHelper: SoundHelperService,
+    private userDataService: UserDataService
   ) {
     // Initialize with default order, will be updated from backend in ngAfterViewInit
     this.tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
+  }
+
+  ngOnInit(): void {
+    // Initialize component state
+    console.log('[AppComponent] Component initialized');
+    
+    // Check audio settings from local storage
+    this.loadAudioSettings();
+    
+    // Load user data
+    this.loadUserData();
   }
 
   ngAfterViewInit() {
@@ -74,11 +90,18 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    this.subscription.unsubscribe();
     if (this.shakeInterval) {
       this.shakeInterval.unsubscribe();
     }
     this.stopContinuousTyping();
+
+    // Clean up user data subscription
+    if (this.userDataSubscription) {
+      this.userDataSubscription.unsubscribe();
+    }
   }
 
   startShakingInterval() {
@@ -90,16 +113,27 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  enableAudio() {
+  enableAudio(): void {
     this.audioEnabled = true;
     if (this.shakeInterval) {
       this.shakeInterval.unsubscribe();
       this.shakeInterval = null;
     }
     this.isAudioInitialized = true;
-    setTimeout(() => {
-      this.startAnimations();
-    }, 500);
+    
+    // Initialize the sound helper service
+    this.subscription.add(
+      this.soundHelper.initialize().subscribe(success => {
+        if (success) {
+          // Set enabled once initialized
+          this.soundHelper.setEnabled(true);
+          
+          setTimeout(() => {
+            this.startAnimations();
+          }, 500);
+        }
+      })
+    );
   }
 
   preloadAudioAssets() {
@@ -263,67 +297,22 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  playKeySound(volume?: number) {
-    try {
-      if (!this.keyStrikeSound?.nativeElement) return;
-      const keyElement = this.keyStrikeSound.nativeElement;
-      keyElement.currentTime = 0;
-      keyElement.volume = volume || 0.2;
-      keyElement
-        .play()
-        .then(() => {
-          // Optionally, you could trigger a visual effect for the key sound
-          // e.g., this.showKeySoundIndicator();
-        })
-        .catch(() => {
-          if (!this.soundErrorsLogged) {
-            this.soundErrorsLogged = true;
-          }
-          console.error('Error playing key sound:', keyElement.src);
-        });
-    } catch {
-      console.error(
-        'Error playing key sound:',
-        this.keyStrikeSound.nativeElement.src
-      );
+  playKeySound(volume?: number): void {
+    if (this.audioEnabled) {
+      this.soundHelper.playSound(SoundType.KEYSTRIKE, volume).subscribe();
     }
   }
 
-  playDingSound(volume?: number) {
-    try {
-      if (!this.dingSound?.nativeElement) return;
-      const dingElement = this.dingSound.nativeElement;
-      dingElement.currentTime = 0;
-      dingElement.volume = volume || 0.6;
-      dingElement
-        .play()
-        .then(() => {
-          // Optionally, you could trigger a visual effect for the "ding"
-          // e.g., this.showDingIndicator();
-        })
-        .catch(() => {
-          if (!this.soundErrorsLogged) {
-            // Optionally, show a notification or log
-            alert('Ding sound failed to play.');
-            this.soundErrorsLogged = true;
-          }
-        });
-    } catch {
-      // Optionally, show a notification or log
-      alert('Error setting up ding sound playback.');
+  playDingSound(volume?: number): void {
+    if (this.audioEnabled) {
+      this.soundHelper.playSound(SoundType.DING, volume).subscribe();
     }
   }
 
-  toggleMute(event: Event) {
+  toggleMute(event: Event): void {
     event.stopPropagation();
     this.isMuted = !this.isMuted;
-    // Only toggle sound mute/unmute, do not affect layout or tiles
-    const audioElements = [this.keyStrikeSound, this.dingSound];
-    audioElements.forEach((element) => {
-      if (element?.nativeElement) {
-        element.nativeElement.muted = this.isMuted;
-      }
-    });
+    this.soundHelper.setMuted(this.isMuted);
   }
 
   toggleContextBlock() {
@@ -414,6 +403,32 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   setupUserDataService() {
-    // no-op for now
+    // This method can remain as a no-op or be removed if not needed
+    // The actual initialization happens in loadUserData
+  }
+
+  /**
+   * Load audio settings from local storage
+   */
+  private loadAudioSettings(): void {
+    const savedAudioSettings = localStorage.getItem('audioEnabled');
+    if (savedAudioSettings !== null) {
+      this.audioEnabled = savedAudioSettings === 'true';
+    }
+  }
+  
+  /**
+   * Load user data from service
+   */
+  private loadUserData(): void {
+    this.userDataSubscription = this.userDataService.getUserData()
+      .subscribe({
+        next: (userData: UserData) => {
+          this.userData = userData;
+        },
+        error: (err: Error) => {
+          console.error('[AppComponent] Error loading user data:', err);
+        }
+      });
   }
 }

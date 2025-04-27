@@ -19,8 +19,9 @@ import { LoggerPageModule } from './pages/logger/logger.module';
 // Services and interceptors
 import { ErrorService } from './services/error.service';
 import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
+import { TypeValidationInterceptor } from './interceptors/type-validation.interceptor';
+import { TypeDiagnosticsService } from './services/type-diagnostics.service';
 
-// Status indicator
 import { ConnectionStatusIndicatorComponent } from './components/connection-status-indicator/connection-status-indicator.component';
 
 @NgModule({
@@ -48,12 +49,9 @@ import { ConnectionStatusIndicatorComponent } from './components/connection-stat
   ],
   providers: [
     ErrorService,
-    { 
-      provide: HTTP_INTERCEPTORS, 
-      useClass: ApiErrorInterceptor, 
-      multi: true 
-    }
+    { provide: HTTP_INTERCEPTORS, useClass: TypeValidationInterceptor, multi: true },
+    TypeDiagnosticsService
   ],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent]
 })
-export class AppModule {}
+export class AppModule { }

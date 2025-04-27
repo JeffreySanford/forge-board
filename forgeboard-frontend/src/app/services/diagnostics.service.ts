@@ -3,54 +3,21 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Socket, io } from 'socket.io-client';
-import { SocketResponse } from '@forge-board/shared/api-interfaces';
+import { 
+  SocketResponse, 
+  SocketInfo, 
+  SocketMetrics, 
+  SocketStatusUpdate,
+  SocketLogEvent,
+  HealthData,
+  DiagnosticEvent,
+  validateDiagnosticEvent,
+  validateMetricData,
+  ValidationResult,
+  isMetricData
+} from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
-
-// Socket Information Types
-export interface SocketInfo {
-  id: string;
-  namespace: string;
-  clientIp: string;
-  userAgent: string;
-  connectTime: string | Date;
-  disconnectTime?: string | Date;
-  lastActivity: string | Date;
-  events: {
-    type: string;
-    timestamp: string | Date;
-    data?: any;
-  }[];
-}
-
-export interface SocketMetrics {
-  totalConnections: number;
-  activeConnections: number;
-  disconnections: number;
-  errors: number;
-  messagesSent: number;
-  messagesReceived: number;
-}
-
-export interface SocketStatusUpdate {
-  activeSockets: SocketInfo[];
-  metrics: SocketMetrics;
-}
-
-export interface SocketLogEvent {
-  socketId: string;
-  namespace: string;
-  eventType: string;
-  timestamp: string | Date;
-  message: string;
-  data?: any;
-}
-
-export interface HealthData {
-  status: string;
-  uptime: number;
-  timestamp: string;
-  details: Record<string, string>;
-}
+import { TypeDiagnosticsService } from './type-diagnostics.service';
 
 @Injectable({
   providedIn: 'root'
@@ -93,8 +60,14 @@ export class DiagnosticsService implements OnDestroy {
   
   constructor(
     private http: HttpClient,
-    private backendStatusService: BackendStatusService
+    private backendStatusService: BackendStatusService,
+    private typeDiagnostics: TypeDiagnosticsService // Add this service
   ) {
+    // Register validators for our types
+    this.typeDiagnostics.registerValidator('HealthData', this.validateHealthData);
+    this.typeDiagnostics.registerValidator('MetricData', isMetricData);
+    // Add more validators as needed
+    
     this.backendStatusService.registerGateway('diagnostics');
     this.initSocket();
     
@@ -221,7 +194,19 @@ export class DiagnosticsService implements OnDestroy {
     
     this.socket.on('health-update', (response: SocketResponse<HealthData>) => {
       if (response.status === 'success') {
-        this.healthSubject.next(response.data);
+        try {
+          // Validate health data before updating the subject
+          const validatedHealth = this.typeDiagnostics.validateType<HealthData>(
+            response.data, 
+            'HealthData', 
+            'DiagnosticsService.setupSocketEvents.health-update'
+          );
+          this.healthSubject.next(validatedHealth);
+        } catch (error) {
+          console.error('Health data validation failed:', error);
+          // Still update with response.data but log the error
+          this.healthSubject.next(response.data);
+        }
       }
     });
   }
@@ -459,5 +444,24 @@ export class DiagnosticsService implements OnDestroy {
         }
       }))
     );
+  }
+  
+  // Custom validator for HealthData
+  private validateHealthData(obj: any): ValidationResult {
+    const issues: string[] = [];
+    
+    if (!obj) {
+      issues.push('Object is null or undefined');
+      return { valid: false, issues };
+    }
+    
+    if (typeof obj.status !== 'string') issues.push('Missing or invalid status (string)');
+    if (typeof obj.uptime !== 'number') issues.push('Missing or invalid uptime (number)');
+    if (typeof obj.timestamp !== 'string') issues.push('Missing or invalid timestamp (string)');
+    if (!obj.details || typeof obj.details !== 'object') {
+      issues.push('Missing or invalid details (object)');
+    }
+    
+    return { valid: issues.length === 0, issues };
   }
 }

@@ -23,7 +23,7 @@ export class SocketController {
     return this.socketLogger.getLogs(100).map(log => ({
       socketId: log.socketId,
       namespace: log.namespace,
-      type: log.eventType, // map eventType to type
+      eventType: log.eventType, // Use eventType, not type
       timestamp: typeof log.timestamp === 'string' ? log.timestamp : log.timestamp.toISOString(),
       message: log.message,
       data: log.data

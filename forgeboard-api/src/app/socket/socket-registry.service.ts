@@ -109,7 +109,8 @@ export class SocketRegistryService {
     const logEvent: SocketLogEvent = {
       socketId,
       namespace: socketInfo?.namespace || 'unknown',
-      type: eventType, // Corrected property name
+      eventType: eventType, // Use eventType as the primary property
+      type: eventType,      // Also set type for backward compatibility
       timestamp: new Date().toISOString(),
       message,
       data

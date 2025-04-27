@@ -1,45 +1,45 @@
-<div class="connection-status-tile">
-  <div class="status-header">
-    <div class="status-indicator">
-      <span class="status-dot" [ngClass]="getStatusClass()"></span>
-      <mat-icon>wifi</mat-icon>
-      <span class="status-text">{{ status | titlecase }}</span>
-    </div>
-    <div class="ping-display" *ngIf="status === 'connected'">
-      <span class="ping-value">{{ pingTime }}ms</span>
+<div class="connection-status-container">
+  <div class="status-header" [ngClass]="getConnectionStatusClass()">
+    <div class="status-indicator"></div>
+    <div class="status-text">
+      <ng-container *ngIf="socketStatus === 'connected' && !usingMockData">Connected</ng-container>
+      <ng-container *ngIf="socketStatus === 'disconnected' && !usingMockData">Disconnected</ng-container>
+      <ng-container *ngIf="socketStatus === 'error' && !usingMockData">Connection Error</ng-container>
+      <ng-container *ngIf="usingMockData">Using Simulated Data</ng-container>
     </div>
   </div>
   
   <div class="connection-details">
-    <div class="quality-meter">
-      <div class="quality-label">Connection Quality</div>
-      <div class="quality-bar-container">
-        <div class="quality-bar" 
-             [ngClass]="getQualityClass(connectionQuality)" 
-             [style.width.%]="connectionQuality">
-          {{ connectionQuality | number:'1.0-0' }}%
-        </div>
-      </div>
+    <div class="detail-row" *ngIf="socketStatus === 'connected' || usingMockData">
+      <div class="detail-label">Duration:</div>
+      <div class="detail-value">{{ formatDuration(connectionDuration) }}</div>
     </div>
     
-    <div class="last-connected" *ngIf="lastConnected">
-      <div class="connected-label">Last Connected</div>
-      <div class="connected-time">{{ lastConnected | date:'shortTime' }}</div>
+    <div class="detail-row">
+      <div class="detail-label">Active:</div>
+      <div class="detail-value">{{ activeConnections }}</div>
     </div>
     
-    <!-- Add CORS error message -->
-    <div class="cors-error" *ngIf="hasCorsError">
-      <div class="error-title">
-        <mat-icon color="warn">error_outline</mat-icon>
-        <span>Connection Error</span>
-      </div>
-      <div class="error-message">
-        CORS policy is blocking connection to the server. Please ensure the backend server has CORS configured to allow requests from this origin.
-      </div>
-      <div class="error-detail">
-        Server: http://localhost:3000<br>
-        Origin: http://localhost:4200
-      </div>
+    <div class="detail-row">
+      <div class="detail-label">Total:</div>
+      <div class="detail-value">{{ totalConnections }}</div>
     </div>
+    
+    <div class="detail-row" *ngIf="lastActivity">
+      <div class="detail-label">Last Activity:</div>
+      <div class="detail-value">{{ lastActivity | date:'HH:mm:ss' }}</div>
+    </div>
+  </div>
+  
+  <div class="connection-footer" [ngClass]="getConnectionStatusClass()">
+    <ng-container *ngIf="usingMockData">
+      <mat-icon>sync_problem</mat-icon> Simulated metrics (backend unavailable)
+    </ng-container>
+    <ng-container *ngIf="!usingMockData && socketStatus === 'connected'">
+      <mat-icon>sync</mat-icon> Receiving real-time updates
+    </ng-container>
+    <ng-container *ngIf="!usingMockData && socketStatus !== 'connected'">
+      <mat-icon>sync_disabled</mat-icon> Waiting for connection
+    </ng-container>
   </div>
 </div>

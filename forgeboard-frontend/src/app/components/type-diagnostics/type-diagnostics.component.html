@@ -1,0 +1,65 @@
+<div class="type-diagnostics" [class.expanded]="expanded">
+  <div class="diagnostics-content" *ngIf="expanded">
+    <div class="filters">
+      <button mat-button [class.active]="activeFilter === 'errors'" (click)="setFilter('errors')">
+        <mat-icon>error</mat-icon> Errors
+      </button>
+      <button mat-button [class.active]="activeFilter === 'success'" (click)="setFilter('success')">
+        <mat-icon>check_circle</mat-icon> Success
+      </button>
+      <button mat-button [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
+        <mat-icon>list</mat-icon> All
+      </button>
+      <button mat-button color="warn" (click)="clearEvents()" class="clear-btn">
+        <mat-icon>clear_all</mat-icon> Clear
+      </button>
+    </div>
+    
+    <div class="registered-types" *ngIf="registeredValidators.length > 0">
+      <h4>Registered Type Validators:</h4>
+      <div class="type-chips">
+        <mat-chip-set aria-label="Registered types">
+          <mat-chip *ngFor="let validator of registeredValidators">
+            {{validator}}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+    
+    <div class="events-list">
+      <mat-card *ngFor="let event of filteredEvents" class="event-card" [class.invalid]="!event.valid">
+        <mat-card-header>
+          <div mat-card-avatar>
+            <mat-icon>{{ event.valid ? 'check_circle' : 'error' }}</mat-icon>
+          </div>
+          <mat-card-title>{{ event.typeName }}</mat-card-title>
+          <mat-card-subtitle>{{ formatTimestamp(event.timestamp) }}</mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <p><strong>Caller:</strong> {{ event.callerInfo }}</p>
+          
+          <div *ngIf="!event.valid" class="issues-list">
+            <h4>Issues:</h4>
+            <ul>
+              <li *ngFor="let issue of event.issues">{{ issue }}</li>
+            </ul>
+          </div>
+          
+          <div *ngIf="!event.valid" class="event-data">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>Invalid Data</mat-panel-title>
+              </mat-expansion-panel-header>
+              <pre>{{ getStringRepresentation(event) }}</pre>
+            </mat-expansion-panel>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      
+      <div class="no-events" *ngIf="filteredEvents.length === 0">
+        No events to display
+      </div>
+    </div>
+  </div>
+</div>

@@ -65,6 +65,7 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         status: true,
         logs,
         total: totalCount,
+        totalCount: totalCount,  // Add totalCount property
         timestamp: new Date().toISOString(),
         filtered: true
       }

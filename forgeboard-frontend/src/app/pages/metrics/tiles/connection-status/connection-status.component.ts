@@ -1,178 +1,146 @@
-/* eslint-disable require-socket-cleanup/ngondestroy-socket-disconnect */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription, timer } from 'rxjs';
-import { Socket, io } from 'socket.io-client';
-
-// Define a more specific error type for socket errors
-interface SocketConnectionError {
-  message?: string;
-  description?: string;
-  toString(): string;
-}
+import { Subscription } from 'rxjs';
+import { DiagnosticsService } from '../../../../services/diagnostics.service';
+import { SocketStatusUpdate } from '@forge-board/shared/api-interfaces';
+import { BackendStatusService } from '../../../../services/backend-status.service';
 
 @Component({
   selector: 'app-connection-status',
   templateUrl: './connection-status.component.html',
-  styleUrls: ['./connection-status.component.scss'],
-  standalone: false
+  styleUrls: ['./connection-status.component.scss']
 })
 export class ConnectionStatusComponent implements OnInit, OnDestroy {
-  status: 'connected' | 'disconnected' | 'connecting' = 'connecting';
-  lastConnected: Date | null = null;
+  // Socket information
+  socketStatus: 'connected' | 'disconnected' | 'error' = 'disconnected';
+  connectionTime: Date | null = null;
+  lastActivity: Date | null = null;
+  connectionDuration = 0;
+  activeConnections = 0;
+  totalConnections = 0;
+  
+  // Mock data status
+  usingMockData = false;
+  
+  // Update timer for duration
+  private durationTimer: any;
+  
+  // Subscriptions
+  private subscriptions = new Subscription();
 
-  // Properties to hold current values
-  connectionQuality = 0;
-  pingTime = 0;
-
-  // Add property to track CORS errors
-  hasCorsError = false;
-
-  private socket: Socket | null = null;
-  private pingInterval: Subscription | null = null;
-  private connectionAttempts = 0;
-  private readonly maxConnectionAttempts = 3;
-  private readonly socketUrl = 'http://localhost:3000';
+  constructor(
+    private diagnosticsService: DiagnosticsService,
+    private backendStatusService: BackendStatusService
+  ) {}
 
   ngOnInit(): void {
-    console.log('[ConnectionStatus] Component initializing');
-    this.initSocket();
+    // Track socket connection status
+    this.subscriptions.add(
+      this.diagnosticsService.getConnectionStatus().subscribe(connected => {
+        const wasConnected = this.socketStatus === 'connected';
+        this.socketStatus = connected ? 'connected' : 'disconnected';
+        
+        // Update connection time when we connect
+        if (connected && !wasConnected) {
+          this.connectionTime = new Date();
+          // Start timer to update duration
+          this.startDurationTimer();
+        }
+        
+        // Clear connection time when disconnected
+        if (!connected && wasConnected) {
+          this.stopDurationTimer();
+        }
+      })
+    );
+    
+    // Track socket status updates for metrics
+    this.subscriptions.add(
+      this.diagnosticsService.getSocketStatus().subscribe(status => {
+        this.updateSocketMetrics(status);
+      })
+    );
+    
+    // Track if we're using mock data
+    this.subscriptions.add(
+      this.backendStatusService.getStatus().subscribe(status => {
+        if (status.gateways) {
+          const diagnosticsGateway = status.gateways.find(g => g.name === 'diagnostics');
+          this.usingMockData = diagnosticsGateway?.usingMockData || false;
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
-    console.log('[ConnectionStatus] Component destroying, cleaning up resources');
-    // Clean up the ping interval subscription
-    if (this.pingInterval) {
-      this.pingInterval.unsubscribe();
-      this.pingInterval = null;
-    }
-
-    // Clean up socket directly in ngOnDestroy to satisfy ESLint rule
-    if (this.socket) {
-      console.log('[ConnectionStatus] Removing socket event listeners and disconnecting');
-      // Remove all event listeners
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('connect_error');
-      this.socket.off('ping');
-
-      // Disconnect if connected
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    // Clean up subscriptions and timers
+    this.subscriptions.unsubscribe();
+    this.stopDurationTimer();
   }
-
-  private initSocket(): void {
-    try {
-      console.log('[ConnectionStatus] Initializing socket connection');
-      this.status = 'connecting';
-      this.socket = io(this.socketUrl, {
-        reconnectionAttempts: this.maxConnectionAttempts,
-        timeout: 5000,
-      });
-
-      this.setupSocketEvents();
-      this.startPingInterval();
-    } catch (err) {
-      console.error('[ConnectionStatus] Socket initialization error:', err);
-      this.handleConnectionError(err as SocketConnectionError);
-    }
-  }
-
-  private setupSocketEvents(): void {
-    if (!this.socket) return;
-
-    this.socket.on('connect', () => {
-      console.log('[ConnectionStatus] Socket connected');
-      this.status = 'connected';
-      this.lastConnected = new Date();
-      this.connectionQuality = 100;
-      this.hasCorsError = false; // Clear CORS error flag on successful connection
-      this.connectionAttempts = 0;
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('[ConnectionStatus] Socket disconnected');
-      this.status = 'disconnected';
-      this.connectionQuality = 0;
-    });
-
-    this.socket.on('connect_error', (error) => {
-      console.error('[ConnectionStatus] Socket connection error:', error);
-      this.handleConnectionError(error as SocketConnectionError);
-    });
-
-    // Add event listeners for other socket events
-  }
-
-  private handleConnectionError(error: SocketConnectionError): void {
-    this.connectionAttempts++;
-    console.error('[ConnectionStatus] Socket connection error:', error);
-
-    // Check if error is CORS-related
-    if (
-      error &&
-      (error.message?.includes('CORS') ||
-        error.toString().includes('CORS') ||
-        // Check for transport error which can indicate CORS issues
-        error.message?.includes('xhr poll error') ||
-        error.description?.includes('failed'))
-    ) {
-      console.warn('[ConnectionStatus] CORS error detected');
-      this.hasCorsError = true;
-    }
-
-    // Update status and quality based on connection attempts
-    if (this.connectionAttempts >= this.maxConnectionAttempts) {
-      console.warn('[ConnectionStatus] Max connection attempts reached, giving up');
-      this.status = 'disconnected';
-      this.connectionQuality = 0;
-    } else {
-      console.log('[ConnectionStatus] Attempt', this.connectionAttempts, 'of', this.maxConnectionAttempts);
-      this.status = 'connecting';
-      this.connectionQuality = Math.max(0, 100 - this.connectionAttempts * 30);
-    }
-  }
-
-  private startPingInterval(): void {
-    console.log('[ConnectionStatus] Starting ping interval to measure latency');
-    this.pingInterval = timer(0, 2000).subscribe(() => {
-      if (this.socket && this.socket.connected) {
-        const start = Date.now();
-        this.socket.emit('ping', () => {
-          this.pingTime = Date.now() - start;
-          // Update connection quality based on ping time
-          this.updateConnectionQuality();
-        });
-      }
-    });
-  }
-
-  private updateConnectionQuality(): void {
-    if (this.status !== 'connected') return;
-
-    // Calculate quality based on ping time (lower ping = higher quality)
-    if (this.pingTime < 50) {
-      this.connectionQuality = 100;
-    } else if (this.pingTime < 100) {
-      this.connectionQuality = 90;
-    } else if (this.pingTime < 200) {
-      this.connectionQuality = 80;
-    } else if (this.pingTime < 300) {
-      this.connectionQuality = 70;
-    } else {
-      this.connectionQuality = Math.max(50, 100 - this.pingTime / 10);
-    }
+  
+  /**
+   * Update socket metrics from status update
+   */
+  private updateSocketMetrics(status: SocketStatusUpdate): void {
+    if (!status) return;
     
-    console.log(`[ConnectionStatus] Connection quality: ${this.connectionQuality}%, ping: ${this.pingTime}ms`);
+    // Update connection counts
+    this.activeConnections = status.metrics.activeConnections;
+    this.totalConnections = status.metrics.totalConnections;
+    
+    // If we have active sockets, update the last activity time
+    if (status.activeSockets && status.activeSockets.length > 0) {
+      const mostRecentActivity = status.activeSockets.reduce((latest, socket) => {
+        const activityTime = new Date(socket.lastActivity).getTime();
+        return activityTime > latest ? activityTime : latest;
+      }, 0);
+      
+      if (mostRecentActivity > 0) {
+        this.lastActivity = new Date(mostRecentActivity);
+      }
+    }
   }
-
-  getStatusClass(): string {
-    return `status-${this.status}`;
+  
+  /**
+   * Start timer to update connection duration
+   */
+  private startDurationTimer(): void {
+    this.stopDurationTimer(); // Clear any existing timer
+    
+    // Update duration every second
+    this.durationTimer = setInterval(() => {
+      if (this.connectionTime) {
+        const now = new Date();
+        this.connectionDuration = Math.floor((now.getTime() - this.connectionTime.getTime()) / 1000);
+      }
+    }, 1000);
   }
-
-  getQualityClass(quality: number): string {
-    if (quality >= 80) return 'quality-high';
-    if (quality >= 50) return 'quality-medium';
-    return 'quality-low';
+  
+  /**
+   * Stop the duration timer
+   */
+  private stopDurationTimer(): void {
+    if (this.durationTimer) {
+      clearInterval(this.durationTimer);
+      this.durationTimer = null;
+    }
+  }
+  
+  /**
+   * Format duration in a human-readable way
+   */
+  formatDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  }
+  
+  /**
+   * Get connection status class for styling
+   */
+  getConnectionStatusClass(): string {
+    if (this.usingMockData) return 'mock';
+    return this.socketStatus;
   }
 }
