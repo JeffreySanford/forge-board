@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 import { KablanCard, KablanCardSchema } from './kablan-card.schema';
 
 export type KablanColumnDocument = KablanColumn & Document;
@@ -10,10 +10,7 @@ export class KablanColumn {
   id: string;
 
   @Prop({ required: true })
-  name: string;
-
-  @Prop({ required: true })
-  order: number;
+  title: string;
 
   @Prop({ type: [KablanCardSchema], default: [] })
   cards: KablanCard[];

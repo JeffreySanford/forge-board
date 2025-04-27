@@ -1,143 +1,95 @@
-import { 
-  WebSocketGateway, 
-  WebSocketServer, 
-  SubscribeMessage, 
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
-  MessageBody,
-  ConnectedSocket
+  WsResponse,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import { Logger } from '@nestjs/common';
 import { KablanService } from './kablan.service';
-import { CreateBoardDto, CreateCardDto, CreateColumnDto, MoveCardDto } from './dto/kablan.dto';
-import { SocketResponse } from '@forge-board/shared/api-interfaces';
+import { SocketRegistryService } from '../app/socket-registry/socket-registry.service';
+import { createSocketResponse } from '@forge-board/shared/api-interfaces';
 
-@WebSocketGateway({
-  namespace: '/kablan',
+@WebSocketGateway({ 
+  namespace: 'kablan',
   cors: {
     origin: '*',
-  },
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }
 })
 export class KablanGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
   private readonly logger = new Logger(KablanGateway.name);
 
-  @WebSocketServer()
-  server: Server;
-
-  constructor(private readonly kablanService: KablanService) {}
+  constructor(
+    private kablanService: KablanService,
+    private socketRegistry: SocketRegistryService,
+  ) {}
 
   afterInit(server: Server): void {
-    this.logger.log('Kablan Gateway initialized');
+    this.logger.log('Kablan WebSocket Gateway Initialized');
   }
 
-  handleConnection(client: Socket): void {
+  handleConnection(client: Socket, ...args: any[]): void {
     this.logger.log(`Client connected: ${client.id}`);
+    this.socketRegistry.registerSocket(client);
+    
+    // Send initial boards data to the connected client
+    this.kablanService.getBoards().then(boards => {
+      client.emit('boards', createSocketResponse('boards', boards));
+    });
   }
 
   handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected: ${client.id}`);
+    this.socketRegistry.unregisterSocket(client.id);
   }
 
-  @SubscribeMessage('get-boards')
-  async getAllBoards(@ConnectedSocket() client: Socket): Promise<void> {
+  @SubscribeMessage('getBoards')
+  async handleGetBoards(client: Socket): Promise<WsResponse<any>> {
+    const boards = await this.kablanService.getBoards();
+    return { event: 'boards', data: createSocketResponse('boards', boards) };
+  }
+
+  @SubscribeMessage('getBoard')
+  async handleGetBoard(client: Socket, boardId: string): Promise<WsResponse<any>> {
     try {
-      const boards = await this.kablanService.getBoards();
-      client.emit('boards-update', {
-        status: 'success',
-        data: boards
-      } as SocketResponse<any>);
+      const board = await this.kablanService.getBoardById(boardId);
+      return { event: 'board', data: createSocketResponse('board', board) };
     } catch (error) {
-      this.logger.error(`Error fetching boards: ${error.message}`, error.stack);
-      client.emit('boards-update', {
-        status: 'error',
-        message: 'Failed to fetch boards'
-      } as SocketResponse<any>);
+      this.logger.error(`Error getting board ${boardId}:`, error);
+      return { 
+        event: 'error', 
+        data: { 
+          status: 'error', 
+          message: 'Board not found', 
+          timestamp: new Date().toISOString() 
+        }
+      };
     }
   }
 
-  @SubscribeMessage('create-board')
-  async createBoard(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() createBoardDto: CreateBoardDto
-  ): Promise<void> {
+  @SubscribeMessage('moveCard')
+  async handleMoveCard(client: Socket, payload: any): Promise<WsResponse<any>> {
     try {
-      await this.kablanService.createBoard(createBoardDto);
-      const boards = await this.kablanService.getBoards();
-      this.server.emit('boards-update', {
-        status: 'success',
-        data: boards
-      } as SocketResponse<any>);
+      const updatedBoard = await this.kablanService.moveCard(payload.boardId, payload);
+      // Broadcast to all clients in the namespace
+      this.server.emit('boardUpdated', createSocketResponse('boardUpdated', updatedBoard));
+      return { event: 'moveCardSuccess', data: createSocketResponse('moveCardSuccess', true) };
     } catch (error) {
-      this.logger.error(`Error creating board: ${error.message}`, error.stack);
-      client.emit('error', {
-        status: 'error',
-        message: 'Failed to create board'
-      } as SocketResponse<any>);
-    }
-  }
-
-  @SubscribeMessage('add-column')
-  async addColumn(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { boardId: string; column: CreateColumnDto }
-  ): Promise<void> {
-    try {
-      await this.kablanService.addColumnToBoard(payload.boardId, payload.column);
-      const boards = await this.kablanService.getBoards();
-      this.server.emit('boards-update', {
-        status: 'success',
-        data: boards
-      } as SocketResponse<any>);
-    } catch (error) {
-      this.logger.error(`Error adding column: ${error.message}`, error.stack);
-      client.emit('error', {
-        status: 'error',
-        message: 'Failed to add column'
-      } as SocketResponse<any>);
-    }
-  }
-
-  @SubscribeMessage('add-card')
-  async addCard(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { boardId: string; columnId: string; card: CreateCardDto }
-  ): Promise<void> {
-    try {
-      await this.kablanService.addCardToColumn(payload.boardId, payload.columnId, payload.card);
-      const boards = await this.kablanService.getBoards();
-      this.server.emit('boards-update', {
-        status: 'success',
-        data: boards
-      } as SocketResponse<any>);
-    } catch (error) {
-      this.logger.error(`Error adding card: ${error.message}`, error.stack);
-      client.emit('error', {
-        status: 'error',
-        message: 'Failed to add card'
-      } as SocketResponse<any>);
-    }
-  }
-
-  @SubscribeMessage('move-card')
-  async moveCard(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { boardId: string; moveCard: MoveCardDto }
-  ): Promise<void> {
-    try {
-      await this.kablanService.moveCard(payload.boardId, payload.moveCard);
-      const boards = await this.kablanService.getBoards();
-      this.server.emit('boards-update', {
-        status: 'success',
-        data: boards
-      } as SocketResponse<any>);
-    } catch (error) {
-      this.logger.error(`Error moving card: ${error.message}`, error.stack);
-      client.emit('error', {
-        status: 'error',
-        message: 'Failed to move card'
-      } as SocketResponse<any>);
+      this.logger.error('Error moving card:', error);
+      return { 
+        event: 'error', 
+        data: { 
+          status: 'error', 
+          message: 'Failed to move card', 
+          timestamp: new Date().toISOString() 
+        }
+      };
     }
   }
 }

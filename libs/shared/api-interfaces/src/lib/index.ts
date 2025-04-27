@@ -1,20 +1,35 @@
 /**
- * Export all types from submodules to ensure they're available to importing modules
+ * Index file for re-exporting all types from the API interfaces library
  */
 
+// Re-export all types from api-interfaces.ts
 export * from './api-interfaces';
-export * from './tile-types';
-export * from './health-timeline';
+
+// Re-export all types from socket-types.ts
 export * from './socket-types';
-export * from './metric-types';
-export * from './logger-types';
+
+// Re-export all types from diagnostic-types.ts
 export * from './diagnostic-types';
+
+// Re-export all types from logger-types.ts
+export * from './logger-types';
+
+// Re-export all types from metric-types.ts
+export * from './metric-types';
+
+// Re-export all types from tile-types.ts
+export * from './tile-types';
+
+// Re-export all types from health-timeline.ts
+export * from './health-timeline';
+
+// Re-export all types and functions from type-validation.ts
 export * from './type-validation';
 
-// Make specific validators available
+// Export socket utility functions
 export {
-  validateMetricData,
-  validateLogResponse,
-  validateDiagnosticEvent,
-  validateSocketResponse
-} from './type-validation';
+  createSocketResponse,
+  createErrorResponse,
+  SOCKET_EVENTS,
+  SocketStatus
+} from './socket-types';

@@ -1,104 +1,69 @@
-import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
-
-export class KablanCardDto {
-  @IsString()
+// Card Data Transfer Object
+export class CardDto {
   id: string;
-
-  @IsString()
   title: string;
-
-  @IsString()
-  description: string;
-
-  @IsEnum(['low', 'medium', 'high'])
-  priority: 'low' | 'medium' | 'high';
-
-  @IsString()
-  @IsOptional()
-  dueDate?: string;
-
-  @IsString()
-  @IsOptional()
+  description?: string;
   assignee?: string;
-
-  @IsArray()
-  tags: string[];
-
-  createdAt: string;
-  updatedAt: string;
+  dueDate?: string;
+  priority?: string;
+  labels?: string[];
+  comments?: CommentDto[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export class KablanColumnDto {
-  @IsString()
+// Comment Data Transfer Object
+export class CommentDto {
   id: string;
+  text: string;
+  author: string;
+  createdAt: string;
+}
 
-  @IsString()
-  name: string;
-
-  @IsArray()
-  cards: KablanCardDto[];
-
+// Column Data Transfer Object
+export class ColumnDto {
+  id: string;
+  title: string;
+  cards: CardDto[];
+  limit?: number;
   order: number;
 }
 
+// Board Data Transfer Object
 export class KablanBoardDto {
-  @IsString()
   id: string;
-
-  @IsString()
   name: string;
-
-  @IsArray()
-  columns: KablanColumnDto[];
-
-  createdAt: string;
-  updatedAt: string;
+  columns: ColumnDto[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// Create Board Request DTO
 export class CreateBoardDto {
-  @IsString()
   name: string;
 }
 
+// Create Column Request DTO
 export class CreateColumnDto {
-  @IsString()
-  name: string;
-
-  order: number;
-}
-
-export class CreateCardDto {
-  @IsString()
   title: string;
-
-  @IsString()
-  description: string;
-
-  @IsEnum(['low', 'medium', 'high'])
-  priority: 'low' | 'medium' | 'high';
-
-  @IsString()
-  @IsOptional()
-  dueDate?: string;
-
-  @IsString()
-  @IsOptional()
-  assignee?: string;
-
-  @IsArray()
-  @IsOptional()
-  tags?: string[];
+  order?: number;
+  limit?: number;
 }
 
+// Create Card Request DTO
+export class CreateCardDto {
+  title: string;
+  description?: string;
+  assignee?: string;
+  dueDate?: string;
+  priority?: string;
+  labels?: string[];
+}
+
+// Move Card Request DTO
 export class MoveCardDto {
-  @IsString()
   cardId: string;
-  
-  @IsString()
   sourceColumnId: string;
-  
-  @IsString()
-  targetColumnId: string;
-  
-  newIndex: number;
+  destinationColumnId: string;
+  position: number;
 }

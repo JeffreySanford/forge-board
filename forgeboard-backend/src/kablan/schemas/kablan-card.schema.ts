@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 export type KablanCardDocument = KablanCard & Document;
 
-@Schema({ timestamps: true })
+@Schema()
 export class KablanCard {
   @Prop({ required: true })
   id: string;
@@ -14,17 +14,14 @@ export class KablanCard {
   @Prop({ default: '' })
   description: string;
 
-  @Prop({ enum: ['low', 'medium', 'high'], default: 'medium' })
-  priority: 'low' | 'medium' | 'high';
+  @Prop({ default: 'medium' })
+  priority: string;
 
-  @Prop()
-  dueDate?: string;
+  @Prop({ default: Date.now })
+  createdAt: Date;
 
-  @Prop()
-  assignee?: string;
-
-  @Prop({ type: [String], default: [] })
-  tags: string[];
+  @Prop({ default: null })
+  assignee: string;
 }
 
 export const KablanCardSchema = SchemaFactory.createForClass(KablanCard);

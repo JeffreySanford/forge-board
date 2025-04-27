@@ -59,6 +59,8 @@
     "babel-plugin-transform-typescript-metadata": "^0.3.2",
     "eslint": "~8.57.0",
     "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-eslint-rules": "file:eslint-rules",
+    "eslint-plugin-forge": "file:eslint-plugin-forge",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-prefer-observable": "file:eslint-plugin-prefer-observable",
     "eslint-plugin-prettier": "^4.2.1",
@@ -74,9 +76,7 @@
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "webpack-cli": "^5.1.4",
-    "webpack-node-externals": "^3.0.0",
-    "eslint-plugin-eslint-rules": "file:eslint-rules",
-    "eslint-plugin-forge": "file:eslint-plugin-forge"
+    "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
     "@angular/animations": "^19.2.7",
@@ -92,6 +92,7 @@
     "@nestjs/common": "^10.0.2",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.2",
+    "@nestjs/mongoose": "^11.0.3",
     "@nestjs/platform-express": "^10.0.2",
     "@nestjs/platform-socket.io": "^10.4.17",
     "@nestjs/websockets": "^10.4.17",
@@ -99,6 +100,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "d3": "^7.9.0",
+    "mongoose": "^8.14.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "socket.io": "^4.8.1",
