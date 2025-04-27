@@ -17,18 +17,32 @@ export interface LogEntry {
   message: string;
   source: string;
   data?: Record<string, unknown>;
+  // Add these missing properties that are used in the code
+  context?: string;
+  tags?: string[];
+  stackTrace?: string;
 }
 
 /**
  * Log filter options
  */
 export interface LogFilter {
+  // Change from singular to plural forms to match actual usage in code
+  levels?: LogLevelType[];
+  sources?: string[];
+  // Add additional properties used in code
+  contexts?: string[];
+  tags?: string[];
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+  // Keep these for backward compatibility
   level?: LogLevelType;
   source?: string;
   fromDate?: string;
   toDate?: string;
-  search?: string;
-  limit?: number;
   skip?: number;
 }
 
@@ -42,4 +56,13 @@ export interface LogResponse {
   status: boolean;
   total: number;
   timestamp: string;
+}
+
+/**
+ * Update format for log streaming
+ */
+export interface LogStreamUpdate {
+  log: LogEntry;
+  totalCount: number;
+  append?: boolean;
 }

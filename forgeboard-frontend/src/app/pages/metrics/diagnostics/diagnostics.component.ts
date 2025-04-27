@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { TileType } from '@forge-board/shared/api-interfaces';
+import { Component, OnInit } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { TileType, TileDragEvent } from '@forge-board/shared/api-interfaces';
 import { TileStateService } from '../../../services/tile-state.service';
 
 @Component({
@@ -10,7 +9,7 @@ import { TileStateService } from '../../../services/tile-state.service';
   styleUrls: ['./diagnostics.component.scss'],
   standalone: false
 })
-export class DiagnosticsComponent implements OnInit, OnDestroy {
+export class DiagnosticsComponent implements OnInit {
   showLayoutBorder = true;
   showMetricsTile = true;
   showConnectionTile = true;
@@ -18,7 +17,6 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   showUptimeTile = true;
   showActivityTile = true;
   tileOrder: TileType[] = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
-  private subscriptions = new Subscription();
 
   constructor(private tileStateService: TileStateService) {}
 
@@ -38,16 +36,9 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
         }
       }
     });
-    
-    this.subscriptions.add(sub);
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
   }
 
   onTileDrop(event: CdkDragDrop<TileType[]>): void {
-    // First update the local array for immediate UI feedback
     moveItemInArray(this.tileOrder, event.previousIndex, event.currentIndex);
     
     // Then persist to backend with error handling

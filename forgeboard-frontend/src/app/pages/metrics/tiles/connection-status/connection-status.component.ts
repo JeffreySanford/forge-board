@@ -7,7 +7,8 @@ import { BackendStatusService } from '../../../../services/backend-status.servic
 @Component({
   selector: 'app-connection-status',
   templateUrl: './connection-status.component.html',
-  styleUrls: ['./connection-status.component.scss']
+  styleUrls: ['./connection-status.component.scss'],
+  standalone: false
 })
 export class ConnectionStatusComponent implements OnInit, OnDestroy {
   // Socket information

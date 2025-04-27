@@ -36,11 +36,10 @@ export class TypeValidationInterceptor implements HttpInterceptor {
           
           if (typeName) {
             try {
-              // Try to validate the response body
+              // Use validateType instead of tryValidateType
               const callerInfo = `HTTP ${request.method} ${url}`;
-              this.typeDiagnostics.tryValidateType(event.body, typeName, callerInfo);
+              this.typeDiagnostics.validateType(event.body, typeName, callerInfo);
               // Even if validation fails, we still return the original response
-              // The error is just logged by tryValidateType
             } catch (error) {
               // Log error but don't fail the request
               this.logger.error(

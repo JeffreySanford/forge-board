@@ -1,0 +1,7 @@
+{
+  "name": "eslint-plugin-forge",
+  "version": "1.0.0",
+  "description": "Custom ESLint rules for ForgeBoard",
+  "main": "index.js",
+  "author": "ForgeBoard Team"
+}

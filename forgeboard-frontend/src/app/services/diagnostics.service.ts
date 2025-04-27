@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { Socket, io } from 'socket.io-client';
 import { 
   SocketResponse, 
@@ -10,11 +10,8 @@ import {
   SocketStatusUpdate,
   SocketLogEvent,
   HealthData,
-  DiagnosticEvent,
-  validateDiagnosticEvent,
   validateMetricData,
   ValidationResult,
-  isMetricData
 } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
 import { TypeDiagnosticsService } from './type-diagnostics.service';
@@ -61,25 +58,22 @@ export class DiagnosticsService implements OnDestroy {
   constructor(
     private http: HttpClient,
     private backendStatusService: BackendStatusService,
-    private typeDiagnostics: TypeDiagnosticsService // Add this service
+    private typeDiagnostics: TypeDiagnosticsService
   ) {
-    // Register validators for our types
-    this.typeDiagnostics.registerValidator('HealthData', this.validateHealthData);
-    this.typeDiagnostics.registerValidator('MetricData', isMetricData);
-    // Add more validators as needed
-    
-    this.backendStatusService.registerGateway('diagnostics');
-    this.initSocket();
-    
-    // Listen for backend availability to reconnect
+    // Initialize socket and event listener
     this.backendAvailableListener = () => {
-      console.log('[DiagnosticsService] Backend available event received, attempting reconnection');
-      if (this.mockDataInterval && !this.reconnecting) {
+      if (!this.socket?.connected && !this.reconnecting) {
         this.reconnectToBackend();
       }
     };
     
     window.addEventListener('backend-available', this.backendAvailableListener);
+    
+    // Register validators
+    this.typeDiagnostics.registerValidator('MetricData', validateMetricData);
+    
+    // Initialize socket
+    this.initSocket();
   }
 
   ngOnDestroy(): void {
@@ -416,13 +410,22 @@ export class DiagnosticsService implements OnDestroy {
    */
   getHealth(): Observable<HealthData> {
     return this.http.get<HealthData>(`${this.apiUrl}/diagnostics/health`).pipe(
+      map(response => {
+        // Ensure the response matches the HealthData interface
+        if (typeof response.status === 'string' && 
+            !['healthy', 'degraded', 'unhealthy', 'unknown', 'simulated'].includes(response.status)) {
+          return {
+            ...response,
+            status: 'unknown' as const // Force it to be a valid status
+          };
+        }
+        return response;
+      }),
       catchError(() => of({
-        status: 'error',
+        status: 'unknown' as const,
         uptime: 0,
         timestamp: new Date().toISOString(),
-        details: {
-          message: 'Failed to fetch health data'
-        }
+        details: { message: 'Unable to connect to backend server' }
       }))
     );
   }
@@ -445,7 +448,7 @@ export class DiagnosticsService implements OnDestroy {
       }))
     );
   }
-  
+
   // Custom validator for HealthData
   private validateHealthData(obj: any): ValidationResult {
     const issues: string[] = [];

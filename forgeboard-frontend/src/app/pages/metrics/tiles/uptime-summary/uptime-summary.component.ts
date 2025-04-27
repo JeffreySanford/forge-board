@@ -9,6 +9,7 @@ import { Tile, TileType } from '@forge-board/shared/api-interfaces';
   standalone: false
 })
 export class UptimeSummaryComponent implements OnInit, OnDestroy, Tile {
+  position: number = 0;
   @Input() id: string = 'uptime';
   @Input() type: TileType = 'uptime';
   @Input() title: string = 'Uptime Summary';

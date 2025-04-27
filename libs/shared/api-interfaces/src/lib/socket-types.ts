@@ -62,3 +62,11 @@ export function createErrorResponse<T>(message: string, data: T): SocketResponse
     timestamp: new Date().toISOString()
   };
 }
+
+// Re-export everything from this module to ensure they're available
+export const socketTypes = {
+  SocketStatus,
+  SOCKET_EVENTS,
+  createSocketResponse,
+  createErrorResponse
+};

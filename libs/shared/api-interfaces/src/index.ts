@@ -3,31 +3,30 @@
  * All types and interfaces should be exported from here to be available to consumers.
  */
 
-// Re-export all types from type modules
-export * from './lib/api-interfaces';
-export * from './lib/socket-types';
-export * from './lib/metric-types';
-export * from './lib/logger-types';
-export * from './lib/tile-types';
-export * from './lib/diagnostic-types';
-export * from './lib/health-timeline';
+// Export everything from lib/index.ts
+export * from './lib/index';
 
-// Export all from type-validation
+// Re-export specific types that are being directly imported
 export {
-  ValidationResult,
-  TypeValidationError,
-  TypeValidator,
-  typeValidators,
-  registerTypeValidator,
-  validateType,
-  createTypeValidationError,
-  isDiagnosticEvent,
-  validateDiagnosticEvent,
-  isMetricData,
-  validateMetricData,
-  isSocketResponse,
-  isSuccessResponse,
-  isErrorResponse,
-  validateSocketResponse,
-  safeStringify
-} from './lib/type-validation';
+  // From diagnostic-types.ts
+  DiagnosticEvent,
+  HealthData,
+  DiagnosticSocketEvent,
+  SocketLogEvent,
+  SocketInfo,
+  SocketMetrics,
+  SocketStatusUpdate,
+  SocketConnectionError,
+
+  // From logger-types.ts
+  LogLevelType,
+  LogEntry,
+  LogFilter,
+  LogResponse,
+  LogStreamUpdate,
+
+  // From metric-types.ts
+  MetricData,
+  MetricResponse,
+  MetricConfig
+} from './lib/index';

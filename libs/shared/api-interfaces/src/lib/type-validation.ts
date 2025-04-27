@@ -36,14 +36,14 @@ interface TypeValidatorRegistry {
 }
 
 // Initialize the validator registry
-const typeValidators: TypeValidatorRegistry = {};
+export const typeValidators: TypeValidatorRegistry = {};
 
 /**
  * Register a type validator in the global registry
  */
-export function registerTypeValidator<T>(
+export function registerTypeValidator(
   typeName: string, 
-  validator: TypeValidator<T>
+  validator: TypeValidator
 ): void {
   typeValidators[typeName] = validator as TypeValidator<unknown>;
 }
@@ -75,7 +75,7 @@ export function validateType<T>(
     );
   }
   
-  // If valid, return the original object cast as the expected type
+  // Using T here to fix the unused type parameter warning
   return obj as T;
 }
 
@@ -294,5 +294,19 @@ export function safeStringify(obj: unknown): string {
   }
 }
 
-// Export the validators registry for use in applications
-export { typeValidators };
+// Make sure this is exported properly
+export const validators = {
+  typeValidators,
+  registerTypeValidator,
+  validateType,
+  createTypeValidationError,
+  isDiagnosticEvent,
+  validateDiagnosticEvent,
+  isMetricData,
+  validateMetricData,
+  isSocketResponse,
+  isSuccessResponse,
+  isErrorResponse,
+  validateSocketResponse,
+  safeStringify
+};
