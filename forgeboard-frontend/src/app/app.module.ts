@@ -22,6 +22,7 @@ import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
 import { TypeValidationInterceptor } from './interceptors/type-validation.interceptor';
 import { TypeDiagnosticsService } from './services/type-diagnostics.service';
 
+// Standalone components
 import { ConnectionStatusIndicatorComponent } from './components/connection-status-indicator/connection-status-indicator.component';
 
 @NgModule({
@@ -42,15 +43,25 @@ import { ConnectionStatusIndicatorComponent } from './components/connection-stat
     NavigationModule,
     NotFoundModule,
     FooterModule,
-    LoggerPageModule, // Add Logger Page Module
+    LoggerPageModule,
     
     // Standalone components
     ConnectionStatusIndicatorComponent
   ],
   providers: [
     ErrorService,
-    { provide: HTTP_INTERCEPTORS, useClass: TypeValidationInterceptor, multi: true },
-    TypeDiagnosticsService
+    TypeDiagnosticsService,
+    // Order matters for HTTP interceptors to avoid circular dependencies
+    { 
+      provide: HTTP_INTERCEPTORS, 
+      useClass: ApiErrorInterceptor, 
+      multi: true 
+    },
+    { 
+      provide: HTTP_INTERCEPTORS, 
+      useClass: TypeValidationInterceptor, 
+      multi: true 
+    }
   ],
   bootstrap: [AppComponent]
 })

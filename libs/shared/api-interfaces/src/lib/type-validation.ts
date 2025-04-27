@@ -4,6 +4,7 @@
 import { DiagnosticEvent } from './diagnostic-types';
 import { MetricData } from './metric-types';
 import { SocketResponse } from './socket-types';
+import { LogResponse } from './logger-types';
 
 /**
  * Result of a type validation
@@ -275,6 +276,49 @@ export function validateSocketResponse<T>(obj: unknown): ValidationResult {
 }
 
 /**
+ * Validate LogResponse
+ */
+export function validateLogResponse(obj: unknown): ValidationResult {
+  const issues: string[] = [];
+  
+  if (!obj || typeof obj !== 'object') {
+    issues.push('Expected an object');
+    return { valid: false, issues };
+  }
+  
+  const response = obj as Partial<LogResponse>;
+  
+  if (typeof response.status !== 'boolean') {
+    issues.push('status must be a boolean');
+  }
+  
+  if (!Array.isArray(response.logs)) {
+    issues.push('logs must be an array');
+  } else {
+    // Optional: validate each log entry in the array
+  }
+  
+  if (typeof response.totalCount !== 'number') {
+    issues.push('totalCount must be a number');
+  }
+  
+  if (typeof response.filtered !== 'boolean' && response.filtered !== undefined) {
+    issues.push('filtered must be a boolean if present');
+  }
+  
+  if (typeof response.timestamp !== 'string' && response.timestamp !== undefined) {
+    issues.push('timestamp must be a string if present');
+  }
+  
+  return {
+    valid: issues.length === 0,
+    issues,
+    typeName: 'LogResponse',
+    stringRepresentation: safeStringify(obj)
+  };
+}
+
+/**
  * Safely stringify an object for logging, handling circular references
  */
 export function safeStringify(obj: unknown): string {
@@ -308,5 +352,6 @@ export const validators = {
   isSuccessResponse,
   isErrorResponse,
   validateSocketResponse,
+  validateLogResponse,
   safeStringify
 };

@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { v4 as uuid } from 'uuid';
-import { TypeValidator, ValidationResult, typeValidators, registerTypeValidator, safeStringify, validateType } from '@forge-board/shared/api-interfaces';
+import {
+  typeValidators,
+  registerTypeValidator,
+  validateMetricData,
+  safeStringify,
+  TypeValidator,
+  ValidationResult
+} from '@forge-board/shared/api-interfaces';
 
 /**
  * Type validation error with detailed information
@@ -27,7 +34,13 @@ export class TypeDiagnosticsService {
   // Local validators registry (extends the shared library's registry)
   private validators: Record<string, TypeValidator> = {...typeValidators};
   
-  constructor() { }
+  constructor() { 
+    // Register built-in validators
+    this.registerValidator('MetricData', validateMetricData);
+    
+    // Add LogResponse validator
+    this.registerValidator('LogResponse', this.validateLogResponse);
+  }
   
   /**
    * Register a validator for a specific type
@@ -147,5 +160,40 @@ export class TypeDiagnosticsService {
         event.stringRepresentation || event.data
       );
     }
+  }
+  
+  /**
+   * Validator for LogResponse type
+   */
+  private validateLogResponse(obj: any): ValidationResult {
+    const issues: string[] = [];
+    
+    if (!obj || typeof obj !== 'object') {
+      issues.push('Expected an object');
+      return { valid: false, issues };
+    }
+    
+    if (typeof obj.status !== 'boolean') issues.push('status must be a boolean');
+    
+    if (!Array.isArray(obj.logs)) {
+      issues.push('logs must be an array');
+    }
+    
+    if (typeof obj.totalCount !== 'number') issues.push('totalCount must be a number');
+    
+    if (typeof obj.filtered !== 'boolean' && obj.filtered !== undefined) {
+      issues.push('filtered must be a boolean if present');
+    }
+    
+    if (typeof obj.timestamp !== 'string' && obj.timestamp !== undefined) {
+      issues.push('timestamp must be a string if present');
+    }
+    
+    return {
+      valid: issues.length === 0,
+      issues,
+      typeName: 'LogResponse',
+      stringRepresentation: safeStringify(obj)
+    };
   }
 }

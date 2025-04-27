@@ -9,7 +9,6 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { TypeDiagnosticsService } from '../services/type-diagnostics.service';
-import { LoggerService } from '../services/logger.service';
 
 @Injectable()
 export class TypeValidationInterceptor implements HttpInterceptor {
@@ -22,8 +21,7 @@ export class TypeValidationInterceptor implements HttpInterceptor {
   };
 
   constructor(
-    private typeDiagnostics: TypeDiagnosticsService,
-    private logger: LoggerService
+    private typeDiagnostics: TypeDiagnosticsService
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
@@ -41,12 +39,8 @@ export class TypeValidationInterceptor implements HttpInterceptor {
               this.typeDiagnostics.validateType(event.body, typeName, callerInfo);
               // Even if validation fails, we still return the original response
             } catch (error) {
-              // Log error but don't fail the request
-              this.logger.error(
-                `Response type validation failed for ${url}`,
-                'TypeValidator',
-                { error, url, body: event.body }
-              );
+              // Log error without using LoggerService (breaking circular dependency)
+              console.error(`Response type validation failed for ${url}:`, error);
             }
           }
         }

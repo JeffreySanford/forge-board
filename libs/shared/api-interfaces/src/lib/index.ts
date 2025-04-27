@@ -10,3 +10,11 @@ export * from './metric-types';
 export * from './logger-types';
 export * from './diagnostic-types';
 export * from './type-validation';
+
+// Make specific validators available
+export {
+  validateMetricData,
+  validateLogResponse,
+  validateDiagnosticEvent,
+  validateSocketResponse
+} from './type-validation';
