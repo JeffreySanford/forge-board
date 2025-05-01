@@ -288,6 +288,7 @@
   justify-content: flex-end;
   z-index: 100;
   margin: 1em 1em 1em auto; /* Align to right with margin */
+  padding: 0.5em;
 }
 
 .audio-icon,
@@ -446,10 +447,11 @@ fieldset.page-container {
   height: calc(100% - 2em);
   width: calc(100% - 2em);
   margin: 1em;
+  padding: 0.25em;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  border: 1em solid #3498db;
+  border: 2px solid #3498db;
   border-radius: 1.5em;
   position: relative;
   overflow: visible;
@@ -457,6 +459,8 @@ fieldset.page-container {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -599,6 +603,7 @@ html, body {
   z-index: 10;
   border: 2px solid #3498db;
   box-shadow: 0 2px 8px rgba(52,152,219,0.05);
+  transition: opacity 0.3s ease;
 }
 
 .content-label {
@@ -613,35 +618,9 @@ html, body {
   background: none;
 }
 
-.page-container,
-.content-wrapper,
-.layout-container,
-.tile-grid-container,
-.tile-grid,
-.footer-container,
-.callout-drawing {
-  background: transparent !important;
-}
-
-.content-wrapper.blue-border {
-  background: rgba(255,255,255,0.85) !important;
-}
-
-.layout-container {
-  background: rgba(255,255,255,0.7) !important;
-}
-
-.tile-grid-container {
-  background: rgba(255,255,255,0.5) !important;
-}
-
-.tile-grid {
-  background: rgba(255,255,255,0.3) !important;
-}
-
-.footer-container,
-.callout-drawing {
-  background: rgba(255,255,255,0.6) !important;
+.hide-indicators .fieldset-label {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* ==========================================================================
@@ -658,6 +637,8 @@ html, body {
   align-items: stretch;
   justify-content: flex-start;
   max-height: 7em;
+  width: calc(100% - 2em);
+  margin: 0.5em 1em;
 }
 
 /* Callout drawing: fill callout-container, no extra margin */
@@ -985,4 +966,153 @@ html, body {
     animation: shakeIcon 0.8s cubic-bezier(.36,.07,.19,.97) both;
     transform-origin: center center;
   }
+}
+
+/* New button for container indicator toggle */
+.indicator-toggle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(13, 27, 42, 0.7);
+  border: 1px solid rgba(78, 255, 145, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+  padding: 0;
+  
+  mat-icon {
+    font-size: 24px;
+    color: #3498db;
+    transition: color 0.2s;
+  }
+  
+  &:hover {
+    background: rgba(13, 27, 42, 0.9);
+    border: 2px solid #4eff91;
+    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    transform: scale(1.1);
+    
+    mat-icon {
+      color: #4eff91;
+    }
+  }
+  
+  &.active {
+    background: rgba(13, 27, 42, 0.9);
+    border: 2px solid #4eff91;
+    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    
+    mat-icon {
+      color: #4eff91;
+    }
+  }
+}
+
+/* ==========================================================================
+   CONTROLS WRAPPER (NEW)
+   ========================================================================== */
+
+.controls-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 80px;
+  margin-top: auto; /* Push to the bottom of content-wrapper */
+  border: 2px solid #3498db;
+  border-radius: 0.75em;
+  padding: 0.5em;
+  box-sizing: border-box;
+  background: rgba(13, 27, 42, 0.4);
+}
+
+.controls-label {
+  color: #3498db;
+  border-color: #3498db;
+  background: none;
+  left: 0.25em;
+  bottom: 0.25em;
+  font-size: 0.7em;
+}
+
+/* Adjust content wrapper to make room for controls wrapper */
+.content-wrapper.blue-border {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+/* Callout container: align with layout-container, inside controls wrapper */
+.callout-container {
+  width: calc(100% - 2em);
+  margin: 0.5em 1em;
+  max-height: 7em;
+}
+
+/* Update controls row positioning */
+.controls-row {
+  position: relative;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 1em;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 100;
+  padding: 0.5em;
+}
+
+/* ==========================================================================
+   AUDIO SYSTEM NOTE
+   ========================================================================== */
+/* 
+   TODO: Audio ambient system requires:
+   1. assets/sounds/typewriter/ambient.mp3
+   2. assets/sounds/typewriter/ambient-stars-and-stripes-forever-vocals.mp3
+   
+   Create fallback silencers for these in the preloadAudioElements method
+   to prevent console errors when files are missing.
+*/
+
+/* ==========================================================================
+   CALLOUT CONTAINER FIXES
+   ========================================================================== */
+
+/* Make sure app-footer has proper display */
+app-footer {
+  display: block;
+  width: 100%;
+  margin: 1em 0;
+}
+
+/* Ensure content wrapper leaves space for footer and controls */
+.content-wrapper.blue-border {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4em); /* Account for margins */
+  min-height: 0;
+}
+
+/* Make router-outlet container take remaining height */
+router-outlet + * {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Controls row positioning fix */
+.controls-row {
+  position: relative;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 1em;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 100;
+  margin: 0.5em 1em;
 }

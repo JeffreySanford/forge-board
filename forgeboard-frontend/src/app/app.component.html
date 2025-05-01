@@ -1,5 +1,5 @@
 <!-- Wrap the entire page in a black border container -->
-<div class="page-container" [class.hide-border]="!showLayoutBorder">
+<div class="page-container" [class.hide-border]="!showLayoutBorder" [class.hide-indicators]="!showContainerIndicators">
   <!-- Content wrapper with router outlet -->
   <div class="content-wrapper blue-border" [class.hide-border]="!showLayoutBorder">
 
@@ -26,8 +26,14 @@
       [userData]="userData">
     </app-footer>
 
-    <!-- Controls row stays in app component -->
+    <!-- Controls row -->
     <div class="controls-row">
+      <!-- Add container indicator toggle button -->
+      <div class="indicator-toggle mr-1" [class.active]="showContainerIndicators" (click)="toggleContainerIndicators()"
+        title="Toggle container indicators">
+        <mat-icon>label</mat-icon>
+      </div>
+      <!-- Rest of controls -->
       <div class="layout-icon mr-1" [class.shake]="layoutWiggle" (click)="toggleLayoutMode()"
         title="Toggle layout border and context block">
         <mat-icon>grid_on</mat-icon>
@@ -72,3 +78,6 @@
 <!-- Audio elements -->
 <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
 <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
+<!-- Note: Missing ambient sounds - add these files to prevent errors -->
+<!-- <audio #ambientSound preload="auto" src="assets/sounds/typewriter/ambient.mp3"></audio> -->
+<!-- <audio #starsAndStripesSound preload="auto" src="assets/sounds/typewriter/ambient-stars-and-stripes-forever-vocals.mp3"></audio> -->

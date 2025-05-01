@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FooterComponent } from './footer.component';
-import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
@@ -10,8 +9,7 @@ import { SharedModule } from '../../shared/shared.module';
   ],
   imports: [
     CommonModule,
-    MatIconModule,
-    SharedModule // Add SharedModule to imports
+    SharedModule // This should import the LetterAnimatorDirective
   ],
   exports: [
     FooterComponent

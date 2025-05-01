@@ -46,6 +46,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private soundErrorsLogged = false;
   private typingSoundInterval: ReturnType<typeof setInterval> | null = null;
   showLayoutBorder = true;
+  showContainerIndicators = true;
   showContextBlock = true;
   showMetricsTile = true;
   layoutWiggle = false;
@@ -56,6 +57,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   isSmallGridVisible = false;
   isLargeGridVisible = false;
   private subscription = new Subscription(); // Add this line to declare the subscription property
+
+  // Add references for ambient sounds
+  @ViewChild('ambientSound') ambientSound?: ElementRef<HTMLAudioElement>;
+  @ViewChild('starsAndStripesSound') starsAndStripesSound?: ElementRef<HTMLAudioElement>;
 
   constructor(
     private projectConfigService: ProjectConfigService,
@@ -292,18 +297,29 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     const soundFiles = [
       { ref: this.keyStrikeSound, volume: 0.2, name: 'keyStrikeSound' },
       { ref: this.dingSound, volume: 0.5, name: 'dingSound' },
+      // Add optional ambient sounds with null checks
+      { ref: this.ambientSound, volume: 0.3, name: 'ambientSound', optional: true },
+      { ref: this.starsAndStripesSound, volume: 0.4, name: 'starsAndStripesSound', optional: true },
     ];
+    
     soundFiles.forEach((sound) => {
       if (sound.ref?.nativeElement) {
         sound.ref.nativeElement.volume = sound.volume;
         sound.ref.nativeElement.muted = false;
         try {
           sound.ref.nativeElement.load();
-        } catch {
-          console.error('Error preloading audio:', sound.ref.nativeElement.src);
+        } catch (e) {
+          if (!sound.optional) {
+            console.error(`Error preloading audio: ${sound.name}`, e);
+          } else {
+            console.warn(`Optional sound file not found: ${sound.name}`);
+          }
         }
+      } else if (sound.optional) {
+        console.info(`Optional sound element not available: ${sound.name}`);
       }
     });
+    
     setTimeout(() => {
       this.testAudioPlayback();
     }, 500);
@@ -410,37 +426,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Handles custom drag events from child components
+   * Handles tile visibility events from child components
    * 
-   * @param event The custom drag event from a child component
+   * @param event The tile visibility event
    */
-  onChildDragEvent(event: { type: string; data: any }): void {
-    // Process drag events from child components (like Kablan cards)
-    console.log(`[AppComponent] Received drag event: ${event.type}`);
+  onChildDragEvent(event: TileVisibilityChangedEvent): void {
+    // Log the event and directly process it since we only have one event type
+    console.log(`[AppComponent] Processing tile visibility change for: ${event.data.tileType}`);
     
-    switch (event.type) {
-      case 'kablan-card-moved':
-        // Delegate to specialized handler for Kablan cards
-        this.handleKablanCardMove(event.data);
-        break;
-      case 'tile-visibility-changed':
-        // Update tile visibility
-        this.toggleTileVisibility(event.data.tileType);
-        break;
-      default:
-        console.log(`[AppComponent] Unhandled drag event type: ${event.type}`);
-    }
-  }
-
-  /**
-   * Handle Kablan card movement events
-   * 
-   * @param data Data associated with the Kablan card move
-   */
-  private handleKablanCardMove(data: { cardId: string; sourceColumn: string; targetColumn: string; }): void {
-    // This would typically delegate to the KablanService
-    console.log(`[AppComponent] Kablan card ${data.cardId} moved from ${data.sourceColumn} to ${data.targetColumn}`);
-    // Additional handling as needed
+    // Directly update tile visibility without type checking
+    this.toggleTileVisibility(event.data.tileType);
   }
 
   /**
@@ -507,4 +502,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
   }
+
+  // Add new method to toggle container indicators
+  toggleContainerIndicators(): void {
+    this.showContainerIndicators = !this.showContainerIndicators;
+  }
+}
+
+// Simplified event interface - we don't need a union type anymore
+interface TileVisibilityChangedEvent {
+  type: 'tile-visibility-changed';
+  data: {
+    tileType: TileType;
+  };
 }
