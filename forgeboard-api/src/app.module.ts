@@ -1,17 +1,19 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TilesModule } from './tiles/tiles.module';
-import { StatusModule } from './status/status.module';
-import { MetricsModule } from './metrics/metrics.module';
-import { SocketModule } from './socket/socket.module';
+import { MetricsModule } from './app/metrics/metrics.module';
+import { DiagnosticsModule } from './app/diagnostics/diagnostics.module';
+import { KablanModule } from './app/kablan/kablan.module';
 
 @Module({
   imports: [
-    TilesModule,
-    StatusModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MetricsModule,
-    SocketModule
+    DiagnosticsModule,
+    KablanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

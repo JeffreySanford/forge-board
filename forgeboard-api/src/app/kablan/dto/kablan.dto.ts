@@ -3,30 +3,27 @@ export class CardDto {
   id: string;
   title: string;
   description?: string;
-  assignee?: string;
-  dueDate?: string;
   priority?: string;
-  labels?: string[];
-  comments?: CommentDto[];
+  tags?: string[];
+  assignee?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
-// Comment Data Transfer Object
-export class CommentDto {
-  id: string;
-  text: string;
-  author: string;
-  createdAt: string;
 }
 
 // Column Data Transfer Object
 export class ColumnDto {
   id: string;
-  title: string;
+  name: string;
   cards: CardDto[];
-  limit?: number;
-  order: number;
+  order?: number;
+  phase?: string;
+}
+
+// Project Phase Data Transfer Object
+export class PhaseDto {
+  active: boolean;
+  startDate?: string;
+  completionDate?: string;
 }
 
 // Board Data Transfer Object
@@ -34,6 +31,8 @@ export class KablanBoardDto {
   id: string;
   name: string;
   columns: ColumnDto[];
+  currentPhase?: string;
+  phases?: Record<string, PhaseDto>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -45,25 +44,25 @@ export class CreateBoardDto {
 
 // Create Column Request DTO
 export class CreateColumnDto {
-  title: string;
+  name: string;
   order?: number;
-  limit?: number;
+  phase?: string;
 }
 
 // Create Card Request DTO
 export class CreateCardDto {
   title: string;
   description?: string;
-  assignee?: string;
-  dueDate?: string;
   priority?: string;
-  labels?: string[];
+  tags?: string[];
+  assignee?: string;
 }
 
 // Move Card Request DTO
 export class MoveCardDto {
   cardId: string;
   sourceColumnId: string;
-  destinationColumnId: string;
-  position: number;
+  targetColumnId: string;
+  sourceIndex?: number;
+  targetIndex: number;
 }

@@ -116,21 +116,48 @@ export class KablanService implements OnDestroy {
   // Socket initialization
   private initSocket(): void {
     try {
-      // Fix: Use the correct socket namespace without duplicating 'api'
+      // Try to connect to the kablan namespace first
       console.log('[KablanService] Initializing socket connection to', `${this.socketUrl}/kablan`);
       
       // Clean up existing socket if any
       this.cleanupSocket();
       
+      // First try the /kablan namespace
       this.socket = io(`${this.socketUrl}/kablan`, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
         timeout: 5000,
-        reconnectionAttempts: 3,
+        reconnectionAttempts: 1, // Only try once before falling back
         reconnectionDelay: 1000,
         forceNew: true
       });
       
+      // Add error handler for invalid namespace
+      this.socket.on('connect_error', (err) => {
+        if (err.message.includes('Invalid namespace')) {
+          console.log('[KablanService] Kablan namespace not found, trying root namespace');
+          this.cleanupSocket();
+          
+          // Try the root namespace as fallback
+          this.socket = io(this.socketUrl, {
+            withCredentials: false,
+            transports: ['websocket', 'polling'],
+            timeout: 5000,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            forceNew: true
+          });
+          
+          this.setupSocketEvents();
+        } else {
+          console.error('[KablanService] Socket connection error:', err);
+          this.connectionStatusSubject.next(false);
+          this.backendStatusService.updateGatewayStatus('kablan', false, false);
+          this.startMockDataGeneration();
+        }
+      });
+      
+      // Setup socket events
       this.setupSocketEvents();
     } catch (err) {
       console.error('[KablanService] Socket initialization error:', err);
@@ -154,13 +181,6 @@ export class KablanService implements OnDestroy {
     
     this.socket.on('disconnect', () => {
       console.log('[KablanService] Socket disconnected');
-      this.connectionStatusSubject.next(false);
-      this.backendStatusService.updateGatewayStatus('kablan', false, false);
-      this.startMockDataGeneration();
-    });
-    
-    this.socket.on('connect_error', (err) => {
-      console.error('[KablanService] Socket connection error:', err);
       this.connectionStatusSubject.next(false);
       this.backendStatusService.updateGatewayStatus('kablan', false, false);
       this.startMockDataGeneration();
@@ -197,9 +217,16 @@ export class KablanService implements OnDestroy {
     
     console.log('[KablanService] Attempting to reconnect to backend');
     
-    // Fix: Use the correct status endpoint without duplicating 'api'
-    this.http.get(`${this.apiUrl}/status`).pipe(
-      catchError(() => of(null))
+    // Explicitly use the global status endpoint, NOT kablan-specific
+    // This ensures we're connecting to /api/status which exists in the backend
+    const statusEndpoint = `${environment.apiBaseUrl}/status`;
+    console.log('[KablanService] Checking backend availability at:', statusEndpoint);
+    
+    this.http.get(statusEndpoint).pipe(
+      catchError((err) => {
+        console.error('[KablanService] Error checking backend status:', err);
+        return of(null);
+      })
     ).subscribe(response => {
       if (response) {
         this.cleanupSocket();
