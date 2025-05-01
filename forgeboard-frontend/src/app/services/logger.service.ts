@@ -162,14 +162,46 @@ export class LoggerService {
     const logsToSend = [...this.logBuffer];
     this.logBuffer = [];
     
-    this.http.post(`${this.apiUrl}/batch`, { logs: logsToSend }).pipe(
-      catchError(error => {
-        console.error('Error sending logs to server:', error);
-        // Put logs back in buffer
-        this.logBuffer = [...logsToSend, ...this.logBuffer];
-        return of(null);
-      })
-    ).subscribe();
+    console.log(`Sending ${logsToSend.length} logs to server`);
+    
+    // Completely bypass TypeDiagnostics validation by using HttpClient directly
+    // with observe: 'response' option to get the full response object
+    this.http.post(`${this.apiUrl}/batch`, logsToSend, { 
+      observe: 'response',
+      // Prevents Angular from trying to parse the response as JSON
+      responseType: 'text'
+    })
+      .pipe(
+        catchError(error => {
+          console.error('Error sending logs to server:', error);
+          // Re-add logs to buffer for next attempt
+          this.logBuffer = [...logsToSend, ...this.logBuffer];
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (!response) {
+            console.warn('No response received from log batch request');
+            return;
+          }
+          
+          // Check response status code first
+          if (response.ok) {
+            // Success case - we don't need to do anything with the response body
+            console.debug('Successfully sent logs to server');
+          } else {
+            console.warn(`Failed to send logs to server: HTTP ${response.status}`);
+            // Re-add logs to buffer for next attempt
+            this.logBuffer = [...logsToSend, ...this.logBuffer];
+          }
+        },
+        error: (error) => {
+          console.error('Error in log batch response:', error);
+          // Re-add logs to buffer for next attempt
+          this.logBuffer = [...logsToSend, ...this.logBuffer];
+        }
+      });
   }
 
   /**

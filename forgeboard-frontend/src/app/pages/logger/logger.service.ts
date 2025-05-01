@@ -1,9 +1,18 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, Subject, of, timer, Subscription } from 'rxjs';
-import { catchError, tap, switchMap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, timer, Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Socket, io } from 'socket.io-client';
-import { LogLevel, LogEntry, LogFilter, LogResponse, LogStreamUpdate, SocketResponse } from '@forge-board/shared/api-interfaces';
+import { LogEntry, LogFilter, LogResponse, LogStreamUpdate, SocketResponse } from '@forge-board/shared/api-interfaces';
+
+// Define enum locally since it's not exported from api-interfaces
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warning', // Note: this maps to 'warning' which is the LogLevelType in the API
+  ERROR = 'error',
+  FATAL = 'fatal'
+}
 
 @Injectable({
   providedIn: 'root'
@@ -29,8 +38,8 @@ export class LoggerService implements OnDestroy {
   private filterSubject = new BehaviorSubject<LogFilter>({
     levels: [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL],
     sources: [],
-    startTime: null,
-    endTime: null,
+    startTime: undefined, // Fixed: Changed from null to undefined to match LogFilter type
+    endTime: undefined, // Fixed: Changed from null to undefined to match LogFilter type
     search: ''
   });
   
@@ -38,7 +47,7 @@ export class LoggerService implements OnDestroy {
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
   // Mock data generation
-  private mockDataInterval: any;
+  private mockDataInterval: ReturnType<typeof setInterval> | null = null; // Fixed: using proper type instead of any
   private mockDataSubscription: Subscription | null = null;
 
   constructor(private http: HttpClient) {
@@ -139,9 +148,12 @@ export class LoggerService implements OnDestroy {
           this.logsSubject.next(newLogs);
         }
         
-        // Update stats
-        if (response.data.stats) {
-          this.logStatsSubject.next(response.data.stats);
+        // Update stats if they exist in the response
+        // Note: This is a custom extension not in the LogStreamUpdate interface
+        // We need to use a type assertion to access it
+        const extendedData = response.data as LogStreamUpdate & { stats?: Record<LogLevel, number> };
+        if (extendedData.stats) {
+          this.logStatsSubject.next(extendedData.stats);
         }
       }
     });
@@ -217,7 +229,9 @@ export class LoggerService implements OnDestroy {
     
     // Calculate stats
     const stats = initialLogs.reduce((acc, log) => {
-      acc[log.level] = (acc[log.level] || 0) + 1;
+      // Map API log level to our local LogLevel enum to ensure type compatibility
+      const mappedLevel = this.mapApiLevelToLocalEnum(log.level);
+      acc[mappedLevel] = (acc[mappedLevel] || 0) + 1;
       return acc;
     }, {} as Record<LogLevel, number>);
     
@@ -251,9 +265,26 @@ export class LoggerService implements OnDestroy {
       
       // Update stats
       const currentStats = this.logStatsSubject.getValue();
-      currentStats[level] = (currentStats[level] || 0) + 1;
+      const mappedLevel = this.mapApiLevelToLocalEnum(level);
+      currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
       this.logStatsSubject.next({...currentStats});
     });
+  }
+  
+  /**
+   * Map API log level type (LogLevelType) to our local LogLevel enum
+   * This resolves the type incompatibility between the API's string literals and our enum
+   */
+  private mapApiLevelToLocalEnum(level: string): LogLevel {
+    switch(level.toLowerCase()) {
+      case 'debug': return LogLevel.DEBUG;
+      case 'info': return LogLevel.INFO;
+      case 'warning': 
+      case 'warn': return LogLevel.WARN;
+      case 'error': return LogLevel.ERROR;
+      case 'fatal': return LogLevel.FATAL;
+      default: return LogLevel.INFO; // Default fallback
+    }
   }
   
   /**
@@ -329,6 +360,48 @@ export class LoggerService implements OnDestroy {
       
       return true;
     });
+  }
+
+  /**
+   * Connect to the socket server
+   */
+  private connectToSocket(): void {
+    if (this.socket) {
+      this.cleanupSocket(); // Make sure we clean up any existing connections
+    }
+  
+    try {
+      console.log('Connecting to socket server:', `${this.socketUrl}/logs`);
+      this.socket = io(`${this.socketUrl}/logs`, {
+        withCredentials: false,
+        transports: ['websocket', 'polling'],
+        forceNew: true
+      });
+  
+      this.socket.on('connect', () => {
+        console.log('Socket connected to logs namespace');
+        this.connectionStatusSubject.next(true);
+        this.stopMockDataGeneration();
+        
+        // Request initial data - use the current filter
+        const filter = this.filterSubject.getValue();
+        if (this.socket) { // Fixed: Added null check for this.socket
+          this.socket.emit('filter-logs', filter);
+        }
+      });
+  
+      this.socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected from logs namespace:', reason);
+        this.connectionStatusSubject.next(false);
+        this.startMockDataGeneration(); // Only start mock data if disconnected
+      });
+  
+      this.setupSocketEvents();
+    } catch (error) {
+      console.error('Error connecting to socket:', error);
+      this.connectionStatusSubject.next(false);
+      this.startMockDataGeneration();
+    }
   }
   
   /**

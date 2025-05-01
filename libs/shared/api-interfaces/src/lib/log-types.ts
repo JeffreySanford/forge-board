@@ -56,6 +56,7 @@ export interface LogResponse {
   timestamp: string;
   filtered?: boolean;
   status?: boolean;
+  success?: boolean; // Adding success field to match what's being used
 }
 
 /**
