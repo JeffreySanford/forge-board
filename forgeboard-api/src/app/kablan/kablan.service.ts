@@ -8,7 +8,8 @@ import {
   CreateColumnDto, 
   CreateCardDto, 
   MoveCardDto,
-  PhaseDto
+  // Remove the unused import to fix the ESLint warning
+  // PhaseDto 
 } from './dto/kablan.dto';
 
 @Injectable()
@@ -88,11 +89,20 @@ export class KablanService {
 
   // Get the current storage type
   getStorageType(): string {
+    this.logger.log(`Getting storage type: ${this.storageType}`);
     return this.storageType;
+  }
+
+  // Check storage connection
+  checkStorageConnection(): boolean {
+    // This could be expanded to check MongoDB connection if that backend is used
+    this.logger.log(`Checking storage connection for type: ${this.storageType}`);
+    return true;
   }
 
   // Get all boards
   async getBoards(): Promise<KablanBoardDto[]> {
+    this.logger.log(`Getting boards from ${this.storageType} storage`);
     return this.boards;
   }
 

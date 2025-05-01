@@ -1,12 +1,12 @@
 {
   "root": true,
   "ignorePatterns": ["**/*"],
-  "plugins": ["@nx", "eslint-plugin-forge"],
+  "plugins": ["@nx", "require-socket-cleanup"],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
-        "eslint-plugin-forge/ngondestroy-socket-disconnect": "warn"
+        "require-socket-cleanup/ngondestroy-socket-disconnect": "warn"
       }
     },
     {

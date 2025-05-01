@@ -5,26 +5,29 @@
 // Re-export all types from api-interfaces.ts
 export * from './api-interfaces';
 
-// Re-export all types from socket-types.ts
+// Export all socket types
 export * from './socket-types';
 
-// Re-export all types from diagnostic-types.ts
+// Export all metric types
+export * from './metric-types';
+
+// Export all diagnostic types
 export * from './diagnostic-types';
 
-// Re-export all types from logger-types.ts
-export * from './logger-types';
+// Export all log types
+export * from './log-types';
 
-// Re-export all types from metric-types.ts
-export * from './metric-types';
+// Export type validation related entities
+export * from './type-validation';
+
+// Now correctly export from validation-types
+export * from './validation-types';
 
 // Re-export all types from tile-types.ts
 export * from './tile-types';
 
 // Re-export all types from health-timeline.ts
 export * from './health-timeline';
-
-// Re-export all types and functions from type-validation.ts
-export * from './type-validation';
 
 // Export socket utility functions
 export {

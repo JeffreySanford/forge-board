@@ -1,11 +1,11 @@
 /**
- * Logger types for the application
+ * Types related to logging
  */
 
 /**
- * Log level types
+ * Log level type
  */
-export type LogLevelType = 'debug' | 'info' | 'warning' | 'error';
+export type LogLevelType = 'debug' | 'info' | 'warn' | 'warning' | 'error' | 'fatal';
 
 /**
  * Log entry structure
@@ -16,8 +16,9 @@ export interface LogEntry {
   level: LogLevelType;
   message: string;
   source: string;
-  data?: Record<string, unknown>;
   context?: string;
+  details?: Record<string, unknown>;
+  data?: Record<string, unknown>;
   tags?: string[];
   stackTrace?: string;
 }
@@ -26,39 +27,44 @@ export interface LogEntry {
  * Log filter options
  */
 export interface LogFilter {
+  level?: LogLevelType;
   levels?: LogLevelType[];
-  sources?: string[];
+  context?: string;
   contexts?: string[];
-  tags?: string[];
-  search?: string;
+  source?: string;
+  sources?: string[];
+  startTime?: string;
+  endTime?: string;
   startDate?: string;
   endDate?: string;
-  limit?: number;
-  offset?: number;
-  level?: LogLevelType;
-  source?: string;
   fromDate?: string;
   toDate?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
   skip?: number;
+  tags?: string[];
 }
 
 /**
- * Response format for log requests
+ * Log response from the server
  */
 export interface LogResponse {
   logs: LogEntry[];
-  totalCount: number;
-  filtered: boolean;
-  status: boolean;
   total: number;
+  totalCount?: number;
   timestamp: string;
+  filtered?: boolean;
+  status?: boolean;
 }
 
 /**
- * Update format for log streaming
+ * Log stream update
  */
 export interface LogStreamUpdate {
-  log: LogEntry;
-  totalCount: number;
+  logs?: LogEntry[];
+  log?: LogEntry;
+  timestamp?: string;
+  totalCount?: number;
   append?: boolean;
 }

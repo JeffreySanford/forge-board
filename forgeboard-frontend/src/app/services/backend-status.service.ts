@@ -1,7 +1,26 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
+/**
+ * Represents the status of a backend gateway service
+ */
 export interface GatewayStatus {
+  name: string;
+  connected: boolean;
+  usingMockData: boolean;
+}
+
+/**
+ * Summary of all backend services status
+ */
+export interface BackendStatusSummary {
+  gateways: GatewayStatus[];
+  allConnected: boolean;
+  anyMockData: boolean;
+}
+
+// Define an interface for the gateway status state
+interface GatewayState {
   connected: boolean;
   mockActive: boolean;
 }
@@ -10,7 +29,15 @@ export interface GatewayStatus {
   providedIn: 'root'
 })
 export class BackendStatusService {
-  private gatewayStatusSubjects = new Map<string, BehaviorSubject<GatewayStatus>>();
+  // Track status of all gateways
+  private gatewayStatusSubjects = new Map<string, BehaviorSubject<GatewayState>>();
+  
+  // Status summary subject for the entire backend
+  private statusSummarySubject = new BehaviorSubject<BackendStatusSummary>({
+    gateways: [],
+    allConnected: false,
+    anyMockData: false
+  });
 
   constructor() {
     // Initialize default statuses for known gateways
@@ -33,64 +60,77 @@ export class BackendStatusService {
    */
   registerGateway(name: string): void {
     if (!this.gatewayStatusSubjects.has(name)) {
-      this.gatewayStatusSubjects.set(name, new BehaviorSubject<GatewayStatus>({
+      this.gatewayStatusSubjects.set(name, new BehaviorSubject<GatewayState>({
         connected: false,
         mockActive: false
       }));
+      this.updateStatusSummary();
     }
   }
 
   /**
-   * Update the status of a gateway
+   * Update the status of a specific gateway
    */
-  updateGatewayStatus(name: string, connected: boolean, mockActive: boolean): void {
+  updateGatewayStatus(name: string, connected: boolean, usingMockData: boolean): void {
     if (!this.gatewayStatusSubjects.has(name)) {
       this.registerGateway(name);
     }
     
-    const subject = this.gatewayStatusSubjects.get(name);
-    if (subject) {
-      subject.next({ connected, mockActive });
-    }
-  }
-
-  /**
-   * Get an observable of the status for a specific gateway
-   */
-  getGatewayStatus(name: string): Observable<GatewayStatus> {
-    if (!this.gatewayStatusSubjects.has(name)) {
-      this.registerGateway(name);
-    }
-    
-    // Using null assertion operator is safe here since we just registered the gateway if it didn't exist
-    const subject = this.gatewayStatusSubjects.get(name);
-    if (!subject) {
-      throw new Error(`Gateway ${name} not found even after registration attempt`);
-    }
-    return subject.asObservable();
-  }
-
-  /**
-   * Check if any gateway is using mock data
-   */
-  getAnyMockDataStatus(): Observable<boolean> {
-    const subject = new BehaviorSubject<boolean>(false);
-    
-    // Update subject whenever any gateway status changes
-    this.gatewayStatusSubjects.forEach((statusSubject) => {
-      statusSubject.subscribe(() => {
-        let anyMockActive = false;
-        
-        this.gatewayStatusSubjects.forEach(sub => {
-          if (sub.value.mockActive) {
-            anyMockActive = true;
-          }
-        });
-        
-        subject.next(anyMockActive);
-      });
+    this.gatewayStatusSubjects.get(name)?.next({
+      connected,
+      mockActive: usingMockData
     });
     
-    return subject.asObservable();
+    this.updateStatusSummary();
+  }
+
+  /**
+   * Update the status summary based on all gateway statuses
+   * @private
+   */
+  private updateStatusSummary(): void {
+    const gateways: GatewayStatus[] = [];
+    let allConnected = true;
+    let anyMockData = false;
+    
+    this.gatewayStatusSubjects.forEach((subject, name) => {
+      const status = subject.getValue();
+      gateways.push({
+        name,
+        connected: status.connected,
+        usingMockData: status.mockActive
+      });
+      
+      if (!status.connected) {
+        allConnected = false;
+      }
+      
+      if (status.mockActive) {
+        anyMockData = true;
+      }
+    });
+    
+    this.statusSummarySubject.next({
+      gateways,
+      allConnected,
+      anyMockData
+    });
+  }
+
+  /**
+   * Get the status summary observable
+   */
+  getStatus(): Observable<BackendStatusSummary> {
+    return this.statusSummarySubject.asObservable();
+  }
+
+  /**
+   * Force a reconnection attempt for all services
+   */
+  forceReconnectionCheck(): void {
+    console.log('Triggering backend reconnection check');
+    // Dispatch a custom event that services can listen for
+    const event = new CustomEvent('backend-available');
+    window.dispatchEvent(event);
   }
 }

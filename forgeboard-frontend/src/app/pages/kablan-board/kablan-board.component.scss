@@ -24,6 +24,21 @@
     color: #172B4D;
     margin: 0;
   }
+}
+
+// Connection controls
+.connection-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+// Connection status container
+.connection-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   
   .connection-status {
     padding: 6px 12px;
@@ -35,6 +50,89 @@
     
     &.connected {
       background: #36B37E;
+    }
+  }
+  
+  .storage-type {
+    font-size: 11px;
+    margin-top: 4px;
+    color: #6B778C;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .storage-type-selector {
+      font-size: 11px;
+      padding: 2px 4px;
+      border: 1px solid #dfe1e6;
+      border-radius: 3px;
+      background-color: white;
+      color: #172B4D;
+      
+      &:focus {
+        outline: none;
+        border-color: #0052CC;
+      }
+    }
+  }
+}
+
+// Data source toggle switch
+.data-source-toggle {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 8px;
+    
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    
+    .toggle-slider {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: #dfe1e6;
+      border-radius: 10px;
+      transition: background 0.3s ease;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        transition: transform 0.3s ease;
+      }
+    }
+    
+    input:checked + .toggle-slider {
+      background: #0052CC;
+    }
+    
+    input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+    
+    .toggle-text {
+      font-size: 12px;
+      color: #6B778C;
+      transition: color 0.3s ease;
+    }
+    
+    input:checked ~ .toggle-text {
+      color: #0052CC;
     }
   }
 }
@@ -312,6 +410,7 @@
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+    line-clamp: 3; // Add standard property for compatibility
   }
   
   .card-footer {
@@ -514,5 +613,30 @@
     font-weight: 600;
     color: #172B4D;
     margin: 0;
+  }
+}
+
+.connection-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  
+  .connection-status {
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #FF5630;
+    color: white;
+    
+    &.connected {
+      background: #36B37E;
+    }
+  }
+  
+  .storage-type {
+    font-size: 11px;
+    margin-top: 4px;
+    color: #6B778C;
   }
 }

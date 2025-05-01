@@ -59,10 +59,13 @@ export class KablanService implements OnDestroy {
   // Status tracking
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   private boardsSubject = new BehaviorSubject<KablanBoard[]>([]);
-  private mockDataInterval: any = null;
+  private mockDataInterval: ReturnType<typeof setTimeout> | null = null; // Fix NodeJS.Timeout issue
   private reconnecting = false;
   private backendAvailableListener: () => void;
   private subscriptions = new Subscription();
+  private storageType = 'unknown';
+  private forceMockData = false;
+  private storageTypeSubject = new BehaviorSubject<string>(this.storageType);
 
   constructor(
     private http: HttpClient,
@@ -112,6 +115,42 @@ export class KablanService implements OnDestroy {
   
   getBoards(): Observable<KablanBoard[]> {
     return this.boardsSubject.asObservable();
+  }
+  
+  // Add method to get storage type
+  getStorageType(): string {
+    console.log('[KablanService] Getting storage type:', this.storageType);
+    return this.storageType;
+  }
+  
+  // Get storage type as an observable
+  getStorageTypeChanges(): Observable<string> {
+    return this.storageTypeSubject.asObservable();
+  }
+  
+  // Toggle between mock data and real data
+  toggleMockData(useMockData: boolean): void {
+    this.forceMockData = useMockData;
+    
+    if (useMockData) {
+      // Disconnect socket and use mock data
+      console.log('[KablanService] Switching to mock data');
+      this.disconnectSocket();
+      this.startMockDataGeneration();
+      this.connectionStatusSubject.next(false);
+    } else {
+      // Try to reconnect to real data
+      console.log('[KablanService] Attempting to connect to real data');
+      this.stopMockDataGeneration();
+      this.initSocket();
+    }
+  }
+  
+  // Force a storage type (for demonstration purposes)
+  setStorageType(type: string): void {
+    this.storageType = type;
+    this.storageTypeSubject.next(type);
+    console.log('[KablanService] Storage type set to:', type);
   }
   
   // Socket initialization
@@ -188,9 +227,12 @@ export class KablanService implements OnDestroy {
     });
     
     // Listen for board updates
-    this.socket.on('boards-update', (response: SocketResponse<KablanBoard[]>) => {
+    this.socket.on('boards-update', (response: SocketResponse<{boards: KablanBoard[], storageType: string}>) => {
+      console.log('[KablanService] Received boards update:', response);
       if (response.status === 'success') {
-        this.boardsSubject.next(response.data);
+        this.storageType = response.data.storageType || 'unknown';
+        console.log('[KablanService] Updated storage type to:', this.storageType);
+        this.boardsSubject.next(response.data.boards);
       }
     });
   }
@@ -208,6 +250,26 @@ export class KablanService implements OnDestroy {
         this.socket.disconnect();
       }
       this.socket = null;
+    }
+  }
+  
+  private disconnectSocket(): void {
+    if (this.socket) {
+      console.log('[KablanService] Disconnecting socket');
+      
+      // Remove all event listeners
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('connect_error');
+      this.socket.off('boards-update');
+      
+      // Disconnect if connected
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
+      
+      this.socket = null;
+      this.connectionStatusSubject.next(false);
     }
   }
   

@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, HostListener, NgZone } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core';
+// Remove the unused HostListener import
 import { Subscription } from 'rxjs';
-import { KablanBoard, KablanColumn, KablanService, ProjectPhase } from '../../services/kablan.service';
+import { KablanBoard, KablanColumn, KablanService, ProjectPhase, KablanCard } from '../../services/kablan.service';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -25,6 +26,9 @@ import { trigger, transition, style, animate } from '@angular/animations';
 export class KablanBoardComponent implements OnInit, OnDestroy {
   board: KablanBoard | null = null;
   isConnected = false;
+  storageType = 'Unknown'; // Add this property to track storage type
+  forcingMockData = false; // Track whether we're forcing mock data
+  availableStorageTypes = ['memory', 'localStorage', 'mongodb', 'blockchain', 'mock'];
   
   // Card navigation properties
   currentCardIndex = 0;
@@ -63,6 +67,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.kablanService.getConnectionStatus().subscribe(status => {
         this.isConnected = status;
+        console.log('[KablanBoard] Connection status changed:', status);
       })
     );
     
@@ -89,10 +94,35 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
         }
       })
     );
+    
+    // Subscribe to storage type changes
+    this.subscriptions.add(
+      this.kablanService.getStorageTypeChanges().subscribe(type => {
+        this.storageType = type || 'Unknown';
+        console.log('[KablanBoard] Storage type changed:', this.storageType);
+      })
+    );
+    
+    // Initialize storage type
+    this.storageType = this.kablanService.getStorageType() || 'Unknown';
+    console.log('[KablanBoard] Initial storage type:', this.storageType);
   }
   
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+  }
+  
+  // Toggle between mock data and real backend data
+  toggleMockData(): void {
+    this.forcingMockData = !this.forcingMockData;
+    this.kablanService.toggleMockData(this.forcingMockData);
+    console.log('[KablanBoard] Mock data toggled:', this.forcingMockData);
+  }
+  
+  // Change the storage type (for demonstration purposes)
+  changeStorageType(type: string): void {
+    this.kablanService.setStorageType(type);
+    console.log('[KablanBoard] Storage type manually set to:', type);
   }
   
   // Group columns by their phase
@@ -223,12 +253,12 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     return column.id;
   }
   
-  trackCardByFn(index: number, card: any): string {
+  trackCardByFn(index: number, card: KablanCard): string {
     return card.id;
   }
   
   // Handle card drop events with improved error handling
-  onCardDropped(event: CdkDragDrop<any[]>): void {
+  onCardDropped(event: CdkDragDrop<KablanCard[]>): void {
     if (!this.board) return;
     
     try {
@@ -267,7 +297,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Helper to find column ID by its cards array reference
-  private findColumnIdByCards(cards: any[]): string | null {
+  private findColumnIdByCards(cards: KablanCard[]): string | null {
     if (!this.board) return null;
     
     const column = this.board.columns.find(col => col.cards === cards);

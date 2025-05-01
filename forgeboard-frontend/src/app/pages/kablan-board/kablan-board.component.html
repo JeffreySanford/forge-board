@@ -2,8 +2,36 @@
   <!-- Toolbar and filters -->
   <div class="kablan-toolbar">
     <h2>{{ board?.name || 'Planning Board' }}</h2>
-    <div class="connection-status" [class.connected]="isConnected">
-      {{ isConnected ? 'Connected' : 'Using Demo Data' }}
+    <div class="connection-controls">
+      <!-- Connection status indicator -->
+      <div class="connection-status-container">
+        <div class="connection-status" [class.connected]="isConnected">
+          {{ isConnected ? 'Connected' : 'Using Demo Data' }}
+        </div>
+        <div class="storage-type">
+          Storage: {{ storageType }}
+          <!-- Storage type selector dropdown (only visible when connected) -->
+          <select *ngIf="isConnected" 
+                  class="storage-type-selector"
+                  [ngModel]="storageType" 
+                  (ngModelChange)="changeStorageType($event)">
+            <option *ngFor="let type of availableStorageTypes" [value]="type">
+              {{ type }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Data source toggle -->
+      <div class="data-source-toggle">
+        <label class="toggle-label">
+          <input type="checkbox" 
+                 [checked]="forcingMockData" 
+                 (change)="toggleMockData()">
+          <span class="toggle-slider"></span>
+          <span class="toggle-text">{{ forcingMockData ? 'Using Mock Data' : 'Using Real Data' }}</span>
+        </label>
+      </div>
     </div>
   </div>
   

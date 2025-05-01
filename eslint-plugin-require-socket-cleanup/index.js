@@ -16,34 +16,34 @@ module.exports = {
       },
       create: function(context) {
         return {
-          ClassDeclaration(node) {
+          ClassDeclaration: function(node) {
             // Only check classes with socket property
-            const hasSocket = node.body.body.some(member => 
-              member.type === "PropertyDefinition" &&
-              member.key.type === "Identifier" &&
-              member.key.name === "socket"
-            );
+            var hasSocket = node.body.body.some(function(member) {
+              return member.type === "PropertyDefinition" &&
+                member.key.type === "Identifier" &&
+                member.key.name === "socket";
+            });
 
             if (!hasSocket) return;
 
             // Find the ngOnDestroy method
-            const ngOnDestroyMethod = node.body.body.find(member => 
-              member.type === "MethodDefinition" &&
-              member.key.type === "Identifier" &&
-              member.key.name === "ngOnDestroy"
-            );
+            var ngOnDestroyMethod = node.body.body.find(function(member) {
+              return member.type === "MethodDefinition" &&
+                member.key.type === "Identifier" &&
+                member.key.name === "ngOnDestroy";
+            });
 
             if (!ngOnDestroyMethod) {
               context.report({
-                node,
+                node: node,
                 message: "Classes with socket property must implement ngOnDestroy method"
               });
               return;
             }
 
             // Check if ngOnDestroy method has socket cleanup code
-            const methodBody = ngOnDestroyMethod.value.body.body;
-            const hasSocketCleanup = methodBody.some(statement => {
+            var methodBody = ngOnDestroyMethod.value.body.body;
+            var hasSocketCleanup = methodBody.some(function(statement) {
               // Look for socket.off() or socket.disconnect() or cleanupSocket()
               return (
                 // Check for this.socket.off()

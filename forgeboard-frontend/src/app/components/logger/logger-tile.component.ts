@@ -18,9 +18,12 @@ export class LoggerTileComponent implements OnInit {
 
   // Form controls
   searchControl = new FormControl<string>('');
+  // Now 'warning' is properly included in LogLevelType
   levelFilter = new FormControl<LogLevelType[]>(['info', 'warning', 'error']);
-
+  searchFilter = new FormControl<string>('');
+  
   // Available log levels
+  // This is now correctly typed
   readonly logLevels: LogLevelType[] = ['debug', 'info', 'warning', 'error'];
 
   // Filtered logs observable
@@ -67,7 +70,7 @@ export class LoggerTileComponent implements OnInit {
         const searchLower = search.toLowerCase();
         return (
           log.message.toLowerCase().includes(searchLower) ||
-          log.source.toLowerCase().includes(searchLower) ||
+          log.source.toLowerCase().includes(searchLower) || // Now source is guaranteed to exist
           log.level.toLowerCase().includes(searchLower)
         );
       })

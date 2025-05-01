@@ -13,6 +13,17 @@ import { KablanService } from './kablan.service';
 import { createSocketResponse } from '@forge-board/shared/api-interfaces';
 import { MoveCardDto } from './dto/kablan.dto';
 
+// Define proper types to replace 'any'
+interface MoveCardPayload {
+  boardId: string;
+  moveCard: {
+    cardId: string;
+    sourceColumnId: string;
+    targetColumnId: string;
+    newIndex: number;
+  };
+}
+
 @WebSocketGateway({
   namespace: 'kablan',
   cors: {
@@ -29,6 +40,8 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
 
   afterInit(server: Server): void {
     this.logger.log('Kablan WebSocket Gateway Initialized');
+    // Fix the reference to server.name which doesn't exist
+    this.logger.log(`Server namespace: ${server.path() || '/kablan'}`);
   }
 
   handleConnection(client: Socket): void {
@@ -45,11 +58,14 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
   private async sendInitialData(client: Socket): Promise<void> {
     try {
       const boards = await this.kablanService.getBoards();
+      const storageType = this.kablanService.getStorageType();
+      
+      this.logger.log(`Sending initial data to client ${client.id} with storage type: ${storageType}`);
       
       // Also send storage type info with the boards
       client.emit('boards-update', createSocketResponse('boards-update', {
         boards,
-        storageType: this.kablanService.getStorageType()
+        storageType: storageType
       }));
     } catch (error) {
       this.logger.error('Error sending initial data:', error);
@@ -57,15 +73,19 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
   }
 
   @SubscribeMessage('get-boards')
-  async handleGetBoards(client: Socket): Promise<WsResponse<any>> {
+  async handleGetBoards(client: Socket): Promise<WsResponse<unknown>> {
     this.logger.log(`Client ${client.id} requested boards`);
     try {
       const boards = await this.kablanService.getBoards();
+      const storageType = this.kablanService.getStorageType();
+      
+      this.logger.log(`Sending boards to client ${client.id} with storage type: ${storageType}`);
+      
       return { 
         event: 'boards-update', 
         data: createSocketResponse('boards-update', {
           boards,
-          storageType: this.kablanService.getStorageType()
+          storageType: storageType
         })
       };
     } catch (error) {
@@ -82,7 +102,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
   }
 
   @SubscribeMessage('move-card')
-  async handleMoveCard(client: Socket, payload: any): Promise<WsResponse<any>> {
+  async handleMoveCard(client: Socket, payload: MoveCardPayload): Promise<WsResponse<unknown>> {
     this.logger.log(`Client ${client.id} moving card: ${JSON.stringify(payload)}`);
     try {
       const { boardId, moveCard } = payload;
@@ -115,7 +135,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         event: 'error',
         data: createSocketResponse('error', {
           message: 'Failed to move card',
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         })
       };
     }

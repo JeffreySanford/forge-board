@@ -7,13 +7,13 @@ import {
   SubscribeMessage
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { createSocketResponse } from '@forge-board/shared/api-interfaces';
-import { SocketRegistryService } from '../socket/socket-registry.service';
 import { Logger } from '@nestjs/common';
+import { SocketRegistryService } from '../socket/socket-registry.service';
+import { createSocketResponse } from '@forge-board/shared/api-interfaces';
 
-// Change the gateway configuration to use a specific namespace
+// Ensure namespace starts with a forward slash for clarity and consistency
 @WebSocketGateway({
-  namespace: 'metrics',
+  namespace: '/metrics',
   cors: {
     origin: '*',
   },
@@ -30,6 +30,7 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   }
 
   afterInit(server: Server) {
+    this.logger.log('MetricsGateway initialized.  Server instance:', server);
     this.logger.log('Metrics Socket.IO server initialized with namespace /metrics');
     this.startMetricsEmission();
   }
@@ -38,7 +39,7 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     this.logger.log(`Client connected to metrics namespace: ${client.id}`);
     
     // Register socket with registry
-    this.socketRegistry.registerSocket(client);
+    this.socketRegistry.registerSocket(client, '/metrics');
     
     // Emit connection status to client
     client.emit('connection-status', createSocketResponse('connection-status', { connected: true }));

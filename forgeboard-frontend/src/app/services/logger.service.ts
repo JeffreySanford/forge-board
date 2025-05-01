@@ -20,7 +20,7 @@ export class LoggerService {
   private logBuffer: LogEntry[] = [];
   private bufferSize = 10;
   private autoSendInterval = 5000; // ms
-  private autoSendTimer: any;
+  private autoSendTimer: ReturnType<typeof setTimeout> | null = null; // Initialize to avoid TS2564
 
   constructor(private http: HttpClient) {
     // Start auto-send timer if configured
@@ -61,7 +61,7 @@ export class LoggerService {
           logs: [], 
           totalCount: 0, 
           filtered: false,
-          status: false, // Change from 'error' string to false boolean
+          status: false,
           total: 0,
           timestamp: new Date().toISOString()
         } as LogResponse);
@@ -73,20 +73,20 @@ export class LoggerService {
    * Add a log entry to the local store and optionally send to server
    */
   logMessage(level: LogLevelType, message: string, source: string = 'app', data?: Record<string, unknown>): void {
-    const logEntry: LogEntry = {
-      id: uuid(),
+    const entry: LogEntry = {
+      id: uuid(), // Now using the uuid function
+      timestamp: new Date().toISOString(),
       level,
       message,
       source,
-      timestamp: new Date().toISOString(),
       data
     };
 
     // Add to local logs
-    this.addLog(logEntry);
+    this.addLog(entry);
     
     // Add to buffer for sending to server
-    this.logBuffer.push(logEntry);
+    this.logBuffer.push(entry);
     
     // If buffer is full, send logs to server
     if (this.logBuffer.length >= this.bufferSize) {
@@ -121,19 +121,19 @@ export class LoggerService {
     }
   }
 
-  debug(message: string, source?: string, data?: any): void {
+  debug(message: string, source?: string, data?: Record<string, unknown>): void {
     this.logMessage('debug' as LogLevelType, message, source, data);
   }
 
-  info(message: string, source?: string, data?: any): void {
+  info(message: string, source?: string, data?: Record<string, unknown>): void {
     this.logMessage('info' as LogLevelType, message, source, data);
   }
 
-  warning(message: string, source?: string, data?: any): void {
+  warning(message: string, source?: string, data?: Record<string, unknown>): void {
     this.logMessage('warning' as LogLevelType, message, source, data);
   }
 
-  error(message: string, source?: string, data?: any): void {
+  error(message: string, source?: string, data?: Record<string, unknown>): void {
     this.logMessage('error' as LogLevelType, message, source, data);
   }
 
