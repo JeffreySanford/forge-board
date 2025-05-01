@@ -5,6 +5,37 @@ import { catchError, tap } from 'rxjs/operators';
 import { v4 as uuid } from 'uuid';
 import { LogEntry, LogLevelType, LogFilter, LogResponse } from '@forge-board/shared/api-interfaces';
 
+/**
+ * Log levels supported by the logger
+ */
+export enum LogLevel {
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  FATAL = 5,
+  OFF = 6
+}
+
+/**
+ * Common log metadata structure
+ */
+export interface LogMetadata {
+  service?: string;
+  action?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Logger configuration
+ */
+export interface LoggerConfig {
+  level: LogLevel;
+  includeTimestamp: boolean;
+  enableConsoleColors: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -22,7 +53,21 @@ export class LoggerService {
   private autoSendInterval = 5000; // ms
   private autoSendTimer: ReturnType<typeof setTimeout> | null = null; // Initialize to avoid TS2564
 
+  private config: LoggerConfig = {
+    level: LogLevel.INFO,
+    includeTimestamp: true,
+    enableConsoleColors: true
+  };
+
   constructor(private http: HttpClient) {
+    console.log('LoggerService initialized');
+    
+    // Check for log level in environment or localStorage
+    const envLevel = localStorage.getItem('log_level');
+    if (envLevel && Object.values(LogLevel).includes(Number(envLevel))) {
+      this.config.level = Number(envLevel) as LogLevel;
+    }
+
     // Start auto-send timer if configured
     if (this.autoSendInterval > 0) {
       this.startAutoSend();
@@ -121,20 +166,109 @@ export class LoggerService {
     }
   }
 
-  debug(message: string, source?: string, data?: Record<string, unknown>): void {
-    this.logMessage('debug' as LogLevelType, message, source, data);
+  /**
+   * Log a debug message (older API)
+   */
+  debug(message: string, source?: string, data?: Record<string, unknown>): void;
+  /**
+   * Log a debug message (detailed diagnostics)
+   */
+  debug(message: string, metadata?: LogMetadata): void;
+  /**
+   * Debug implementation that handles both versions
+   */
+  debug(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
+      this.logMessage('debug' as LogLevelType, message, sourceOrMetadata, data);
+    } else {
+      this.log(LogLevel.DEBUG, message, sourceOrMetadata);
+    }
   }
 
-  info(message: string, source?: string, data?: Record<string, unknown>): void {
-    this.logMessage('info' as LogLevelType, message, source, data);
+  /**
+   * Log an info message (older API)
+   */
+  info(message: string, source?: string, data?: Record<string, unknown>): void;
+  /**
+   * Log an info message (normal operations)
+   */
+  info(message: string, metadata?: LogMetadata): void;
+  /**
+   * Info implementation that handles both versions
+   */
+  info(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
+      this.logMessage('info' as LogLevelType, message, sourceOrMetadata, data);
+    } else {
+      this.log(LogLevel.INFO, message, sourceOrMetadata);
+    }
   }
 
-  warning(message: string, source?: string, data?: Record<string, unknown>): void {
-    this.logMessage('warning' as LogLevelType, message, source, data);
+  /**
+   * Log a warning message (older API)
+   */
+  warning(message: string, source?: string, data?: Record<string, unknown>): void;
+  /**
+   * Log a warning message (potential issues)
+   */
+  warning(message: string, metadata?: LogMetadata): void;
+  /**
+   * Warning implementation that handles both versions
+   */
+  warning(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
+      this.logMessage('warning' as LogLevelType, message, sourceOrMetadata, data);
+    } else {
+      this.log(LogLevel.WARN, message, sourceOrMetadata);
+    }
+  }
+  
+  /**
+   * Alias for warning method (older API)
+   */
+  warn(message: string, source?: string, data?: Record<string, unknown>): void;
+  /**
+   * Alias for warning method (newer API)
+   */
+  warn(message: string, metadata?: LogMetadata): void;
+  /**
+   * Warn implementation that delegates to warning
+   */
+  warn(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+    this.warning(message, typeof sourceOrMetadata === 'string' ? sourceOrMetadata : undefined, data);
   }
 
-  error(message: string, source?: string, data?: Record<string, unknown>): void {
-    this.logMessage('error' as LogLevelType, message, source, data);
+  /**
+   * Log an error message (older API)
+   */
+  error(message: string, source?: string, data?: Record<string, unknown>): void;
+  /**
+   * Log an error message (recoverable errors)
+   */
+  error(message: string, metadata?: LogMetadata): void;
+  /**
+   * Error implementation that handles both versions
+   */
+  error(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
+      this.logMessage('error' as LogLevelType, message, sourceOrMetadata, data);
+    } else {
+      this.log(LogLevel.ERROR, message, sourceOrMetadata);
+    }
+  }
+
+  /**
+   * Log a trace message (most detailed)
+   */
+  trace(message: string, metadata?: LogMetadata): void {
+    this.log(LogLevel.TRACE, message, metadata);
+  }
+
+  /**
+   * Log a fatal message (unrecoverable errors)
+   */
+  fatal(message: string, metadata?: LogMetadata): void {
+    this.log(LogLevel.FATAL, message, metadata);
   }
 
   /**
@@ -209,5 +343,49 @@ export class LoggerService {
    */
   private notifySubscribers(): void {
     this.logsSubject.next([...this.logs]);
+  }
+
+  /**
+   * Set the current log level
+   */
+  setLogLevel(level: LogLevel): void {
+    this.config.level = level;
+    localStorage.setItem('log_level', level.toString());
+  }
+
+  /**
+   * Core logging function
+   */
+  private log(level: LogLevel, message: string, metadata?: LogMetadata): void {
+    if (level < this.config.level) return;
+    
+    const timestamp = this.config.includeTimestamp ? new Date().toISOString() : null;
+    
+    // Format the log message
+    let formattedMessage = message;
+    if (timestamp) {
+      formattedMessage = `[${timestamp}] ${formattedMessage}`;
+    }
+    
+    // Create combined log data
+    const logData = metadata ? { message, ...metadata } : { message };
+    
+    // Use appropriate console method based on level
+    switch (level) {
+      case LogLevel.TRACE:
+      case LogLevel.DEBUG:
+        console.debug(formattedMessage, logData);
+        break;
+      case LogLevel.INFO:
+        console.info(formattedMessage, logData);
+        break;
+      case LogLevel.WARN:
+        console.warn(formattedMessage, logData);
+        break;
+      case LogLevel.ERROR:
+      case LogLevel.FATAL:
+        console.error(formattedMessage, logData);
+        break;
+    }
   }
 }

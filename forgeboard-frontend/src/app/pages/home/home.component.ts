@@ -27,15 +27,22 @@ export class HomeComponent implements OnInit {
       title: 'Diagnostics',
       description: 'System health monitoring and detailed diagnostics reporting',
       icon: 'healing',
-      route: '/diagnostics',  // Updated to the dedicated diagnostics route
+      route: '/diagnostics',
       color: '#3498db'
     },
     {
       title: 'Logger',
       description: 'Real-time log monitoring with filtering and search capabilities',
       icon: 'receipt_long',
-      route: '/logs',  // Updated to the dedicated logs route
+      route: '/logs',
       color: '#e74c3c'
+    },
+    {
+      title: 'Documentation',
+      description: 'Comprehensive system documentation and API references',
+      icon: 'description',
+      route: '/documentation',
+      color: '#9b59b6'
     }
   ];
   

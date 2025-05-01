@@ -1,0 +1,65 @@
+<div class="documentation-container">
+  <h1>ForgeBoard Documentation</h1>
+  
+  <mat-tab-group>
+    <mat-tab *ngFor="let tab of tabs" [label]="tab.label">
+      <div class="tab-content">
+        <div class="content-section">
+          <h2>{{ tab.label }}</h2>
+          <p>{{ tab.content }}</p>
+          
+          <!-- Additional content based on tab -->
+          <div [ngSwitch]="tab.label">
+            <div *ngSwitchCase="'API'">
+              <h3>REST Endpoints</h3>
+              <ul>
+                <li><code>/api/metrics</code> - System performance metrics</li>
+                <li><code>/api/diagnostics</code> - System health and diagnostics</li>
+                <li><code>/api/kablan</code> - Project board management</li>
+                <li><code>/api/logs</code> - Log management</li>
+              </ul>
+              
+              <h3>WebSocket Namespaces</h3>
+              <ul>
+                <li><code>/metrics</code> - Real-time metrics updates</li>
+                <li><code>/diagnostics</code> - Health and socket diagnostics</li>
+                <li><code>/kablan</code> - Real-time board updates</li>
+              </ul>
+            </div>
+            
+            <div *ngSwitchCase="'Metrics'">
+              <h3>Available Metrics</h3>
+              <ul>
+                <li>CPU Usage</li>
+                <li>Memory Consumption</li>
+                <li>Storage Usage</li>
+                <li>Network Activity</li>
+                <li>User Sessions</li>
+              </ul>
+            </div>
+            
+            <div *ngSwitchCase="'Kablan Board'">
+              <h3>Board Features</h3>
+              <ul>
+                <li>Phase-based column organization</li>
+                <li>Card priority visualization</li>
+                <li>Timeline-based status tracking</li>
+                <li>Real-time collaboration</li>
+              </ul>
+            </div>
+            
+            <div *ngSwitchCase="'Logger'">
+              <h3>Log Filtering Options</h3>
+              <ul>
+                <li>By severity level</li>
+                <li>By source component</li>
+                <li>By date range</li>
+                <li>By text content</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

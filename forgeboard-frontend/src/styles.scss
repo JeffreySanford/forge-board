@@ -1,7 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
 // Define primary variables
 $primary: #3498db;
@@ -60,4 +65,81 @@ button {
 
 .fade-in {
     animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Ensure all containers fit within their parents */
+.container-fluid,
+.row,
+.col,
+.card,
+.mat-card {
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent unwanted overflow */
+.overflow-container {
+  overflow: auto;
+}
+
+/* Properly size flex containers */
+.d-flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* General utility classes for spacing */
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 0.25rem !important; }
+.p-2 { padding: 0.5rem !important; }
+.p-3 { padding: 1rem !important; }
+.p-4 { padding: 1.5rem !important; }
+.p-5 { padding: 3rem !important; }
+
+.m-0 { margin: 0 !important; }
+.m-1 { margin: 0.25rem !important; }
+.m-2 { margin: 0.5rem !important; }
+.m-3 { margin: 1rem !important; }
+.m-4 { margin: 1.5rem !important; }
+.m-5 { margin: 3rem !important; }
+
+/* Container sizing */
+.h-100 { height: 100% !important; }
+.w-100 { width: 100% !important; }
+
+/* Blueprint theme enhancements */
+.blueprint-container {
+  background-color: #f4f7fa;
+  background-image: linear-gradient(rgba(25, 118, 210, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(25, 118, 210, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  padding: 20px;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+  border-radius: 4px;
+}
+
+.blueprint-header {
+  color: #1976d2;
+  font-weight: 500;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid rgba(25, 118, 210, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+/* Card styling */
+.blueprint-card {
+  border: 1px solid rgba(25, 118, 210, 0.2);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Scrollable containers */
+.scrollable {
+  overflow-y: auto;
+  max-height: 100%;
 }

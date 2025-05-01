@@ -1,22 +1,20 @@
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { SharedModule } from '../../shared/shared.module';
 import { DocumentationComponent } from './documentation.component';
-import { MarkdownRendererComponent } from './markdown-renderer/markdown-renderer.component';
-import { TocGeneratorComponent } from './toc-generator/toc-generator.component';
-import { MarkdownModule } from 'ngx-markdown';
+import { MatTabsModule } from '@angular/material/tabs';
 
 @NgModule({
   declarations: [
-    DocumentationComponent,
-    MarkdownRendererComponent,
-    TocGeneratorComponent
+    DocumentationComponent
   ],
   imports: [
+    CommonModule,
     SharedModule,
-    MarkdownModule.forChild(),
-    SharedModule.forChild([
-      { path: '', component: DocumentationComponent },
-      { path: ':path', component: DocumentationComponent }
+    MatTabsModule,
+    RouterModule.forChild([
+      { path: 'documentation', component: DocumentationComponent }
     ])
   ],
   exports: [

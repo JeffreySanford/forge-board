@@ -22,7 +22,8 @@ export class NavigationComponent {
     { name: 'Metrics', route: '/metrics', icon: 'timeline', description: 'System performance metrics' },
     { name: 'Kablan Board', route: '/kablan', icon: 'dashboard', description: 'Task management board' },
     { name: 'Logs', route: '/logs', icon: 'receipt_long', description: 'System logs viewer' },
-    { name: 'Diagnostics', route: '/diagnostics', icon: 'healing', description: 'System diagnostics' }
+    { name: 'Diagnostics', route: '/diagnostics', icon: 'healing', description: 'System diagnostics' },
+    { name: 'Documentation', route: '/documentation', icon: 'description', description: 'System documentation' }
   ];
 
   isHandset$: Observable<boolean>;

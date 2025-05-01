@@ -1,5 +1,9 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
-  socketBaseUrl: ''
+  socketBaseUrl: '',
+  project: {
+    name: 'FORGEBOARD',
+    prefix: 'PROJECT'
+  }
 };

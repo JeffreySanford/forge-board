@@ -3,10 +3,20 @@ import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } fr
 import { from, of, interval, Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { UserDataService, UserData } from './services/user-data.service';
-import { TileType, TileDragEvent } from './models/tile.model';
+import { TileType } from './models/tile.model';
 import { TileStateService } from './services/tile-state.service';
 import { SoundHelperService, SoundType } from './services/sound-helper.service';
+import { ProjectConfigService } from './services/project-config.service';
 
+/**
+ * Main application component that manages global state and layout
+ * 
+ * Provides:
+ * - Audio feedback management
+ * - Layout visualization tools
+ * - Tile drag and drop organization
+ * - User context display
+ */
 @Component({
   selector: 'app-root',
   // eslint-disable-next-line @angular-eslint/prefer-standalone
@@ -14,8 +24,9 @@ import { SoundHelperService, SoundType } from './services/sound-helper.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   title = 'forgeboard-frontend';
+  projectName = 'PROJECT: FORGEBOARD'; // Default fallback
   currentDate = new Date().toLocaleDateString();
   todayDate = new Date().toLocaleDateString();
   showCallout = false;
@@ -25,6 +36,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isMuted = false;
   userData: UserData | null = null;
   private userDataSubscription: Subscription | null = null;
+  private projectNameSubscription: Subscription | null = null;
   
   // Remove callout-specific cursor and lines
   private shakeInterval: Subscription | null = null;
@@ -46,6 +58,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private subscription = new Subscription(); // Add this line to declare the subscription property
 
   constructor(
+    private projectConfigService: ProjectConfigService,
     private tileStateService: TileStateService,
     private soundHelper: SoundHelperService,
     private userDataService: UserDataService
@@ -54,6 +67,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
   }
 
+  /**
+   * Initialize component after Angular has initialized all data-bound properties
+   */
   ngOnInit(): void {
     // Initialize component state
     console.log('[AppComponent] Component initialized');
@@ -63,8 +79,17 @@ export class AppComponent implements OnInit, OnDestroy {
     
     // Load user data
     this.loadUserData();
+
+    // Subscribe to project name changes
+    this.projectNameSubscription = this.projectConfigService.getProjectName()
+      .subscribe(name => {
+        this.projectName = name;
+      });
   }
 
+  /**
+   * Initialize view-related functionality after the view is fully initialized
+   */
   ngAfterViewInit() {
     setTimeout(() => {
       this.showCallout = true;
@@ -90,6 +115,9 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Clean up resources when component is destroyed
+   */
   ngOnDestroy(): void {
     // Clean up subscriptions
     this.subscription.unsubscribe();
@@ -101,6 +129,11 @@ export class AppComponent implements OnInit, OnDestroy {
     // Clean up user data subscription
     if (this.userDataSubscription) {
       this.userDataSubscription.unsubscribe();
+    }
+
+    // Clean up project name subscription
+    if (this.projectNameSubscription) {
+      this.projectNameSubscription.unsubscribe();
     }
   }
 
@@ -351,6 +384,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isLargeGridVisible = !this.isLargeGridVisible;
   }
 
+  /**
+   * Handles drag and drop events for tile reordering
+   * 
+   * @param event The drag drop event containing previous and current indices
+   */
   onTileDrop(event: CdkDragDrop<TileType[]>): void {
     // First update the local array for immediate UI feedback
     moveItemInArray(this.tileOrder, event.previousIndex, event.currentIndex);
@@ -371,7 +409,45 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Method to toggle tile visibility
+  /**
+   * Handles custom drag events from child components
+   * 
+   * @param event The custom drag event from a child component
+   */
+  onChildDragEvent(event: { type: string; data: any }): void {
+    // Process drag events from child components (like Kablan cards)
+    console.log(`[AppComponent] Received drag event: ${event.type}`);
+    
+    switch (event.type) {
+      case 'kablan-card-moved':
+        // Delegate to specialized handler for Kablan cards
+        this.handleKablanCardMove(event.data);
+        break;
+      case 'tile-visibility-changed':
+        // Update tile visibility
+        this.toggleTileVisibility(event.data.tileType);
+        break;
+      default:
+        console.log(`[AppComponent] Unhandled drag event type: ${event.type}`);
+    }
+  }
+
+  /**
+   * Handle Kablan card movement events
+   * 
+   * @param data Data associated with the Kablan card move
+   */
+  private handleKablanCardMove(data: { cardId: string; sourceColumn: string; targetColumn: string; }): void {
+    // This would typically delegate to the KablanService
+    console.log(`[AppComponent] Kablan card ${data.cardId} moved from ${data.sourceColumn} to ${data.targetColumn}`);
+    // Additional handling as needed
+  }
+
+  /**
+   * Method to toggle tile visibility
+   * 
+   * @param tileType The type of tile whose visibility is being toggled
+   */
   toggleTileVisibility(tileType: TileType): void {
     // Update local state based on tile type
     if (tileType === 'metrics') {
@@ -386,7 +462,7 @@ export class AppComponent implements OnInit, OnDestroy {
       logs: true,
       uptime: true,
       activity: true,
-      kablan: true // Add the missing property
+      kablan: true 
     };
     
     this.tileStateService.setTileVisibility('user1', visibility)

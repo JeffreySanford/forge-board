@@ -20,10 +20,12 @@ import { LoggerPageModule } from './pages/logger/logger.module';
 import { ErrorService } from './services/error.service';
 import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
 import { TypeValidationInterceptor } from './interceptors/type-validation.interceptor';
+import { ProjectConfigService } from './services/project-config.service';
 import { TypeDiagnosticsService } from './services/type-diagnostics.service';
 
 // Standalone components
 import { ConnectionStatusIndicatorComponent } from './components/connection-status-indicator/connection-status-indicator.component';
+import { DocumentationModule } from './pages/documentation/documentation.module';
 
 @NgModule({
   declarations: [
@@ -44,6 +46,7 @@ import { ConnectionStatusIndicatorComponent } from './components/connection-stat
     NotFoundModule,
     FooterModule,
     LoggerPageModule,
+    DocumentationModule,
     
     // Standalone components
     ConnectionStatusIndicatorComponent
@@ -51,6 +54,7 @@ import { ConnectionStatusIndicatorComponent } from './components/connection-stat
   providers: [
     ErrorService,
     TypeDiagnosticsService,
+    ProjectConfigService,
     // Order matters for HTTP interceptors to avoid circular dependencies
     { 
       provide: HTTP_INTERCEPTORS, 
