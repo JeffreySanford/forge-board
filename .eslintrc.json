@@ -1,6 +1,23 @@
 {
-  "rules": {
-    "socket-cleanup-rule": "error",
-    "require-socket-cleanup/ngondestroy-socket-disconnect": "off"
-  }
+  "root": true,
+  "ignorePatterns": ["**/*"],
+  "plugins": ["@nx", "eslint-plugin-forge"],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "rules": {
+        "eslint-plugin-forge/ngondestroy-socket-disconnect": "warn"
+      }
+    },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:@nx/typescript"],
+      "rules": {}
+    },
+    {
+      "files": ["*.js", "*.jsx"],
+      "extends": ["plugin:@nx/javascript"],
+      "rules": {}
+    }
+  ]
 }

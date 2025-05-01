@@ -1,3 +1,4 @@
+// The original code is correct - no changes needed
 import { NgModule } from '@angular/core';
 import { SharedModule } from '../../shared/shared.module';
 import { KablanBoardComponent } from './kablan-board.component';

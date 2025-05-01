@@ -69,6 +69,7 @@ export class KablanService implements OnDestroy {
     private backendStatusService: BackendStatusService
   ) {
     console.log('[KablanService] Initializing service');
+    // The registerGateway method is now properly defined in BackendStatusService
     this.backendStatusService.registerGateway('kablan');
     
     // Try to establish a socket connection, fall back to mock data if needed
