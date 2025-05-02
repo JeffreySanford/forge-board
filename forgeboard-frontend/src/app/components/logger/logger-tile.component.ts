@@ -2,7 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Observable, combineLatest, of } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
-import { LogEntry, LogLevelType } from '@forge-board/shared/api-interfaces';
+import { LogEntry } from '@forge-board/shared/api-interfaces';
+
+// Local log level type definition
+type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal' | 'trace';
 
 @Component({
   selector: 'app-logger-tile',
@@ -70,7 +73,7 @@ export class LoggerTileComponent implements OnInit {
         const searchLower = search.toLowerCase();
         return (
           log.message.toLowerCase().includes(searchLower) ||
-          log.source.toLowerCase().includes(searchLower) || // Now source is guaranteed to exist
+          (log.source ?? '').toLowerCase().includes(searchLower) ||
           log.level.toLowerCase().includes(searchLower)
         );
       })

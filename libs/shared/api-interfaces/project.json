@@ -30,6 +30,16 @@
         "assets": ["libs/shared/api-interfaces/*.md"],
         "watch": true
       }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "rimraf dist/libs/shared/api-interfaces"
+        ],
+        "cwd": ".",
+        "parallel": false
+      }
     }
   },
   "tags": ["scope:shared", "type:util"]

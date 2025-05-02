@@ -1,9 +1,9 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, BehaviorSubject, Subscription, of } from 'rxjs';
-import { tap, catchError, retry } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import { Socket, io } from 'socket.io-client';
-import { MetricData, MetricResponse, SocketResponse } from '@forge-board/shared/api-interfaces';
+import type { MetricData, MetricResponse, SocketResponse } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
 
 /**
@@ -36,7 +36,7 @@ export class MetricsService implements OnDestroy {
   private connectionErrorSubject = new Subject<Error | null>();
   
   // Generate mock data when socket isn't available
-  private mockDataInterval: any;
+  private mockDataInterval: ReturnType<typeof setInterval> | null = null;
   
   // Track reconnection attempts
   private reconnecting = false;
@@ -87,17 +87,10 @@ export class MetricsService implements OnDestroy {
     // Remove event listener
     window.removeEventListener('backend-available', this.backendAvailableListener);
     
-    if (this.socket) {
-      console.log('[MetricsService] Disconnecting socket');
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('system-metrics');
-      this.socket.off('connect_error');
-      if (this.socket.connected) {
-        this.socket.disconnect();
-      }
-      this.socket = null;
-    }
+    // Clean up socket connection
+    this.cleanupSocket();
+    
+    // Complete all subjects
     this.metricsSubject.complete();
     this.intervalSubject.complete();
     this.connectionStatusSubject.complete();
@@ -158,6 +151,32 @@ export class MetricsService implements OnDestroy {
     }
   }
 
+  resetConnection(): Observable<boolean> {
+    console.log('[MetricsService] Resetting connection');
+    
+    // Clear error state
+    this.connectionError = null;
+    this.connectionErrorSubject.next(null);
+    
+    // Update status indicators
+    this.backendStatusService.updateGatewayStatus('metrics', true, false);
+    
+    // Clean up the existing socket
+    this.cleanupSocket();
+    
+    // Stop any mock data generation
+    this.stopMockDataGeneration();
+    
+    // Reinitialize the socket connection
+    try {
+      this.initSocket();
+      return of(true);
+    } catch (error) {
+      console.error('[MetricsService] Reset connection failed:', error);
+      return of(false);
+    }
+  } 
+  
   /**
    * Attempt to reconnect to the backend when it becomes available again
    */
@@ -191,17 +210,7 @@ export class MetricsService implements OnDestroy {
    */
   private performSocketReconnection(): void {
     // Clean up the existing socket if any
-    if (this.socket) {
-      console.log('[MetricsService] Cleaning up old socket');
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('system-metrics');
-      this.socket.off('connect_error');
-      if (this.socket.connected) {
-        this.socket.disconnect();
-      }
-      this.socket = null;
-    }
+    this.cleanupSocket();
     
     // Initialize a new socket connection
     try {
@@ -302,6 +311,7 @@ export class MetricsService implements OnDestroy {
       catchError(() => {
         return this.handleError<MetricResponse>({
           success: false,
+          status: 'error',
           message: 'Failed to update interval',
           data: null,
           timestamp: new Date().toISOString()
@@ -315,8 +325,9 @@ export class MetricsService implements OnDestroy {
     return this.http.post<MetricResponse>(`${this.apiUrl}/register`, data)
       .pipe(
         catchError(error => {
-          return this.handleError<MetricResponse>({ 
-            success: false, 
+          return this.handleError<MetricResponse>({
+            success: false,
+            status: 'error',
             message: error.message,
             data: null,
             timestamp: new Date().toISOString()
@@ -379,5 +390,27 @@ export class MetricsService implements OnDestroy {
       };
       this.metricsSubject.next(mockMetric);
     }, interval);
+  }
+
+  /**
+   * Properly clean up socket connection
+   */
+  private cleanupSocket(): void {
+    if (this.socket) {
+      console.log('[MetricsService] Disconnecting socket');
+      
+      // Remove all event listeners
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('system-metrics');
+      this.socket.off('connect_error');
+      this.socket.off('error');
+      
+      // Disconnect if connected
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
+      this.socket = null;
+    }
   }
 }

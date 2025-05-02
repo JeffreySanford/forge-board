@@ -8,10 +8,11 @@ import {
   WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
 import { KablanService } from './kablan.service';
 import { createSocketResponse } from '@forge-board/shared/api-interfaces';
 import { MoveCardDto } from './dto/kablan.dto';
+import { LoggerService } from '../logger/logger.service';
+import { Injectable } from '@nestjs/common';
 
 // Define proper types to replace 'any'
 interface MoveCardPayload {
@@ -24,6 +25,7 @@ interface MoveCardPayload {
   };
 }
 
+@Injectable()
 @WebSocketGateway({
   namespace: 'kablan',
   cors: {
@@ -34,25 +36,26 @@ interface MoveCardPayload {
 })
 export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
-  private readonly logger = new Logger(KablanSocketGateway.name);
 
-  constructor(private readonly kablanService: KablanService) {}
+  constructor(
+    private readonly kablanService: KablanService,
+    private readonly logger: LoggerService
+  ) {}
 
   afterInit(server: Server): void {
-    this.logger.log('Kablan WebSocket Gateway Initialized');
-    // Fix the reference to server.name which doesn't exist
-    this.logger.log(`Server namespace: ${server.path() || '/kablan'}`);
+    this.logger.info('Kablan WebSocket Gateway Initialized', 'KablanSocketGateway');
+    this.logger.info(`Server namespace: ${server.path() || '/kablan'}`, 'KablanSocketGateway');
   }
 
   handleConnection(client: Socket): void {
-    this.logger.log(`Client connected to kablan namespace: ${client.id}`);
+    this.logger.info(`Client connected to kablan namespace: ${client.id}`, 'KablanSocketGateway', { clientId: client.id });
     
     // Send initial data when client connects
     this.sendInitialData(client);
   }
 
   handleDisconnect(client: Socket): void {
-    this.logger.log(`Client disconnected from kablan namespace: ${client.id}`);
+    this.logger.info(`Client disconnected from kablan namespace: ${client.id}`, 'KablanSocketGateway', { clientId: client.id });
   }
 
   private async sendInitialData(client: Socket): Promise<void> {
@@ -60,7 +63,11 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
       const boards = await this.kablanService.getBoards();
       const storageType = this.kablanService.getStorageType();
       
-      this.logger.log(`Sending initial data to client ${client.id} with storage type: ${storageType}`);
+      this.logger.info(`Sending initial data to client ${client.id} with storage type: ${storageType}`, 'KablanSocketGateway', { 
+        clientId: client.id, 
+        storageType, 
+        boardCount: boards.length 
+      });
       
       // Also send storage type info with the boards
       client.emit('boards-update', createSocketResponse('boards-update', {
@@ -68,18 +75,25 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         storageType: storageType
       }));
     } catch (error) {
-      this.logger.error('Error sending initial data:', error);
+      this.logger.error('Error sending initial data:', 'KablanSocketGateway', { 
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id
+      });
     }
   }
 
   @SubscribeMessage('get-boards')
   async handleGetBoards(client: Socket): Promise<WsResponse<unknown>> {
-    this.logger.log(`Client ${client.id} requested boards`);
+    this.logger.info(`Client ${client.id} requested boards`, 'KablanSocketGateway', { clientId: client.id });
     try {
       const boards = await this.kablanService.getBoards();
       const storageType = this.kablanService.getStorageType();
       
-      this.logger.log(`Sending boards to client ${client.id} with storage type: ${storageType}`);
+      this.logger.info(`Sending boards to client ${client.id} with storage type: ${storageType}`, 'KablanSocketGateway', {
+        clientId: client.id,
+        storageType,
+        boardCount: boards.length
+      });
       
       return { 
         event: 'boards-update', 
@@ -89,7 +103,10 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         })
       };
     } catch (error) {
-      this.logger.error(`Error retrieving boards:`, error);
+      this.logger.error(`Error retrieving boards:`, 'KablanSocketGateway', {
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id
+      });
       return { 
         event: 'error', 
         data: { 
@@ -103,7 +120,15 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
 
   @SubscribeMessage('move-card')
   async handleMoveCard(client: Socket, payload: MoveCardPayload): Promise<WsResponse<unknown>> {
-    this.logger.log(`Client ${client.id} moving card: ${JSON.stringify(payload)}`);
+    this.logger.info(`Client ${client.id} moving card`, 'KablanSocketGateway', { 
+      clientId: client.id, 
+      boardId: payload.boardId,
+      cardId: payload.moveCard.cardId,
+      sourceColumnId: payload.moveCard.sourceColumnId,
+      targetColumnId: payload.moveCard.targetColumnId,
+      newIndex: payload.moveCard.newIndex
+    });
+    
     try {
       const { boardId, moveCard } = payload;
       const { cardId, sourceColumnId, targetColumnId, newIndex } = moveCard;
@@ -125,12 +150,25 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         storageType: this.kablanService.getStorageType()
       }));
       
+      this.logger.info(`Card moved successfully`, 'KablanSocketGateway', {
+        boardId,
+        cardId,
+        sourceColumnId,
+        targetColumnId,
+        targetIndex: newIndex,
+        clientId: client.id
+      });
+      
       return {
         event: 'move-card-success',
         data: createSocketResponse('move-card-success', { success: true })
       };
     } catch (error) {
-      this.logger.error(`Error moving card:`, error);
+      this.logger.error(`Error moving card:`, 'KablanSocketGateway', {
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id,
+        payload
+      });
       return {
         event: 'error',
         data: createSocketResponse('error', {

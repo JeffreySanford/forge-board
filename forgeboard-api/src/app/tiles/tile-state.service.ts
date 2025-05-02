@@ -49,7 +49,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true
+        kablan: true  // Add the missing 'kablan' property
       },
       lastModified: new Date().toISOString(),
       success: true
@@ -68,7 +68,8 @@ export class TileStateService {
         connection: true,
         logs: true,
         uptime: true,
-        activity: true
+        activity: true,
+        kablan: true  // Add the missing 'kablan' property
       },
       lastModified: new Date().toISOString(),
       success: true
@@ -82,7 +83,14 @@ export class TileStateService {
     return {
       userId,
       order: this.tileOrders.get(userId) || ['metrics', 'connection', 'logs', 'uptime', 'activity'],
-      visibility: this.tileVisibility.get(userId),
+      visibility: this.tileVisibility.get(userId) || {
+        metrics: true,
+        connection: true,
+        logs: true,
+        uptime: true,
+        activity: true,
+        kablan: true  // Add the missing 'kablan' property
+      },
       lastModified: new Date().toISOString(),
       success: true
     };

@@ -67,9 +67,15 @@ export class DiagnosticsService {
       uptime,
       timestamp: new Date().toISOString(),
       details: {
-        past: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'unknown'}".`,
-        present: `Server is currently "${status}" with uptime of ${uptime} seconds.`,
-        future: `If current trends continue, the server is expected to remain "${status}" and stable.`
+        past: {
+          message: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'unknown'}".`
+        },
+        present: {
+          message: `Server is currently "${status}" with uptime of ${uptime} seconds.`
+        },
+        future: {
+          message: `If current trends continue, the server is expected to remain "${status}" and stable.`
+        }
       }
     };
   }

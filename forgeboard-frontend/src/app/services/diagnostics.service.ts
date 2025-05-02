@@ -41,7 +41,7 @@ export class DiagnosticsService implements OnDestroy {
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
   // Add mock data functionality
-  private mockDataInterval: any;
+  private mockDataInterval: ReturnType<typeof setInterval> | null = null;
   private readonly defaultSocketMetrics: SocketMetrics = {
     totalConnections: 0,
     activeConnections: 0,
@@ -217,7 +217,9 @@ export class DiagnosticsService implements OnDestroy {
       uptime: 3600,
       timestamp: new Date().toISOString(),
       details: {
-        message: 'Using simulated data - backend unavailable'
+        simulatedData: {
+          message: 'Using simulated data - backend unavailable'
+        }
       }
     };
     
@@ -236,7 +238,7 @@ export class DiagnosticsService implements OnDestroy {
     this.mockDataInterval = setInterval(() => {
       // Update health data with current time
       mockHealth.timestamp = new Date().toISOString();
-      mockHealth.uptime += 1;
+      mockHealth.uptime = (mockHealth.uptime ?? 0) + 1;
       this.healthSubject.next({...mockHealth});
       
       // Update socket metrics with random fluctuations
@@ -425,7 +427,11 @@ export class DiagnosticsService implements OnDestroy {
         status: 'unknown' as const,
         uptime: 0,
         timestamp: new Date().toISOString(),
-        details: { message: 'Unable to connect to backend server' }
+        details: {
+          error: {
+            message: 'Unable to connect to backend server'
+          }
+        }
       }))
     );
   }
@@ -450,7 +456,7 @@ export class DiagnosticsService implements OnDestroy {
   }
 
   // Custom validator for HealthData
-  private validateHealthData(obj: any): ValidationResult {
+  private validateHealthData(obj: HealthData): ValidationResult {
     const issues: string[] = [];
     
     if (!obj) {

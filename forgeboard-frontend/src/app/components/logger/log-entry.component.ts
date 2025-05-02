@@ -8,9 +8,9 @@ import { LogEntry } from '@forge-board/shared/api-interfaces';
       <div class="log-meta">
         <span class="log-time">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</span>
         <span class="log-level">{{ log.level | uppercase }}</span>
-        <span class="log-source">{{ log.source }}</span>
+        <span class="log-source" [ngClass]="{'testing-source': isTestSource()}">{{ log.source }}</span>
       </div>
-      <div class="log-message">{{ log.message }}</div>
+      <div class="log-message" [innerHTML]="highlightTestingText(log.message)"></div>
       <div class="log-details" *ngIf="log.data">
         <pre>{{ log.data | json }}</pre>
       </div>
@@ -32,5 +32,14 @@ export class LogEntryComponent {
       case 'debug': return 'log-debug';
       default: return '';
     }
+  }
+  
+  isTestSource(): boolean {
+    return this.log.source === 'testing' || this.log.source === 'test-generator';
+  }
+  
+  highlightTestingText(text: string): string {
+    if (!text) return '';
+    return text.replace(/TESTING:?/g, '<span class="testing-highlight">TESTING:</span>');
   }
 }

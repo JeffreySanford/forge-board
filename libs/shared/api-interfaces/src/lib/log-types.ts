@@ -1,71 +1,123 @@
 /**
- * Types related to logging
+ * Types related to logging system
  */
 
 /**
- * Log level type
+ * Log level enum
  */
-export type LogLevelType = 'debug' | 'info' | 'warn' | 'warning' | 'error' | 'fatal';
+export enum LogLevelEnum {
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  FATAL = 5
+}
 
 /**
- * Log entry structure
+ * Log level as string
+ */
+export type LogLevelString = 'trace' | 'debug' | 'info' | 'warn' | 'warning' | 'error' | 'fatal';
+
+/**
+ * Convert string log level to enum
+ */
+export function stringToLogLevelEnum(level: LogLevelString): LogLevelEnum {
+  switch(level.toLowerCase()) {
+    case 'trace': return LogLevelEnum.TRACE;
+    case 'debug': return LogLevelEnum.DEBUG;
+    case 'info': return LogLevelEnum.INFO;
+    case 'warn':
+    case 'warning': return LogLevelEnum.WARN;
+    case 'error': return LogLevelEnum.ERROR;
+    case 'fatal': return LogLevelEnum.FATAL;
+    default: return LogLevelEnum.INFO;
+  }
+}
+
+/**
+ * Convert enum log level to string
+ */
+export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
+  switch(level) {
+    case LogLevelEnum.TRACE: return 'trace';
+    case LogLevelEnum.DEBUG: return 'debug';
+    case LogLevelEnum.INFO: return 'info';
+    case LogLevelEnum.WARN: return 'warn';
+    case LogLevelEnum.ERROR: return 'error';
+    case LogLevelEnum.FATAL: return 'fatal';
+    default: return 'info';
+  }
+}
+
+/**
+ * Log entry interface
  */
 export interface LogEntry {
   id: string;
   timestamp: string;
-  level: LogLevelType;
+  level: LogLevelString;
   message: string;
-  source: string;
-  context?: string;
-  details?: Record<string, unknown>;
+  service?: string;
+  source?: string;
   data?: Record<string, unknown>;
-  tags?: string[];
-  stackTrace?: string;
 }
 
 /**
  * Log filter options
  */
 export interface LogFilter {
-  level?: LogLevelType;
-  levels?: LogLevelType[];
-  context?: string;
-  contexts?: string[];
-  source?: string;
-  sources?: string[];
-  startTime?: string;
-  endTime?: string;
+  level?: LogLevelString | LogLevelString[];
+  service?: string;
   startDate?: string;
   endDate?: string;
-  fromDate?: string;
-  toDate?: string;
   search?: string;
   limit?: number;
-  offset?: number;
   skip?: number;
-  tags?: string[];
 }
 
 /**
- * Log response from the server
+ * Response format for log queries
+ */
+export interface LogQueryResponse {
+  status: boolean;
+  logs: LogEntry[];
+  totalCount: number;
+  filtered?: boolean;
+  timestamp?: string;
+}
+
+/**
+ * Response format for log requests
  */
 export interface LogResponse {
   logs: LogEntry[];
+  totalCount: number;
+  filtered: boolean;
+  status: boolean;
   total: number;
-  totalCount?: number;
   timestamp: string;
-  filtered?: boolean;
-  status?: boolean;
-  success?: boolean; // Adding success field to match what's being used
 }
 
 /**
- * Log stream update
+ * Response for batch log operations
+ */
+export interface LogBatchResponse {
+  success: boolean;
+  count?: number;
+  timestamp?: string;
+}
+
+/**
+ * Update format for log streaming
  */
 export interface LogStreamUpdate {
-  logs?: LogEntry[];
   log?: LogEntry;
-  timestamp?: string;
-  totalCount?: number;
+  logs?: LogEntry[];
+  totalCount: number;
   append?: boolean;
+  stats?: Record<string, number>;
 }
+
+// Mark this module for export
+export const __logTypes = true;

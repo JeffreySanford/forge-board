@@ -1,529 +1,139 @@
 # ForgeBoard Coding Standards
 
-This document outlines the coding standards and best practices for the ForgeBoard project.
+This document defines the core architectural, coding, and workflow standards for the ForgeBoard project. All code, whether backend or frontend, should follow these principles for maintainability, clarity, and real-time robustness.
 
-## Angular Best Practices
+---
 
-### Component Architecture
+## Angular Architecture
 
-1. **Smart & Presentational Components**
-   - Smart components handle data and logic
-   - Presentational components focus on UI rendering
-   - Example:
+### Smart & Presentational Components
 
-   ```typescript
-   // Smart Component (container)
-   @Component({
-     selector: 'app-metrics-container',
-     template: '<app-metrics-display [data]="metrics$ | async" (intervalChange)="updateInterval($event)"></app-metrics-display>'
-   })
-   export class MetricsContainerComponent {
-     metrics$: Observable<MetricData>;
-     
-     constructor(private metricsService: MetricsService) {
-       this.metrics$ = this.metricsService.getMetricsStream();
-     }
-     
-     updateInterval(interval: number): void {
-       this.metricsService.setMetricsInterval(interval).subscribe();
-     }
-   }
-
-   // Presentational Component
-   @Component({
-     selector: 'app-metrics-display',
-     templateUrl: './metrics-display.component.html'
-   })
-   export class MetricsDisplayComponent {
-     @Input() data: MetricData;
-     @Output() intervalChange = new EventEmitter<number>();
-   }
-   ```
-
-2. **Component Lifecycle Management**
-   - Always implement `OnDestroy` for cleanup
-   - Use the appropriate lifecycle hooks
-   - Example:
-
-   ```typescript
-   @Component({/* ... */})
-   export class ExampleComponent implements OnInit, OnDestroy {
-     private subscription = new Subscription();
-     
-     ngOnInit(): void {
-       this.subscription.add(
-         this.someService.getData().subscribe(data => {
-           // Handle data
-         })
-       );
-     }
-     
-     ngOnDestroy(): void {
-       this.subscription.unsubscribe();
-     }
-   }
-   ```
-
-### Service Design
-
-1. **Single Responsibility Principle**
-   - Each service should have a clear, focused purpose
-   - Break down complex services into smaller ones
-
-2. **Injectable Services**
-   - Always use the `@Injectable()` decorator
-   - Provide services at the appropriate level
-
-   ```typescript
-   @Injectable({
-     providedIn: 'root' // Application-wide singleton
-   })
-   export class CoreService { /* ... */ }
-
-   @Injectable() // Component-specific instance
-   export class FeatureService { /* ... */ }
-   ```
-
-3. **Service State Management**
-   - Use RxJS subjects to maintain service state
-   - Expose state as observables for components
-
-   ```typescript
-   @Injectable({
-     providedIn: 'root'
-   })
-   export class DataService {
-     private dataSubject = new BehaviorSubject<Data[]>([]);
-     
-     getData(): Observable<Data[]> {
-       return this.dataSubject.asObservable();
-     }
-     
-     updateData(newData: Data[]): void {
-       this.dataSubject.next(newData);
-     }
-   }
-   ```
-
-## WebSockets & Real-Time
-
-### Service Pattern - Detailed Flow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  @Injectable() MetricsService                                   │
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌───────────────────────┐   │
-│  │             │  │             │  │                       │   │
-│  │ Socket.IO   │──▶ Subject/    │──▶ Public Observable     │   │
-│  │ Connection  │  │ BehaviorSubj│  │ interface getMetrics()│   │
-│  │             │  │             │  │                       │   │
-│  └─────────────┘  └─────────────┘  └───────────────────────┘   │
-│        │                                      │                │
-│        │                                      │                │
-│        ▼                                      │                │
-│  ┌─────────────────────┐                      │                │
-│  │                     │                      │                │
-│  │ Error Handler with  │                      │                │
-│  │ Mock Data Fallback  │                      │                │
-│  │                     │                      │                │
-│  └─────────────────────┘                      │                │
-│                                               │                │
-└───────────────────────────────────────────────┼────────────────┘
-                                                │
-                                                │
-                                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  @Component() MetricsComponent                                  │
-│                                                                 │
-│  ┌─────────────────────┐  ┌─────────────┐  ┌─────────────────┐ │
-│  │                     │  │             │  │                  │ │
-│  │ ngOnInit():         │──▶ Subscribe   │──▶ Update UI State  │ │
-│  │ metrics$.subscribe()│  │ to Stream   │  │ this.chartData   │ │
-│  │                     │  │             │  │                  │ │
-│  └─────────────────────┘  └─────────────┘  └─────────────────┘ │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                                                         │   │
-│  │ ngOnDestroy(): this.subscription.unsubscribe()          │   │
-│  │                                                         │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  Smart[Smart Component]:::smart -->|Inputs/Outputs| Presentational[Presentational Component]:::present
+  Smart -->|Service Injection| Service[Service]:::service
+  Presentational -->|@Input/@Output| Smart
+  classDef smart fill:#E3F2FD,stroke:#1976D2,stroke-width:2px;
+  classDef present fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px;
+  classDef service fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
 ```
 
-### Socket Connection Pattern
+- **Smart components**: Handle data, inject services, manage state.
+- **Presentational components**: Render UI, receive data via `@Input`, emit events via `@Output`.
 
-Services that use WebSockets should follow this pattern:
+### Service Design & State Management
 
-```typescript
-@Injectable({
-  providedIn: 'root'
-})
-export class SocketService implements OnDestroy {
-  private socket: Socket | null = null;
-  private connectionStatusSubject = new BehaviorSubject<boolean>(false);
-  private dataSubject = new Subject<DataType>();
-  
-  constructor() {
-    this.initSocket();
-  }
-  
-  ngOnDestroy(): void {
-    this.cleanupSocket();
-    this.connectionStatusSubject.complete();
-    this.dataSubject.complete();
-  }
-  
-  getConnectionStatus(): Observable<boolean> {
-    return this.connectionStatusSubject.asObservable();
-  }
-  
-  getData(): Observable<DataType> {
-    return this.dataSubject.asObservable();
-  }
-  
-  private initSocket(): void {
-    // Initialize socket with proper error handling
-  }
-  
-  private cleanupSocket(): void {
-    if (this.socket) {
-      // Remove all listeners
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('data-event');
-      
-      // Disconnect if connected
-      if (this.socket.connected) {
-        this.socket.disconnect();
-      }
-      this.socket = null;
-    }
-  }
-}
+```mermaid
+flowchart TD
+  Service[Service]:::service -->|BehaviorSubject/Subject| State[State Stream]:::state
+  State -->|asObservable()| Component[Component]:::component
+  Component -->|subscribe| State
+  classDef service fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
+  classDef state fill:#E1F5FE,stroke:#0288D1,stroke-width:2px;
+  classDef component fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px;
 ```
 
-### Mock Data Strategy
+- Use RxJS `BehaviorSubject` or `Subject` for service state.
+- Expose state as `Observable` for components to subscribe.
 
-When backend is unavailable, implement mock data generation:
+---
 
-```typescript
-private startMockDataGeneration(): void {
-  if (this.mockDataInterval) return;
-  
-  this.mockDataInterval = setInterval(() => {
-    const mockData: DataType = {
-      value: Math.random() * 100,
-      timestamp: new Date().toISOString()
-    };
-    this.dataSubject.next(mockData);
-  }, this.updateInterval);
-  
-  this.backendStatusService.updateGatewayStatus('serviceName', false, true);
-}
+## WebSockets & Real-Time Patterns
 
-private stopMockDataGeneration(): void {
-  if (this.mockDataInterval) {
-    clearInterval(this.mockDataInterval);
-    this.mockDataInterval = null;
-    
-    this.backendStatusService.updateGatewayStatus('serviceName', true, false);
-  }
-}
+### Data Flow: Backend to UI
+
+```mermaid
+flowchart TD
+  subgraph Backend
+    GW[Socket.IO Gateway]:::backend
+    HC[HTTP Controller]:::backend
+  end
+  subgraph ServiceLayer
+    S1[BehaviorSubject/Subject]:::service
+    S2[Public Observable API]:::service
+  end
+  subgraph ComponentLayer
+    C1[Subscribe to Observables]:::component
+    C2[Update UI State]:::component
+  end
+  GW -- WebSocket Events --> S1
+  HC -- HTTP Responses --> S1
+  S1 -- next() --> S2
+  S2 -- subscribe() --> C1
+  C1 --> C2
+  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
+  classDef component fill:#D1E8FF,stroke:#2980B9,stroke-width:2px;
 ```
 
-### Socket Reconnection Pattern
+### Mock Data & Reconnection Strategy
 
-All socket-enabled services should implement a robust reconnection pattern:
-
-```typescript
-// Add reconnection properties
-private reconnecting = false;
-private backendAvailableListener: () => void;
-
-constructor() {
-  // Listen for backend availability to reconnect
-  this.backendAvailableListener = () => {
-    if (this.mockDataActive && !this.reconnecting) {
-      this.reconnectToBackend();
-    }
-  };
-  
-  window.addEventListener('backend-available', this.backendAvailableListener);
-}
-
-ngOnDestroy(): void {
-  // Remove event listener
-  window.removeEventListener('backend-available', this.backendAvailableListener);
-  // ... other cleanup
-}
-
-private reconnectToBackend(): void {
-  if (this.reconnecting) return;
-  this.reconnecting = true;
-  
-  // Validate backend is truly available with direct health check
-  this.http.get(`${this.apiUrl}/status`)
-    .pipe(catchError(() => of({ status: 'error' })))
-    .subscribe(response => {
-      if (response?.status !== 'error') {
-        // Clean up existing socket connection
-        this.cleanupSocket();
-        
-        // Create new socket with proper error handling
-        this.initSocket();
-        
-        // Stop mock data when real data is flowing
-        this.stopMockDataGeneration();
-        
-        // Update status via BackendStatusService
-        this.backendStatusService.updateGatewayStatus('serviceName', true, false);
-      }
-      
-      // Reset reconnection flag after delay
-      setTimeout(() => {
-        this.reconnecting = false;
-      }, 5000);
-    });
-}
+```mermaid
+flowchart TD
+  CF[Connection Failure]:::error --> ED[Error Detection]:::error --> MD[Mock Data Generation]:::mock
+  MD --> SI[Status Indicator]:::status
+  SI --> RL[Reconnection Logic]:::reconnect
+  RL --> BC[Backend Connection]:::backend
+  BC -- success --> SVC[Service Layer]:::service
+  RL -- fail --> MD
+  classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px;
+  classDef mock fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px;
+  classDef status fill:#E1F5FE,stroke:#0288D1,stroke-width:2px;
+  classDef reconnect fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
+  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
 ```
+
+---
 
 ## RxJS Guidelines
 
-### Subscription Management
+- Always clean up subscriptions (`ngOnDestroy`, `takeUntil`).
+- Use `catchError`, `retry`, and `finalize` for robust error handling.
+- Prefer `BehaviorSubject` for state with a current value, `Subject` for event streams.
 
-1. **Always clean up subscriptions**:
-   ```typescript
-   private subscription = new Subscription();
-   
-   ngOnInit(): void {
-     this.subscription.add(
-       this.service.getData().subscribe(/* ... */)
-     );
-     this.subscription.add(
-       this.otherService.getStatus().subscribe(/* ... */)
-     );
-   }
-   
-   ngOnDestroy(): void {
-     this.subscription.unsubscribe();
-   }
-   ```
-
-2. **Use the `takeUntil` pattern for multiple subscriptions**:
-   ```typescript
-   private destroy$ = new Subject<void>();
-   
-   ngOnInit(): void {
-     this.service.getData().pipe(
-       takeUntil(this.destroy$)
-     ).subscribe(/* ... */);
-     
-     this.otherService.getStatus().pipe(
-       takeUntil(this.destroy$)
-     ).subscribe(/* ... */);
-   }
-   
-   ngOnDestroy(): void {
-     this.destroy$.next();
-     this.destroy$.complete();
-   }
-   ```
-
-### Error Handling
-
-Use proper error handling in RxJS streams:
-
-```typescript
-this.http.get<DataType>('/api/data').pipe(
-  retry(3),
-  catchError(error => {
-    console.error('Error fetching data:', error);
-    return of(fallbackData);
-  }),
-  finalize(() => {
-    this.loading = false;
-  })
-).subscribe({
-  next: data => this.handleData(data),
-  error: err => this.handleError(err)
-});
-```
+---
 
 ## CSS/SCSS Standards
 
-1. **BEM-inspired naming**:
-   ```scss
-   .kablan-board {
-     // Block
-     
-     &__column {
-       // Element
-     }
-     
-     &--active {
-       // Modifier
-     }
-   }
-   ```
+- **BEM-inspired naming** for all classes.
+- **Color variables** for consistency and theme support.
+- **Mobile-first** responsive design.
 
-2. **Consistent color variables**:
-   ```scss
-   $color-primary: #3498db;
-   $color-success: #4eff91;
-   $color-warning: #ffe066;
-   $color-error: #e74c3c;
-   ```
-
-3. **Mobile-first responsive design**:
-   ```scss
-   .container {
-     width: 100%;
-     
-     @media (min-width: 768px) {
-       width: 750px;
-     }
-     
-     @media (min-width: 992px) {
-       width: 970px;
-     }
-   }
-   ```
+---
 
 ## Testing Guidelines
 
-1. **Component Tests**:
-   ```typescript
-   describe('AppComponent', () => {
-     let component: AppComponent;
-     let fixture: ComponentFixture<AppComponent>;
-     
-     beforeEach(async () => {
-       await TestBed.configureTestingModule({
-         declarations: [AppComponent],
-         providers: [
-           { provide: MetricsService, useValue: mockMetricsService }
-         ]
-       }).compileComponents();
-       
-       fixture = TestBed.createComponent(AppComponent);
-       component = fixture.componentInstance;
-     });
-     
-     it('should create the component', () => {
-       expect(component).toBeTruthy();
-     });
-     
-     it('should show metrics data', () => {
-       component.metrics = mockMetrics;
-       fixture.detectChanges();
-       const compiled = fixture.nativeElement;
-       expect(compiled.querySelector('.metric-value').textContent).toContain('50%');
-     });
-   });
-   ```
+- **Component tests**: Use Angular TestBed, mock services, and DOM queries.
+- **Service tests**: Use HttpClientTestingModule, test Observables and error handling.
+- **E2E tests**: Use Playwright or Cypress for real user flows.
 
-2. **Service Tests**:
-   ```typescript
-   describe('MetricsService', () => {
-     let service: MetricsService;
-     let httpMock: HttpTestingController;
-     
-     beforeEach(() => {
-       TestBed.configureTestingModule({
-         imports: [HttpClientTestingModule],
-         providers: [MetricsService]
-       });
-       
-       service = TestBed.inject(MetricsService);
-       httpMock = TestBed.inject(HttpTestingController);
-     });
-     
-     it('should fetch metrics', () => {
-       const mockMetrics = { cpu: 50, memory: 60, time: '2023-01-01T00:00:00Z' };
-       
-       service.getMetrics().subscribe(metrics => {
-         expect(metrics).toEqual(mockMetrics);
-       });
-       
-       const req = httpMock.expectOne('/api/metrics');
-       expect(req.request.method).toBe('GET');
-       req.flush(mockMetrics);
-     });
-   });
-   ```
+---
 
-## Documentation Standards
+## Documentation & Git Workflow
 
-1. **Component and Service Documentation**:
-   ```typescript
-   /**
-    * Metrics service responsible for managing real-time system metrics.
-    * 
-    * Features:
-    * - Real-time metric updates via WebSockets
-    * - Automatic reconnection with backoff strategy
-    * - Fallback to mock data generation when backend is unavailable
-    */
-   @Injectable({
-     providedIn: 'root'
-   })
-   export class MetricsService {
-     /**
-      * Subscribe to the metrics stream
-      * @returns Observable that emits MetricData
-      */
-     getMetricsStream(): Observable<MetricData> {
-       // Implementation...
-     }
-   }
-   ```
+- All public classes, interfaces, and services must have JSDoc comments.
+- Use clear, descriptive commit messages:
+  - `feat(scope): Add new feature`
+  - `fix(scope): Fix bug`
+  - `docs(scope): Update documentation`
+- Branch naming: `feature/`, `bugfix/`, `chore/` prefixes.
 
-2. **Interface Documentation**:
-   ```typescript
-   /**
-    * System metric data structure
-    */
-   export interface MetricData {
-     /** CPU usage percentage (0-100) */
-     cpu: number;
-     
-     /** Memory usage percentage (0-100) */
-     memory: number;
-     
-     /** ISO timestamp of the metric reading */
-     time: string;
-     
-     /** Optional disk usage percentage (0-100) */
-     disk?: number;
-     
-     /** Optional network usage percentage (0-100) */
-     network?: number;
-   }
-   ```
+---
 
-## Git Workflow
+## Summary Diagram: End-to-End Flow
 
-1. **Branch naming conventions**:
-   - `feature/short-feature-description`
-   - `bugfix/issue-description`
-   - `chore/maintenance-task`
+```mermaid
+flowchart LR
+  FE[Frontend Component]:::component -->|subscribe| SVC[Angular Service]:::service
+  SVC -->|WebSocket/HTTP| GW[Socket.IO Gateway/REST]:::backend
+  GW -->|DB/Cache| DB[(MongoDB/Cache)]:::db
+  classDef component fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px;
+  classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
+  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef db fill:#E0F7FA,stroke:#00838F,stroke-width:2px;
+```
 
-2. **Commit message format**:
-   ```
-   type(scope): Short summary
+---
 
-   Detailed explanation if needed
-   ```
-
-   Where `type` is one of:
-   - feat: New feature
-   - fix: Bug fix
-   - docs: Documentation changes
-   - style: Formatting changes
-   - refactor: Code refactoring
-   - test: Adding or updating tests
-   - chore: Maintenance tasks
+For more details, see the API, Authentication, and Frontend-API-Architecture docs.

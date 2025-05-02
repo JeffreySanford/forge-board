@@ -14,6 +14,7 @@ const routes: Routes = [
   { path: 'diagnostics', component: DiagnosticsComponent },
   { path: 'kablan', component: KablanBoardComponent },
   { path: 'logs', component: LoggerViewComponent },
+  { path: 'documentation', loadChildren: () => import('./pages/documentation/documentation.module').then(m => m.DocumentationModule) },
   { path: '404', component: NotFoundComponent },
   { path: '**', redirectTo: '/404' } // Redirect all unknown routes to 404 page
 ];

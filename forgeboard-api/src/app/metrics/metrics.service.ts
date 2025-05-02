@@ -1,39 +1,62 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { MetricData } from '@forge-board/shared/api-interfaces';
 
 @Injectable()
-export class MetricsService {
+export class MetricsService implements OnModuleInit {
   private readonly logger = new Logger(MetricsService.name);
   private updateInterval = 1000; // Default update interval in milliseconds
-  private latestMetrics: MetricData;
+  
+  // Use BehaviorSubject to track metrics state
+  private metricsSubject = new BehaviorSubject<MetricData>(this.generateMetrics());
+  private updateSubscription: Subscription;
   
   constructor() {
     this.logger.log('Metrics Service initialized');
-    // Initialize with default data
-    this.latestMetrics = this.generateMetrics();
-    
-    // Update metrics periodically
-    setInterval(() => {
-      this.latestMetrics = this.generateMetrics();
-    }, 1000);
+  }
+  
+  onModuleInit() {
+    // Start the metrics update interval
+    this.startMetricsTimer();
   }
 
-  setUpdateInterval(interval: number) {
+  setUpdateInterval(interval: number): Observable<number> {
     // Ensure minimum interval is 20ms
     this.updateInterval = Math.max(interval, 20);
     this.logger.verbose(`Metrics update interval set to ${this.updateInterval}ms`);
+    
+    // Restart the timer with the new interval
+    this.startMetricsTimer();
+    
+    return new BehaviorSubject<number>(this.updateInterval).asObservable();
   }
 
-  async getMetrics(): Promise<MetricData> {
-    // Return the latest metrics (cache)
-    return this.latestMetrics;
+  getMetrics(): Observable<MetricData> {
+    // Return observable stream of metrics
+    return this.metricsSubject.asObservable();
   }
   
   /**
-   * Get the latest metrics without waiting
+   * Get the latest metrics value synchronously
    */
-  getLatestMetrics(): MetricData {
-    return this.latestMetrics;
+  getLatestMetricsValue(): MetricData {
+    return this.metricsSubject.getValue();
+  }
+  
+  /**
+   * Start or restart the metrics update timer
+   */
+  private startMetricsTimer(): void {
+    // Clean up existing subscription if it exists
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+    
+    // Create new interval subscription that updates metrics regularly
+    this.updateSubscription = interval(this.updateInterval).subscribe(() => {
+      const newMetrics = this.generateMetrics();
+      this.metricsSubject.next(newMetrics);
+    });
   }
   
   /**

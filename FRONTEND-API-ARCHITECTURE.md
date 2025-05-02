@@ -4,82 +4,70 @@
 
 ForgeBoard implements a modern, real-time reactive architecture:
 
-```
-┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│                 │     │                   │     │                 │
-│   Backend       │────▶│    Socket.IO      │────▶│   Angular       │
-│   Events        │     │    Gateway        │     │   Services      │
-│                 │     │                   │     │                 │
-└─────────────────┘     └───────────────────┘     └────────┬────────┘
-                                                           │
-                                                           │
-                                                           ▼
-┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│                 │     │                   │     │                 │
-│   Angular       │◀────┤    Observable     │◀────┤   RxJS          │
-│   Components    │     │    Streams        │     │   Operators     │
-│                 │     │                   │     │                 │
-└─────────────────┘     └───────────────────┘     └─────────────────┘
+```mermaid
+flowchart LR
+  subgraph Backend [Backend]
+    direction TB
+    BE[Backend Events]
+  end
+  subgraph Gateway [Socket.IO Gateway]
+    direction TB
+    GW[Socket.IO Server]
+  end
+  subgraph Frontend [Angular Frontend]
+    direction TB
+    AS[Angular Services]
+    AC[Angular Components]
+  end
+
+  BE -->|Socket.IOevents| GW
+  GW -->|Observable streams| AS
+  AS -->|subscribe| AC
+
+  style BE fill:#FFDDC1,stroke:#E67E22,stroke-width:2px
+  style GW fill:#D1E8E4,stroke:#16A085,stroke-width:2px
+  style AS fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px
+  style AC fill:#D1E8FF,stroke:#2980B9,stroke-width:2px
 ```
 
 ## Key Components
 
-### Frontend Services
-
-The application features these core services:
-
-1. **MetricsService**: Manages real-time system metrics
-   - Uses Socket.IO for live metric updates
-   - Implements mock data generation when backend is unavailable
-   - Handles automatic reconnection
-
-2. **KablanService**: Provides project management functionality
-   - Manages board data through WebSockets
-   - Implements card move operations with optimistic updates
-   - Supports phase-based workflow visualization
-
-3. **DiagnosticsService**: Monitors system health
-   - Tracks WebSocket connections and status
-   - Provides health metrics and timeline data
-   - Surfaces connection errors and statistics
-
-4. **LoggerService**: Manages application logs
-   - Collects and categorizes log entries
-   - Supports filtering and exporting capabilities
-   - Allows batch sending of logs to backend
-
-5. **BackendStatusService**: Coordinates connection management
-   - Tracks status of all backend gateways
-   - Manages reconnection attempts
-   - Provides unified status monitoring
+- **MetricsService**: Manages real-time system metrics with live charts, mock fallback, automatic reconnection.
+- **KablanService**: Handles Kanban board state via WebSockets, supports optimistic updates and phase workflows.
+- **DiagnosticsService**: Tracks health data and socket metrics, surfaces timeline, error logs, and connection stats.
+- **LoggerService**: Collects, filters, and exports logs in real time, with CSV export capability.
+- **BackendStatusService**: Monitors gateway states, coordinates reconnection, and signals UI indicators.
 
 ### Socket Connection Management
 
-#### Socket Lifecycle
-Each socket connection follows a lifecycle pattern:
+```mermaid
+sequenceDiagram
+  participant C as Component
+  participant S as Service
+  participant G as Gateway
+  participant B as Backend
 
-1. **Initialization**: Socket connects to specific namespaces
-2. **Event Subscription**: Registers event handlers for specific data
-3. **Error Handling**: Connection errors trigger mock data generation
-4. **Reconnection**: Automatic reconnection with backoff strategy
-5. **Cleanup**: Proper disconnection and removal of event listeners
+  Note over C,S: Initialization
+  C->>S: initSocket()
+  S->>G: connect(namespace)
+  G-->>S: connect_ack
+  S->>S: next(dataSubject)
+  S-->>C: Observable emits
 
-#### Mock Data Strategy
-When backend connections fail:
+  Note over S: on error -> fallback
+  G-->>S: connection_error
+  S->>S: startMockDataGeneration()
+  S-->>C: mock data stream
 
-1. Services detect disconnection events
-2. Mock data generation begins at appropriate intervals
-3. UI indicates simulated data status
-4. Periodic reconnection attempts are made
-5. Seamless transition back to real data when backend returns
+  Note over S: reconnect when backend available
+  S->>B: GET /status
+  B-->>S: {status: success}
+  S->>G: reconnect(forceNew)
+```
 
-#### Connection Status Monitoring
-The system provides comprehensive connection status tracking:
+### Mock Data & Reconnection
 
-- Real-time status indicators on the UI
-- Visual differentiation between live and mock data
-- Connection metrics (duration, active sessions)
-- Animated status transitions
+Elegant fallback to simulated data ensures the UI remains vibrant even if the backend is offline. Seamless transition back to real data occurs automatically upon reconnection.
 
 ## Module Structure
 
@@ -123,53 +111,64 @@ Provides detailed logging functionality:
 
 ### Service Pattern
 
+```mermaid
+flowchart TD
+  subgraph Backend [Backend]
+    direction TB
+    BE[Socket.IO Gateway]:::backend
+    BH[HTTP Controller]:::backend
+  end
+  subgraph ServiceLayer [Angular Service Layer]
+    direction TB
+    S1[BehaviorSubject/Subject]:::service
+    S2[Public Observable API]:::service
+  end
+  subgraph ComponentLayer [Component Layer]
+    direction TB
+    C1[Subscribe to Observables]:::component
+    C2[Update UI State]:::component
+  end
+
+  BE -- WebSocket Events --> S1
+  BH -- HTTP Responses --> S1
+  S1 -- next() --> S2
+  S2 -- subscribe() --> C1
+  C1 --> C2
+
+  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
+  classDef component fill:#D1E8FF,stroke:#2980B9,stroke-width:2px;
 ```
-┌─────────────────┐     ┌───────────────────────────────────────┐
-│                 │     │                                       │
-│  Socket.IO      │────▶│  Service Layer                        │
-│  Events         │     │                                       │
-│                 │     │  ┌───────────────┐  ┌───────────────┐ │
-└─────────────────┘     │  │ BehaviorSubj/ │  │ Public        │ │
-                        │  │ Subject       │──▶ Observable    │ │
-┌─────────────────┐     │  └───────────────┘  └───────────────┘ │
-│                 │     │                                       │
-│  HTTP           │────▶│                                       │
-│  Responses      │     │                                       │
-│                 │     └───────────────────────────────────────┘
-└─────────────────┘                       │
-                                          │
-                                          ▼
-                        ┌───────────────────────────────────────┐
-                        │                                       │
-                        │  Component Layer                      │
-                        │                                       │
-                        │  ┌───────────────┐  ┌───────────────┐ │
-                        │  │ Subscribe to  │  │ Update UI     │ │
-                        │  │ Observables   │──▶ State         │ │
-                        │  └───────────────┘  └───────────────┘ │
-                        │                                       │
-                        └───────────────────────────────────────┘
-```
+
+**Explanation:**
+- The backend emits events via Socket.IO and responds to HTTP requests.
+- The Angular service layer receives both, updates its BehaviorSubject/Subject, and exposes a public Observable API.
+- Components subscribe to these Observables and update their UI state reactively.
 
 ### Mock Data & Reconnection Strategy
 
+```mermaid
+flowchart TD
+  CF[Connection Failure]:::error --> ED[Error Detection]:::error --> MD[Mock Data Generation]:::mock
+  MD --> SI[Status Indicator]:::status
+  SI --> RL[Reconnection Logic]:::reconnect
+  RL --> BC[Backend Connection]:::backend
+  BC -- success --> SVC[Service Layer]:::service
+  RL -- fail --> MD
+
+  classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px;
+  classDef mock fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px;
+  classDef status fill:#E1F5FE,stroke:#0288D1,stroke-width:2px;
+  classDef reconnect fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
+  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
 ```
-┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│                 │     │                   │     │                 │
-│  Connection     │────▶│  Error            │────▶│  Mock Data      │
-│  Failure        │     │  Detection        │     │  Generation     │
-│                 │     │                   │     │                 │
-└─────────────────┘     └───────────────────┘     └────────┬────────┘
-                                                           │
-                                                           │
-                                                           ▼
-┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│                 │     │                   │     │                 │
-│  Backend        │◀────┤  Reconnection     │◀────┤  Status         │
-│  Connection     │     │  Logic            │     │  Indicator      │
-│                 │     │                   │     │                 │
-└─────────────────┘     └───────────────────┘     └─────────────────┘
-```
+
+**Explanation:**
+- On connection failure, the service detects the error and starts mock data generation.
+- A status indicator is updated for the UI.
+- Reconnection logic periodically checks backend availability.
+- On successful reconnection, the service resumes real data; otherwise, mock data continues.
 
 ## API Integration
 

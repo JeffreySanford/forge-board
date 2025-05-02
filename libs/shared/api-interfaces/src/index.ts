@@ -1,32 +1,49 @@
 /**
- * This is the main entry point for the shared API interfaces library.
- * All types and interfaces should be exported from here to be available to consumers.
+ * Shared API interfaces library that provides types and interfaces used across frontend and backend.
+ * This can be used with Swagger by referencing these types in API controllers with @ApiProperty decorators.
  */
 
-// Export everything from lib/index.ts
-export * from './lib/index';
+// Base API interfaces
+export type { ApiResponse, UserData, ErrorResponse } from './lib/api-interfaces';
 
-// Re-export specific types that are being directly imported
-export {
-  // From diagnostic-types.ts
-  DiagnosticEvent,
-  HealthData,
-  DiagnosticSocketEvent,
-  SocketLogEvent,
-  SocketInfo,
-  SocketMetrics,
-  SocketStatusUpdate,
-  SocketConnectionError,
+// API response helpers
+export { __apiResponse } from './lib/api-response';
+export type { SuccessResponse } from './lib/api-response';
 
-  // From logger-types.ts
-  LogLevelType,
-  LogEntry,
-  LogFilter,
-  LogResponse,
-  LogStreamUpdate,
+// Socket interfaces and helpers
+export { createSocketResponse, createErrorResponse as createSocketErrorResponse } from './lib/socket-types';
+export type { SocketResponse, SocketEvent, SocketLogEvent, SocketInfo, SocketMetrics, SocketStatusUpdate, SocketConnectionError } from './lib/socket-types';
+export type * from './lib/socket-registry-types';
 
-  // From metric-types.ts
-  MetricData,
-  MetricResponse,
-  MetricConfig
-} from './lib/index';
+// Authentication helpers (credentials and token responses)
+export { __authInterfaces } from './lib/auth-interfaces';
+export type { AuthCredentials, AuthTokenResponse } from './lib/auth-interfaces';
+
+// User and auth state definitions
+export type { User, UserRole, JwtPayload, AuthState } from './lib/user-types';
+
+// Tile interfaces
+export type * from './lib/tile-types';
+
+// Health interfaces
+export type * from './lib/health.type';
+
+// Diagnostic interfaces
+export type { DiagnosticEvent, DiagnosticEventResponse, HealthData } from './lib/diagnostic-types';
+
+// Log interfaces
+export { LogLevelEnum } from './lib/log-types';
+export type { LogLevelString, LogEntry, LogFilter, LogQueryResponse, LogResponse, LogBatchResponse, LogStreamUpdate } from './lib/log-types';
+export { stringToLogLevelEnum, logLevelEnumToString } from './lib/log-types';
+
+// Metric interfaces
+export type { MetricData, MetricResponse, MetricFilter, MetricUpdate } from './lib/metrics-types';
+
+// Timeline interfaces
+export type * from './lib/health-timeline';
+
+// Validation types and functions
+export * from './lib/type-validation';
+
+// Constants
+export * from './lib/constants';

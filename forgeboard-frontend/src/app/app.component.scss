@@ -1116,3 +1116,187 @@ router-outlet + * {
   z-index: 100;
   margin: 0.5em 1em;
 }
+
+/* ==========================================================================
+   CONTENT CONTAINER FIXES
+   ========================================================================== */
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Make the router-outlet content area take appropriate space */
+router-outlet + * {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0; /* Important for proper flex behavior */
+}
+
+/* Limit the callout container height */
+.callout-container {
+  max-height: 120px; /* Adjust based on design needs */
+  overflow-y: auto;
+  flex: 0 0 auto; /* Don't let it grow to take extra space */
+  margin-bottom: 1em;
+}
+
+/* Ensure content areas have proper sizing */
+.home-container, 
+.page-container {
+  height: auto;
+  min-height: calc(100vh - 180px); /* Account for header, footer and callout */
+  display: flex;
+  flex-direction: column;
+}
+
+/* For better mobile responsiveness */
+@media (max-height: 768px) {
+  .callout-container {
+    max-height: 80px;
+  }
+}
+
+/* ==========================================================================
+   PAGE CONTAINER WITH GOLD BORDER
+   ========================================================================== */
+
+.gold-page-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  border: 2px solid #FFD700; /* Gold color */
+  box-shadow: 0 0 8px #FFD700, 0 0 15px rgba(255, 215, 0, 0.5); /* Glowing effect */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 0;
+}
+
+.page-indicator {
+  position: absolute;
+  bottom: 0.5em;
+  left: 0.5em;
+  color: #FFD700;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7em;
+  opacity: 0.8;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Fix height issues with containers */
+.content-wrapper {
+  flex: 1 1 auto;
+  min-height: 0; /* Important for proper flex behavior */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make router-outlet content area take appropriate space */
+router-outlet + * {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Limit the callout container height */
+.callout-container {
+  max-height: 80px; /* Reduced height */
+  overflow-y: auto;
+  flex: 0 0 auto; /* Don't let it grow */
+  margin-bottom: 0.5em;
+}
+
+app-footer {
+  flex: 0 0 auto; /* Don't let it grow */
+}
+
+/* Ensure controls stay at the bottom */
+.controls-row {
+  flex: 0 0 auto;
+  margin-top: auto; /* Push to bottom if space available */
+}
+
+/* ==========================================================================
+   ANIMATED CONSOLE TOOLTIPS
+   ========================================================================== */
+
+.console-tooltip {
+  position: absolute;
+  background: rgba(0, 20, 0, 0.85);
+  border: 1px solid #4eff91;
+  border-radius: 4px;
+  padding: 8px 12px;
+  max-width: 250px;
+  min-width: 150px;
+  color: #4eff91;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 0.8em;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(78, 255, 145, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: pre-line;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 10px;
+  transform: translateX(-50%);
+  text-align: left;
+  letter-spacing: 0.05em;
+}
+
+.control-wrapper {
+  position: relative;
+}
+
+.control-wrapper:hover .console-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.typing-animation {
+  overflow: hidden;
+  display: inline-block;
+  white-space: nowrap;
+  border-right: 0.15em solid #4eff91;
+  width: 0;
+  animation: typing 1.5s steps(40, end) forwards, blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #4eff91 }
+}
+
+/* Tooltip positioning variations */
+.tooltip-top-left {
+  left: 0;
+  transform: translateX(0) translateY(10px);
+}
+
+.tooltip-top-left:hover {
+  transform: translateX(0) translateY(0);
+}
+
+.tooltip-top-right {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(10px);
+}
+
+.tooltip-top-right:hover {
+  transform: translateX(0) translateY(0);
+}

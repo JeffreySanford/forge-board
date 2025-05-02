@@ -1,4 +1,6 @@
 import { Module, Logger } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MetricsModule } from './metrics/metrics.module';
@@ -14,22 +16,64 @@ import { StatusController } from './controllers/status.controller';
 import { MetricsController } from './metrics/metrics.controller';
 import { MetricsService } from './metrics/metrics.service';
 import { TileStateController } from './tiles/tile-state.controller';
-import { LoggerModule } from './logger/logger.module'; // Import LoggerModule
+import { LoggerModule } from './logger/logger.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { TileStateModule } from './tile-state/tile-state.module';
-import { ConfigModule } from '@nestjs/config';
 import { LogsController } from './logs/logs.controller';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { AuthGateway } from './auth/auth.gateway';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { WsJwtGuard } from './auth/ws-jwt.guard';
+import { JwtService } from './auth/jwt.service';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { User, UserSchema } from './models/user.model';
+import { Log, LogSchema } from './models/log.model';
+import { Metric, MetricSchema } from './models/metric.model';
+import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
+import { SeedService } from './seed.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        let uri = configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/forgeboard');
+        if (configService.get<string>('USE_IN_MEMORY_MONGO') === 'true') {
+          const mongod = await MongoMemoryServer.create();
+          uri = mongod.getUri();
+          // Optionally, store mongod instance for shutdown
+          console.log('[MongoMemoryServer] Started in-memory MongoDB at', uri);
+        }
+        return {
+          uri,
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        };
+      },
+      inject: [ConfigService],
+    }),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Log.name, schema: LogSchema },
+      { name: Metric.name, schema: MetricSchema },
+      { name: Diagnostic.name, schema: DiagnosticSchema },
+    ]),
     MetricsModule,
-    SocketModule, // Add this module to imports
+    SocketModule,
     StatusModule,
     TilesModule,
-    LoggerModule, // Add LoggerModule
+    LoggerModule,
     DiagnosticsModule,
-    TileStateModule
+    TileStateModule,
+    AuthModule,
+    UserModule,
+    // JwtModule removed for v10+
   ],
   controllers: [
     AppController,
@@ -37,7 +81,8 @@ import { LogsController } from './logs/logs.controller';
     StatusController,
     MetricsController,
     TileStateController,
-    LogsController
+    LogsController,
+    AuthController,
   ],
   providers: [
     AppService,
@@ -48,8 +93,29 @@ import { LogsController } from './logs/logs.controller';
     MetricsService,
     {
       provide: Logger,
-      useValue: new Logger('AppModule')
-    }
+      useValue: new Logger('AppModule'),
+    },
+    AuthService, 
+    AuthGateway, 
+    JwtAuthGuard, 
+    WsJwtGuard,
+    JwtService,
+    SeedService,
   ],
+  exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private readonly configService: ConfigService, private readonly seedService: SeedService) {
+    const useInMemory = this.configService.get<string>('USE_IN_MEMORY_MONGO') === 'true';
+    if (!useInMemory) {
+      const dbUri = this.configService.get<string>('MONGODB_URI');
+      const dbName = this.configService.get<string>('DB_NAME');
+      const dbUser = this.configService.get<string>('DB_USER');
+      const dbPassword = this.configService.get<string>('DB_PASSWORD');
+      if (!dbUri || !dbName || !dbUser || !dbPassword) {
+        throw new Error('Database configuration is missing');
+      }
+    }
+    // In-memory seeding is handled by SeedService.onModuleInit()
+  }
+}

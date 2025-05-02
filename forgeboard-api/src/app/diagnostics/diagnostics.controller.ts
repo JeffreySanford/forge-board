@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Inject, Logger } from '@nestjs/common';
 import { DiagnosticsService } from './diagnostics.service';
 import { DiagnosticsGateway } from '../gateways/diagnostics.gateway';
-import { HealthData, DiagnosticEvent } from '@forge-board/shared/api-interfaces';
+import type { DiagnosticEvent } from '@forge-board/shared/api-interfaces';
+import { HealthData } from '@forge-board/shared/api-interfaces';
 
 // Define DiagnosticEventResponse interface
 export interface DiagnosticEventResponse {

@@ -3,85 +3,39 @@
  */
 
 /**
- * Represents a diagnostic event in the system
+ * Diagnostic event type
  */
 export interface DiagnosticEvent {
   id: string;
   timestamp: string;
   type: string;
   eventType: string;
-  message: string;
   source: string;
-  details?: Record<string, unknown>;
-  severity?: 'info' | 'warning' | 'error' | 'critical';
+  message: string;
+  service?: string;
+  data?: Record<string, unknown>;
 }
 
 /**
- * System health data structure
+ * Health data interface
  */
 export interface HealthData {
-  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' | 'simulated';
+  status: string;
   uptime: number;
   timestamp: string;
-  details: Record<string, string>;
+  details: Record<string, any>;
 }
 
 /**
- * Socket information types
+ * Diagnostic event response
  */
-// Generic event entry for socket events
-export interface DiagnosticSocketEvent<TData = unknown> {
-  type: string;
-  timestamp: string | Date;
-  data?: TData;
-}
-
-// Generic log event for socket logs
-export interface SocketLogEvent<TData = unknown> {
-  socketId: string;
-  namespace: string;
-  eventType: string;
-  timestamp: string | Date;
-  message: string;
-  data?: TData;
-  // Add type property for backward compatibility
-  type?: string;
-}
-
-export interface SocketInfo<TData = unknown> {
+export interface DiagnosticEventResponse {
+  success: boolean;
+  timestamp: string;
   id: string;
-  namespace: string;
-  clientIp: string;
-  userAgent: string;
-  connectTime: string | Date;
-  disconnectTime?: string | Date;
-  lastActivity: string | Date;
-  events: DiagnosticSocketEvent<TData>[];
-  // Add these properties for compatibility with existing code
-  connected?: string | Date;
-  status?: string;
+  eventType: string;
 }
 
-export interface SocketMetrics {
-  totalConnections: number;
-  activeConnections: number;
-  disconnections: number;
-  errors: number;
-  messagesSent: number;
-  messagesReceived: number;
-}
+// Mark this module for export
+export const __diagnosticTypes = true;
 
-export interface SocketStatusUpdate<TData = unknown> {
-  activeSockets: SocketInfo<TData>[];
-  metrics: SocketMetrics;
-}
-
-/**
- * Type for socket connection errors
- */
-export interface SocketConnectionError {
-  message: string;
-  type: string;
-  code?: string;
-  details?: unknown;
-}

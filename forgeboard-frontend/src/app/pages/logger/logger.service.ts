@@ -1,17 +1,21 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of, timer, Subscription } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, timer } from 'rxjs';
+import { LogEntry, LogLevelType, LogLevel, LogQueryResponse, LogSocketResponse, LogFilter } from '@forge-board/shared/api-interfaces';
+import { LogDispatchService } from '../../services/log-dispatch.service';
 import { Socket, io } from 'socket.io-client';
-import { LogEntry, LogFilter, LogResponse, LogStreamUpdate, SocketResponse } from '@forge-board/shared/api-interfaces';
 
-// Define enum locally since it's not exported from api-interfaces
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warning', // Note: this maps to 'warning' which is the LogLevelType in the API
-  ERROR = 'error',
-  FATAL = 'fatal'
+// Define types that aren't in the shared interfaces
+export interface LogStreamUpdate {
+  log?: LogEntry;
+  logs?: LogEntry[];
+  totalCount: number;
+  append?: boolean;
+  stats?: Record<string, number>;
+}
+
+// Define response interface for log fetch operations by extending LogQueryResponse
+export interface LogFetchResponse extends LogQueryResponse {
+  success?: boolean;
 }
 
 @Injectable({
@@ -31,15 +35,17 @@ export class LoggerService implements OnDestroy {
     [LogLevel.INFO]: 0,
     [LogLevel.WARN]: 0,
     [LogLevel.ERROR]: 0,
-    [LogLevel.FATAL]: 0
+    [LogLevel.FATAL]: 0,
+    [LogLevel.TRACE]: 0  // Added missing TRACE level
   });
   
   // Filter subject
   private filterSubject = new BehaviorSubject<LogFilter>({
-    levels: [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL],
-    sources: [],
-    startTime: undefined, // Fixed: Changed from null to undefined to match LogFilter type
-    endTime: undefined, // Fixed: Changed from null to undefined to match LogFilter type
+    level: 'debug', // Change from array to string - use a single level value
+    loglevels: [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL], // Required property
+    service: '', // Service instead of sources
+    startDate: undefined, // Using startDate 
+    endDate: undefined, // Using endDate
     search: ''
   });
   
@@ -50,7 +56,7 @@ export class LoggerService implements OnDestroy {
   private mockDataInterval: ReturnType<typeof setInterval> | null = null; // Fixed: using proper type instead of any
   private mockDataSubscription: Subscription | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(private logDispatch: LogDispatchService) {
     // Initialize socket connection
     this.initSocket();
     
@@ -134,7 +140,7 @@ export class LoggerService implements OnDestroy {
       this.startMockDataGeneration();
     });
     
-    this.socket.on('log-stream', (response: SocketResponse<LogStreamUpdate>) => {
+    this.socket.on('log-stream', (response: LogSocketResponse<LogStreamUpdate>) => {
       if (response.status === 'success') {
         // Update logs
         if (response.data.append) {
@@ -149,8 +155,6 @@ export class LoggerService implements OnDestroy {
         }
         
         // Update stats if they exist in the response
-        // Note: This is a custom extension not in the LogStreamUpdate interface
-        // We need to use a type assertion to access it
         const extendedData = response.data as LogStreamUpdate & { stats?: Record<LogLevel, number> };
         if (extendedData.stats) {
           this.logStatsSubject.next(extendedData.stats);
@@ -206,7 +210,7 @@ export class LoggerService implements OnDestroy {
       'Rate limit exceeded',
       'Session expired'
     ];
-    const levels: LogLevel[] = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
+    const levels: LogLevelType[] = ['debug', 'info', 'info', 'warning', 'error']; // Use string literals
     
     // Generate some initial logs
     for (let i = 0; i < 20; i++) {
@@ -241,7 +245,8 @@ export class LoggerService implements OnDestroy {
       [LogLevel.INFO]: stats[LogLevel.INFO] || 0,
       [LogLevel.WARN]: stats[LogLevel.WARN] || 0,
       [LogLevel.ERROR]: stats[LogLevel.ERROR] || 0,
-      [LogLevel.FATAL]: stats[LogLevel.FATAL] || 0
+      [LogLevel.FATAL]: stats[LogLevel.FATAL] || 0,
+      [LogLevel.TRACE]: stats[LogLevel.TRACE] || 0  // Added missing TRACE level
     });
     
     // Set up interval to add new logs occasionally
@@ -265,7 +270,7 @@ export class LoggerService implements OnDestroy {
       
       // Update stats
       const currentStats = this.logStatsSubject.getValue();
-      const mappedLevel = this.mapApiLevelToLocalEnum(level);
+      const mappedLevel = this.stringToEnumLevel(level);
       currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
       this.logStatsSubject.next({...currentStats});
     });
@@ -276,6 +281,13 @@ export class LoggerService implements OnDestroy {
    * This resolves the type incompatibility between the API's string literals and our enum
    */
   private mapApiLevelToLocalEnum(level: string): LogLevel {
+    return this.stringToEnumLevel(level as LogLevelType);
+  }
+  
+  /**
+   * Convert LogLevelType string to LogLevel enum
+   */
+  private stringToEnumLevel(level: LogLevelType): LogLevel {
     switch(level.toLowerCase()) {
       case 'debug': return LogLevel.DEBUG;
       case 'info': return LogLevel.INFO;
@@ -306,22 +318,10 @@ export class LoggerService implements OnDestroy {
       // If connected to socket, update subscription
       this.socket.emit('update-filter', filter);
     } else {
-      // Otherwise, filter local logs
-      this.http.get<LogResponse>(`${this.apiUrl}`, { params: this.buildFilterParams(filter) })
-        .pipe(
-          catchError(() => {
-            // If HTTP request fails, filter mock logs
-            const allLogs = this.logsSubject.getValue();
-            const filteredLogs = this.applyFilter(allLogs, filter);
-            return of({
-              logs: filteredLogs,
-              total: filteredLogs.length,
-              success: true
-            });
-          })
-        )
+      // Otherwise, filter local logs using our dispatcher
+      this.logDispatch.fetchLogs(this.buildFilterParams(filter))
         .subscribe(response => {
-          if (response.success) {
+          if (response.status) { // Check for status instead of success
             this.logsSubject.next(response.logs);
           }
         });
@@ -333,23 +333,23 @@ export class LoggerService implements OnDestroy {
    */
   private applyFilter(logs: LogEntry[], filter: LogFilter): LogEntry[] {
     return logs.filter(log => {
-      // Filter by level
-      if (filter.levels && filter.levels.length > 0 && !filter.levels.includes(log.level)) {
+      // Filter by level (use level instead of levels)
+      if (filter.level && !filter.level.toString().includes(log.level)) {
         return false;
       }
       
-      // Filter by source
-      if (filter.sources && filter.sources.length > 0 && !filter.sources.includes(log.source)) {
+      // Filter by service (use service instead of sources)
+      if (filter.service && filter.service !== log.source) {
         return false;
       }
       
-      // Filter by start time
-      if (filter.startTime && new Date(log.timestamp) < new Date(filter.startTime)) {
+      // Filter by startDate (use startDate instead of startTime)
+      if (filter.startDate && new Date(log.timestamp) < new Date(filter.startDate)) {
         return false;
       }
       
-      // Filter by end time
-      if (filter.endTime && new Date(log.timestamp) > new Date(filter.endTime)) {
+      // Filter by endDate (use endDate instead of endTime)
+      if (filter.endDate && new Date(log.timestamp) > new Date(filter.endDate)) {
         return false;
       }
       
@@ -410,24 +410,36 @@ export class LoggerService implements OnDestroy {
   private buildFilterParams(filter: LogFilter): Record<string, string> {
     const params: Record<string, string> = {};
     
-    if (filter.levels?.length) {
-      params['levels'] = filter.levels.join(',');
+    // Use level instead of levels
+    if (filter.level) {
+      params['level'] = filter.level.toString();
     }
     
-    if (filter.sources?.length) {
-      params['sources'] = filter.sources.join(',');
+    // Use service instead of sources
+    if (filter.service) {
+      params['service'] = filter.service;
     }
     
-    if (filter.startTime) {
-      params['startTime'] = filter.startTime;
+    // Use startDate and endDate
+    if (filter.startDate) {
+      params['startDate'] = filter.startDate;
     }
     
-    if (filter.endTime) {
-      params['endTime'] = filter.endTime;
+    if (filter.endDate) {
+      params['endDate'] = filter.endDate;
     }
     
     if (filter.search) {
       params['search'] = filter.search;
+    }
+    
+    if (filter.limit) {
+      params['limit'] = filter.limit.toString();
+    }
+    
+    // Use skip instead of offset
+    if (filter.skip) {
+      params['skip'] = filter.skip.toString();
     }
     
     return params;

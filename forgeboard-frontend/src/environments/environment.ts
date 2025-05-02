@@ -1,9 +1,29 @@
 export const environment = {
   production: false,
-  apiBaseUrl: '/api',
-  socketBaseUrl: '',
-  project: {
-    name: 'FORGEBOARD',
-    prefix: 'PROJECT'
-  }
+  apiUrl: 'http://localhost:3000/api',
+  socketUrl: 'http://localhost:3000',
+  apiBaseUrl: 'http://localhost:3000/api',
+  socketBaseUrl: 'http://localhost:3000',
+  encryptedJwtToken: '', // Set at runtime after user login
+  jwtGuestToken: '', // Loaded from environment variable or runtime config
+  features: {
+    enableMockData: true,
+    enableDiagnostics: true,
+    enableSocketLogging: true,
+    enableTypeValidation: true
+  },
+  logging: {
+    level: 'debug',
+    enableConsole: true
+  },
+  mongo: {
+    uri: '', // Loaded from environment variable or runtime config
+    options: {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }
+  },
+  useInMemoryMongo: true,
+  mongoUri: 'In-memory MongoDB'
 };
+// Real keys and secrets are now in .env and should be loaded at runtime.

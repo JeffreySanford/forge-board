@@ -5,33 +5,28 @@ import { SocketInfo, SocketMetrics, SocketLogEvent } from '@forge-board/shared/a
 @Injectable()
 export class SocketRegistryService {
   private readonly logger = new Logger(SocketRegistryService.name);
-  private sockets: Map<string, Socket> = new Map();
-  private socketInfo: Map<string, SocketInfo> = new Map();
-  private socketLogs: SocketLogEvent[] = [];
-  private connectionHistory: SocketInfo[] = [];
-  
-  // Metrics tracking
-  private metrics: SocketMetrics = {
+  private readonly activeSockets = new Map<string, SocketInfo>();
+  private readonly metrics: SocketMetrics = {
     totalConnections: 0,
     activeConnections: 0,
     disconnections: 0,
-    errors: 0,
     messagesSent: 0,
-    messagesReceived: 0
+    messagesReceived: 0,
+    errors: 0,
+    lastError: null // This is now valid with our updated interface
   };
-
+  private socketLogs: SocketLogEvent[] = [];
+  private connectionHistory: SocketInfo[] = [];
+  
   /**
    * Register a new socket connection
    * @param socket The socket instance to register
    * @param namespace Optional namespace name
    */
-  registerSocket(socket: Socket, namespace: string = 'default'): void {
+  registerSocket(socket: Socket, namespace = 'default'): void {
     this.logger.log(`Registering socket: ${socket.id} in namespace: ${namespace}`);
     
     // Store socket instance
-    this.sockets.set(socket.id, socket);
-    
-    // Create socket info
     const socketInfo: SocketInfo = {
       id: socket.id,
       namespace: namespace,
@@ -39,18 +34,15 @@ export class SocketRegistryService {
       userAgent: socket.handshake.headers['user-agent'] || 'Unknown',
       connectTime: new Date().toISOString(),
       lastActivity: new Date().toISOString(),
-      events: [],
-      connected: new Date().toISOString(), // Added missing property
-      status: 'connected' // Added missing property
+      events: []
+      // Removed invalid properties: connected and status
     };
     
-    // Store socket info
-    this.socketInfo.set(socket.id, socketInfo);
-    this.connectionHistory.push({ ...socketInfo });
-    
-    // Update metrics
+    this.activeSockets.set(socket.id, socketInfo);
     this.metrics.totalConnections++;
-    this.metrics.activeConnections = this.sockets.size;
+    this.metrics.activeConnections = this.activeSockets.size;
+    
+    this.logger.log(`Socket ${socket.id} registered from ${namespace}`);
     
     // Setup disconnect handler
     socket.on('disconnect', () => {
@@ -66,7 +58,7 @@ export class SocketRegistryService {
    */
   private handleDisconnect(socketId: string): void {
     // Update socket info
-    const socketInfo = this.socketInfo.get(socketId);
+    const socketInfo = this.activeSockets.get(socketId);
     if (socketInfo) {
       socketInfo.disconnectTime = new Date().toISOString();
       
@@ -78,11 +70,11 @@ export class SocketRegistryService {
     }
     
     // Remove from active sockets
-    this.sockets.delete(socketId);
+    this.activeSockets.delete(socketId);
     
     // Update metrics
     this.metrics.disconnections++;
-    this.metrics.activeConnections = this.sockets.size;
+    this.metrics.activeConnections = this.activeSockets.size;
     
     // Log the event
     this.logSocketEvent(socketId, 'disconnect', 'Socket disconnected');
@@ -91,9 +83,9 @@ export class SocketRegistryService {
   /**
    * Log a socket event
    */
-  private logSocketEvent(socketId: string, eventType: string, message: string, data?: any): void {
+  private logSocketEvent(socketId: string, eventType: string, message: string, data?: unknown): void {
     // Update last activity time
-    const socketInfo = this.socketInfo.get(socketId);
+    const socketInfo = this.activeSockets.get(socketId);
     if (socketInfo) {
       socketInfo.lastActivity = new Date().toISOString();
       
@@ -109,11 +101,10 @@ export class SocketRegistryService {
     const logEvent: SocketLogEvent = {
       socketId,
       namespace: socketInfo?.namespace || 'unknown',
-      eventType: eventType, // Use eventType as the primary property
-      type: eventType,      // Also set type for backward compatibility
+      eventType: eventType,
       timestamp: new Date().toISOString(),
       message,
-      data
+      data: data as Record<string, unknown>
     };
     
     // Add to logs array
@@ -129,8 +120,7 @@ export class SocketRegistryService {
    * Get all active sockets info
    */
   getActiveSockets(): SocketInfo[] {
-    return Array.from(this.socketInfo.values())
-      .filter(info => !info.disconnectTime);
+    return Array.from(this.activeSockets.values());
   }
   
   /**
@@ -144,7 +134,7 @@ export class SocketRegistryService {
    * Get socket logs
    * @param limit Optional limit for number of logs
    */
-  getLogs(limit: number = 50): SocketLogEvent[] {
+  getLogs(limit = 50): SocketLogEvent[] {
     return this.socketLogs.slice(0, limit);
   }
   
@@ -153,6 +143,38 @@ export class SocketRegistryService {
    */
   getConnectionHistory(): SocketInfo[] {
     return [...this.connectionHistory];
+  }
+
+  /**
+   * Record an error
+   */
+  recordError(error: Error): void {
+    this.metrics.errors++;
+    
+    // Create a timestamp separately instead of adding it to the Error object
+    const timestamp = new Date().toISOString();
+    
+    // Update metrics with error info
+    this.metrics.lastError = error;
+    
+    // You might want to log the error with timestamp
+    this.logger.error(`Socket error at ${timestamp}: ${error.message}`, error.stack);
+    
+    // Emit metrics update
+    this.emitMetricsUpdate();
+  }
+
+  /**
+   * Remove a socket
+   */
+  removeSocket(clientId: string, reason: string): void {
+    if (this.activeSockets.has(clientId)) {
+      this.activeSockets.delete(clientId);
+      this.metrics.activeConnections = this.activeSockets.size;
+      this.logger.log(`Socket ${clientId} removed. Reason: ${reason}`);
+    } else {
+      this.logger.warn(`Attempted to remove non-existent socket: ${clientId}`);
+    }
   }
 
   /**
@@ -167,5 +189,45 @@ export class SocketRegistryService {
    */
   incrementMessageReceived(): void {
     this.metrics.messagesReceived++;
+  }
+
+  /**
+   * Record a message received from a client
+   * @param socketId The socket ID
+   * @param eventType The type of event
+   * @param data Optional data received
+   */
+  recordMessageReceived(socketId: string, eventType: string, data?: unknown): void {
+    // Implement this method to fix the errors in jwt-diagnostics.gateway.ts
+    this.metrics.messagesReceived++;
+    
+    const socketInfo = this.activeSockets.get(socketId);
+    if (socketInfo) {
+      socketInfo.lastActivity = new Date().toISOString();
+      
+      // Add event to socket history
+      socketInfo.events.push({
+        type: eventType,
+        timestamp: new Date().toISOString(),
+        data
+      });
+    }
+    
+    this.logger.verbose(`Socket ${socketId} received message: ${eventType}`);
+  }
+
+  /**
+   * Emit metrics update
+   * This method is called when metrics change to notify any observers
+   */
+  private emitMetricsUpdate(): void {
+    // Log metrics update for debugging
+    this.logger.debug('Socket metrics updated', { 
+      activeConnections: this.metrics.activeConnections,
+      totalConnections: this.metrics.totalConnections,
+      errors: this.metrics.errors,
+      messagesSent: this.metrics.messagesSent,
+      messagesReceived: this.metrics.messagesReceived
+    });
   }
 }

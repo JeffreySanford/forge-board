@@ -1,38 +1,24 @@
 /**
- * Types related to system metrics
+ * Types for metrics collection and monitoring
  */
 
 /**
- * Standard metric data structure
+ * Metric data point
  */
 export interface MetricData {
   cpu: number;
   memory: number;
   time: string;
-  disk: number;
-  network: number;
-  details?: Record<string, unknown>;
+  disk?: number;
+  network?: number;
+  [key: string]: number | string | undefined;
 }
 
-/**
- * Metric response structure
- */
 export interface MetricResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data: MetricData | null;
   timestamp: string;
 }
 
-/**
- * Metrics configuration
- */
-export interface MetricConfig {
-  interval: number;
-  retention: number;
-  thresholds: {
-    cpu: number;
-    memory: number;
-    disk: number;
-  };
-}
+export const __metricsTypes = true;

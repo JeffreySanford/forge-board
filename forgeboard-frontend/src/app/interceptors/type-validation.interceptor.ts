@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -16,13 +16,24 @@ export class TypeValidationInterceptor implements HttpInterceptor {
   private urlTypeMap: Record<string, string> = {
     '/api/metrics': 'MetricData',
     '/api/diagnostics/health': 'HealthData',
-    '/api/logs': 'LogResponse',
+    '/api/logs$': 'LogQueryResponse',
+    // Add special case for logs/batch endpoint to use different type validation
+    '/api/logs/batch': 'LogBatchResponse',
     // Add more mappings as needed
   };
 
-  constructor(
-    private typeDiagnostics: TypeDiagnosticsService
-  ) {}
+  // Use injector for lazy loading to break circular dependency
+  constructor(private injector: Injector) {}
+
+  // Lazy getter for TypeDiagnosticsService to avoid circular dependency
+  private get typeDiagnostics(): TypeDiagnosticsService | null {
+    try {
+      return this.injector.get(TypeDiagnosticsService);
+    } catch (e) {
+      console.warn('TypeDiagnosticsService not available:', e);
+      return null;
+    }
+  }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(
@@ -32,14 +43,13 @@ export class TypeValidationInterceptor implements HttpInterceptor {
           // Find matching type for this URL
           const typeName = this.findMatchingType(url);
           
-          if (typeName) {
+          if (typeName && this.typeDiagnostics) {
             try {
-              // Use validateType instead of tryValidateType
+              // Use validateType, but safely get the service first
               const callerInfo = `HTTP ${request.method} ${url}`;
               this.typeDiagnostics.validateType(event.body, typeName, callerInfo);
-              // Even if validation fails, we still return the original response
             } catch (error) {
-              // Log error without using LoggerService (breaking circular dependency)
+              // Log error without using LoggerService
               console.error(`Response type validation failed for ${url}:`, error);
             }
           }

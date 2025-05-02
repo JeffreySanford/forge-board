@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
+import { MatSidenav } from '@angular/material/sidenav';
 
 interface NavItem {
   name: string;
@@ -17,6 +18,8 @@ interface NavItem {
   standalone: false
 })
 export class NavigationComponent {
+  @ViewChild('drawer') drawer!: MatSidenav;
+
   navItems: NavItem[] = [
     { name: 'Home', route: '/home', icon: 'home', description: 'Dashboard home page' },
     { name: 'Metrics', route: '/metrics', icon: 'timeline', description: 'System performance metrics' },
@@ -35,5 +38,14 @@ export class NavigationComponent {
         map(result => result.matches),
         shareReplay()
       );
+  }
+
+  /**
+   * Toggle the navigation drawer
+   */
+  toggleDrawer(): void {
+    if (this.drawer) {
+      this.drawer.toggle();
+    }
   }
 }

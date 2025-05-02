@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, Query, Logger } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
 import { MetricData, MetricResponse } from '@forge-board/shared/api-interfaces';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Controller('metrics')
 export class MetricsController {
@@ -9,47 +11,54 @@ export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
   
   @Get()
-  async getMetrics(): Promise<MetricData> {
+  getMetrics(): Observable<MetricData> {
     this.logger.log('GET /metrics');
+    // Return the observable stream directly
     return this.metricsService.getMetrics();
   }
   
   @Get('status')
-  getStatus(): { status: string; timestamp: string } {
+  getStatus(): Observable<{ status: string; timestamp: string }> {
     this.logger.log('GET /metrics/status');
-    return {
+    return of({
       status: 'online',
       timestamp: new Date().toISOString()
-    };
+    });
   }
   
   @Get('set-interval')
-  setInterval(@Query('interval') intervalStr: string): MetricResponse {
+  setInterval(@Query('interval') intervalStr: string): Observable<MetricResponse> {
     const interval = parseInt(intervalStr, 10);
     if (isNaN(interval) || interval < 20) {
-      return {
+      return of({
         success: false,
+        status: 'error',
         data: null,
         timestamp: new Date().toISOString(),
         message: 'Invalid interval. Must be at least 20ms.'
-      };
+      });
     }
-    this.metricsService.setUpdateInterval(interval);
-    return {
-      success: true,
-      data: null,
-      timestamp: new Date().toISOString(),
-      message: `Interval updated to ${interval}ms`
-    };
+    
+    return this.metricsService.setUpdateInterval(interval).pipe(
+      map(newInterval => ({
+        success: true,
+        status: 'success',
+        data: null,
+        timestamp: new Date().toISOString(),
+        message: `Interval updated to ${newInterval}ms`
+      }))
+    );
   }
 
-  registerMetric(@Body() metric: MetricData): MetricResponse {
+  @Post('register')
+  registerMetric(@Body() metric: MetricData): Observable<MetricResponse> {
     // In a real application, you'd validate and store it
-    return {
+    return of({
       success: true,
+      status: 'success',
       data: metric,
       timestamp: new Date().toISOString(),
       message: 'Metric data received'
-    };
+    });
   }
 }

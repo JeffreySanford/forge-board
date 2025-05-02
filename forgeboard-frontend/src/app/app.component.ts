@@ -1,12 +1,15 @@
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
-import { from, of, interval, Subscription } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { from, of, interval, Observable, Subscription } from 'rxjs';
+import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 import { UserDataService, UserData } from './services/user-data.service';
 import { TileType } from './models/tile.model';
 import { TileStateService } from './services/tile-state.service';
 import { SoundHelperService, SoundType } from './services/sound-helper.service';
 import { ProjectConfigService } from './services/project-config.service';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { environment } from '../environments/environment';
+import { NavigationComponent } from './components/navigation/navigation.component';
 
 /**
  * Main application component that manages global state and layout
@@ -25,6 +28,9 @@ import { ProjectConfigService } from './services/project-config.service';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
+  // Add ViewChild reference to the NavigationComponent
+  @ViewChild(NavigationComponent) navigationComponent!: NavigationComponent;
+  
   title = 'forgeboard-frontend';
   projectName = 'PROJECT: FORGEBOARD'; // Default fallback
   currentDate = new Date().toLocaleDateString();
@@ -37,6 +43,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   userData: UserData | null = null;
   private userDataSubscription: Subscription | null = null;
   private projectNameSubscription: Subscription | null = null;
+  
+  // Add properties for responsive layout
+  isHandset$: Observable<boolean>;
+  
+  // Add properties for header controls
+  iconsCollapsed = false;
+  dbStatus: 'green' | 'yellow' | 'red' = 'green';
+  dbStatusText: string = 'In-memory MongoDB';
   
   // Remove callout-specific cursor and lines
   private shakeInterval: Subscription | null = null;
@@ -66,10 +80,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     private projectConfigService: ProjectConfigService,
     private tileStateService: TileStateService,
     private soundHelper: SoundHelperService,
-    private userDataService: UserDataService
+    private userDataService: UserDataService,
+    private breakpointObserver: BreakpointObserver
   ) {
     // Initialize with default order, will be updated from backend in ngAfterViewInit
     this.tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
+    
+    // Initialize isHandset$ in the constructor
+    this.isHandset$ = this.breakpointObserver.observe(Breakpoints.Handset)
+      .pipe(
+        map(result => result.matches),
+        shareReplay()
+      );
   }
 
   /**
@@ -90,6 +112,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe(name => {
         this.projectName = name;
       });
+      
+    // Initialize database status from environment
+    this.dbStatus = environment.useInMemoryMongo ? 'green' : 'yellow';
+    this.dbStatusText = environment.mongoUri;
   }
 
   /**
@@ -506,6 +532,88 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // Add new method to toggle container indicators
   toggleContainerIndicators(): void {
     this.showContainerIndicators = !this.showContainerIndicators;
+  }
+
+  /**
+   * Plays a sound when showing tooltips if audio is enabled
+   */
+  onTooltipShow(): void {
+    if (this.audioEnabled) {
+      // Play a subtle hover sound
+      this.playKeySound(0.1); // Lower volume for tooltip hover
+    }
+  }
+
+  // Add new methods for header controls
+  onConnectionStatusClick(): void {
+    // This method is just a placeholder since the actual action happens in the component itself
+    console.log('Connection status clicked');
+  }
+  
+  toggleIconsCollapse(): void {
+    this.iconsCollapsed = !this.iconsCollapsed;
+  }
+  
+  toggleAllGrids(): void {
+    this.is12ColumnVisible = !this.is12ColumnVisible;
+    this.is4ColumnVisible = !this.is4ColumnVisible;
+    this.isSmallGridVisible = !this.isSmallGridVisible;
+    this.isLargeGridVisible = !this.isLargeGridVisible;
+  }
+  
+  onInfoClick(): void {
+    // Show info panel or modal
+    alert('ForgeBoard Dashboard\n\nVersion 1.0.0\n\nA blueprint-style dashboard for system monitoring and control.');
+  }
+  
+  onDatabaseIconClick(): void {
+    // Show database connection details or modal
+    alert(`Database Status: ${this.dbStatusText}\nConnection: ${this.dbStatus === 'green' ? 'Healthy' : this.dbStatus === 'yellow' ? 'Warning' : 'Error'}`);
+  }
+  
+  onAudioIconClick(): void {
+    this.audioEnabled = !this.audioEnabled;
+    this.isShaking = true;
+    setTimeout(() => this.isShaking = false, 800);
+    localStorage.setItem('audioEnabled', this.audioEnabled.toString());
+    
+    if (this.audioEnabled && !this.isAudioInitialized) {
+      this.enableAudio();
+    } else {
+      this.soundHelper.setEnabled(this.audioEnabled);
+    }
+  }
+  
+  // Handle events from footer component
+  handleFooterIconsCollapseToggle(collapsed: boolean): void {
+    this.iconsCollapsed = collapsed;
+  }
+  
+  handleFooterGridToggle(): void {
+    this.toggleAllGrids();
+  }
+  
+  handleFooterInfoClick(): void {
+    this.onInfoClick();
+  }
+  
+  handleFooterDatabaseClick(): void {
+    this.onDatabaseIconClick();
+  }
+  
+  handleFooterAudioToggle(enabled: boolean): void {
+    if (this.audioEnabled !== enabled) {
+      this.onAudioIconClick();
+    }
+  }
+
+  /**
+   * Toggles the navigation drawer by accessing the navigation component
+   */
+  toggleNavigation(): void {
+    if (this.navigationComponent) {
+      this.navigationComponent.toggleDrawer();
+    }
   }
 }
 

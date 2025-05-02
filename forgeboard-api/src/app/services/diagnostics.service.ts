@@ -12,13 +12,19 @@ export class DiagnosticsService {
   getHealthData(): HealthData {
     const uptime = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
     return {
-      status: this.determineHealthStatus() as any as 'healthy' | 'degraded' | 'unhealthy' | 'unknown',
+      status: this.determineHealthStatus(),
       uptime,
       timestamp: new Date().toISOString(),
       details: {
-        past: this.generatePastStatus(),
-        present: this.generatePresentStatus(),
-        future: this.generateFutureStatus(),
+        past: {
+          message: this.generatePastStatus()
+        },
+        present: {
+          message: this.generatePresentStatus()
+        },
+        future: {
+          message: this.generateFutureStatus()
+        }
       }
     };
   }
@@ -36,7 +42,6 @@ export class DiagnosticsService {
    */
   private determineHealthStatus(): 'healthy' | 'degraded' | 'unhealthy' | 'unknown' {
     // Implement actual health logic based on real metrics
-    const healthStatuses = ['healthy', 'degraded', 'unhealthy'] as const;
     // For demo, mostly return healthy with occasional other statuses
     const random = Math.random();
     if (random < 0.8) return 'healthy';

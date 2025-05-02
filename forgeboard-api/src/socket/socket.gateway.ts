@@ -7,7 +7,10 @@ import {
   SubscribeMessage
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { LoggerService } from '../app/logger/logger.service';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:4200',
@@ -19,14 +22,16 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private metricsInterval: NodeJS.Timeout;
   private interval = 500;
+  
+  constructor(private readonly logger: LoggerService) {}
 
   afterInit(server: Server) {
-    console.log('Socket.IO server initialized');
+    this.logger.info('Socket.IO server initialized', 'SocketGateway');
     this.startMetricsEmission();
   }
 
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    this.logger.info(`Client connected: ${client.id}`, 'SocketGateway', { clientId: client.id });
     client.emit('connection-status', {
       status: 'success',
       data: { connected: true },
@@ -35,12 +40,15 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.info(`Client disconnected: ${client.id}`, 'SocketGateway', { clientId: client.id });
   }
 
   @SubscribeMessage('subscribe-metrics')
   handleSubscribeMetrics(client: Socket) {
-    console.log(`Client ${client.id} subscribed to metrics`);
+    this.logger.info(`Client ${client.id} subscribed to metrics`, 'SocketGateway', { 
+      clientId: client.id, 
+      event: 'subscribe-metrics' 
+    });
     return { event: 'metrics-subscribed', data: { success: true } };
   }
 
@@ -49,13 +57,28 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     if (typeof interval === 'number' && interval >= 100 && interval <= 10000) {
       this.interval = interval;
       this.restartMetricsEmission();
+      this.logger.info(`Client ${client.id} set metrics interval to ${interval}ms`, 'SocketGateway', {
+        clientId: client.id,
+        interval,
+        event: 'set-interval'
+      });
       return { event: 'interval-set', data: { success: true, interval } };
     }
+    
+    this.logger.warning(`Client ${client.id} attempted to set invalid interval: ${interval}`, 'SocketGateway', {
+      clientId: client.id,
+      invalidInterval: interval,
+      event: 'set-interval'
+    });
     return { event: 'interval-set', data: { success: false, message: 'Invalid interval' } };
   }
 
   @SubscribeMessage('ping')
   handlePing(client: Socket) {
+    this.logger.debug(`Ping received from client ${client.id}`, 'SocketGateway', { 
+      clientId: client.id,
+      event: 'ping'
+    });
     return { event: 'pong', data: { timestamp: new Date().toISOString() } };
   }
 
@@ -64,6 +87,11 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       clearInterval(this.metricsInterval);
     }
 
+    this.logger.info(`Starting metrics emission with interval ${this.interval}ms`, 'SocketGateway', {
+      interval: this.interval,
+      action: 'startMetricsEmission'
+    });
+    
     this.metricsInterval = setInterval(() => {
       const metrics = {
         cpu: 40 + Math.random() * 20,
@@ -82,6 +110,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   private restartMetricsEmission() {
+    this.logger.info('Restarting metrics emission', 'SocketGateway', { 
+      interval: this.interval,
+      action: 'restartMetricsEmission'
+    });
     this.startMetricsEmission();
   }
 }

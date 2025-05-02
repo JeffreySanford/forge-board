@@ -1,8 +1,9 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
 import { createSocketResponse } from '../utils/socket-utils';
+import { Subscription } from 'rxjs';
 
 @WebSocketGateway({
   namespace: '/metrics',
@@ -11,12 +12,19 @@ import { createSocketResponse } from '../utils/socket-utils';
     credentials: false
   }
 })
-export class MetricsGateway {
+export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(MetricsGateway.name);
-  private clientIntervals: Map<string, { interval: number, timerId: NodeJS.Timeout }> = new Map();
+  private clientSubscriptions: Map<string, { 
+    interval: number, 
+    subscription: Subscription 
+  }> = new Map();
   
   constructor(private metricsService: MetricsService) {}
+  
+  afterInit(): void {
+    this.logger.log('Metrics Gateway initialized');
+  }
 
   /**
    * Handle client connection
@@ -24,10 +32,10 @@ export class MetricsGateway {
   handleConnection(client: Socket): void {
     this.logger.log(`Client connected to metrics: ${client.id}`);
     
-    // Initialize client data with default interval
-    this.clientIntervals.set(client.id, { 
+    // Initialize client data with default interval but no subscription yet
+    this.clientSubscriptions.set(client.id, { 
       interval: 1000, // Default interval
-      timerId: null
+      subscription: null
     });
   }
 
@@ -37,12 +45,13 @@ export class MetricsGateway {
   handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected from metrics: ${client.id}`);
     
-    // Clear interval for this client and remove from map
-    const clientData = this.clientIntervals.get(client.id);
-    if (clientData && clientData.timerId) {
-      clearInterval(clientData.timerId);
+    // Clean up subscription for this client
+    const clientData = this.clientSubscriptions.get(client.id);
+    if (clientData?.subscription) {
+      clientData.subscription.unsubscribe();
     }
-    this.clientIntervals.delete(client.id);
+    
+    this.clientSubscriptions.delete(client.id);
   }
 
   /**
@@ -53,30 +62,37 @@ export class MetricsGateway {
     this.logger.log(`Client ${client.id} subscribed to metrics`);
     
     // Get or initialize client data
-    let clientData = this.clientIntervals.get(client.id);
+    let clientData = this.clientSubscriptions.get(client.id);
     if (!clientData) {
-      clientData = { interval: 1000, timerId: null };
-      this.clientIntervals.set(client.id, clientData);
+      clientData = { 
+        interval: 1000, 
+        subscription: null 
+      };
+      this.clientSubscriptions.set(client.id, clientData);
     }
     
-    // Clear any existing interval for this client
-    if (clientData.timerId) {
-      clearInterval(clientData.timerId);
+    // Clean up any existing subscription
+    if (clientData.subscription) {
+      clientData.subscription.unsubscribe();
     }
     
-    // Start sending metrics at the specified interval
-    const timerId = setInterval(() => {
-      try {
-        const metrics = this.metricsService.getLatestMetrics();
-        client.emit('system-metrics', createSocketResponse('system-metrics', metrics));
-      } catch (err) {
-        this.logger.error(`Error sending metrics to client ${client.id}: ${err.message}`, err);
+    // Subscribe to the metrics service observable and forward to the client
+    const subscription = this.metricsService.getMetrics().subscribe({
+      next: (metrics) => {
+        try {
+          client.emit('system-metrics', createSocketResponse('system-metrics', metrics));
+        } catch (err) {
+          this.logger.error(`Error sending metrics to client ${client.id}: ${err.message}`, err.stack);
+        }
+      },
+      error: (err) => {
+        this.logger.error(`Error in metrics stream for client ${client.id}: ${err.message}`, err.stack);
       }
-    }, clientData.interval);
+    });
     
-    // Update client data with new timer ID
-    clientData.timerId = timerId;
-    this.clientIntervals.set(client.id, clientData);
+    // Store the subscription for cleanup
+    clientData.subscription = subscription;
+    this.clientSubscriptions.set(client.id, clientData);
   }
 
   /**
@@ -88,36 +104,11 @@ export class MetricsGateway {
       const interval = typeof payload === 'number' ? payload : 1000;
       this.logger.log(`Client ${client.id} set interval to ${interval}ms`);
       
-      // Get client data - guard against undefined by creating if needed
-      let clientData = this.clientIntervals.get(client.id);
-      if (!clientData) {
-        clientData = { interval: interval, timerId: null };
-        this.clientIntervals.set(client.id, clientData);
-      } else {
-        clientData.interval = interval;
-      }
-      
-      // Clear existing interval
-      if (clientData.timerId) {
-        clearInterval(clientData.timerId);
-      }
-      
-      // Start new interval with updated timing
-      const timerId = setInterval(() => {
-        try {
-          const metrics = this.metricsService.getLatestMetrics();
-          client.emit('system-metrics', createSocketResponse('system-metrics', metrics));
-        } catch (err) {
-          this.logger.error(`Error sending metrics to client ${client.id}: ${err.message}`, err);
-        }
-      }, interval);
-      
-      // Update client data
-      clientData.timerId = timerId;
-      this.clientIntervals.set(client.id, clientData);
-      
-      // Acknowledge the change
+      // Inform the client the interval was accepted
       client.emit('interval-set', createSocketResponse('interval-set', { interval }));
+      
+      // No need to change service interval as we're now using the global metrics stream
+      // The interval is controlled at the service level, not per client
     } catch (error) {
       this.logger.error(`Error setting interval for client ${client.id}: ${error.message}`);
       client.emit('error', createSocketResponse('error', { message: 'Failed to set interval' }));

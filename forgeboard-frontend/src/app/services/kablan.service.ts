@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { BackendStatusService } from './backend-status.service';
 import { SocketResponse } from '@forge-board/shared/api-interfaces';
+import { LoggerService } from './logger.service';
 
 // Define project phases
 export type ProjectPhase = 'inception' | 'planning' | 'design' | 'development' | 'testing' | 'completion';
@@ -69,9 +70,10 @@ export class KablanService implements OnDestroy {
 
   constructor(
     private http: HttpClient,
-    private backendStatusService: BackendStatusService
+    private backendStatusService: BackendStatusService,
+    private logger: LoggerService
   ) {
-    console.log('[KablanService] Initializing service');
+    this.logger.info('[KablanService] Initializing service', 'KablanService');
     // The registerGateway method is now properly defined in BackendStatusService
     this.backendStatusService.registerGateway('kablan');
     
@@ -88,7 +90,7 @@ export class KablanService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('[KablanService] Destroying service, cleaning up resources');
+    this.logger.info('[KablanService] Destroying service, cleaning up resources', 'KablanService');
     this.subscriptions.unsubscribe();
     
     // Remove event listener
@@ -119,7 +121,7 @@ export class KablanService implements OnDestroy {
   
   // Add method to get storage type
   getStorageType(): string {
-    console.log('[KablanService] Getting storage type:', this.storageType);
+    this.logger.debug('[KablanService] Getting storage type: ' + this.storageType, 'KablanService');
     return this.storageType;
   }
   
@@ -134,13 +136,13 @@ export class KablanService implements OnDestroy {
     
     if (useMockData) {
       // Disconnect socket and use mock data
-      console.log('[KablanService] Switching to mock data');
+      this.logger.info('[KablanService] Switching to mock data', 'KablanService');
       this.disconnectSocket();
       this.startMockDataGeneration();
       this.connectionStatusSubject.next(false);
     } else {
       // Try to reconnect to real data
-      console.log('[KablanService] Attempting to connect to real data');
+      this.logger.info('[KablanService] Attempting to connect to real data', 'KablanService');
       this.stopMockDataGeneration();
       this.initSocket();
     }
@@ -150,14 +152,14 @@ export class KablanService implements OnDestroy {
   setStorageType(type: string): void {
     this.storageType = type;
     this.storageTypeSubject.next(type);
-    console.log('[KablanService] Storage type set to:', type);
+    this.logger.info('[KablanService] Storage type set to: ' + type, 'KablanService');
   }
   
   // Socket initialization
   private initSocket(): void {
     try {
       // Try to connect to the kablan namespace first
-      console.log('[KablanService] Initializing socket connection to', `${this.socketUrl}/kablan`);
+      this.logger.info('[KablanService] Initializing socket connection to ' + `${this.socketUrl}/kablan`, 'KablanService');
       
       // Clean up existing socket if any
       this.cleanupSocket();
@@ -175,7 +177,7 @@ export class KablanService implements OnDestroy {
       // Add error handler for invalid namespace
       this.socket.on('connect_error', (err) => {
         if (err.message.includes('Invalid namespace')) {
-          console.log('[KablanService] Kablan namespace not found, trying root namespace');
+          this.logger.info('[KablanService] Kablan namespace not found, trying root namespace', 'KablanService');
           this.cleanupSocket();
           
           // Try the root namespace as fallback
@@ -190,7 +192,7 @@ export class KablanService implements OnDestroy {
           
           this.setupSocketEvents();
         } else {
-          console.error('[KablanService] Socket connection error:', err);
+          this.logger.error('[KablanService] Socket connection error:', 'KablanService', { error: err });
           this.connectionStatusSubject.next(false);
           this.backendStatusService.updateGatewayStatus('kablan', false, false);
           this.startMockDataGeneration();
@@ -200,7 +202,7 @@ export class KablanService implements OnDestroy {
       // Setup socket events
       this.setupSocketEvents();
     } catch (err) {
-      console.error('[KablanService] Socket initialization error:', err);
+      this.logger.error('[KablanService] Socket initialization error:', 'KablanService', { error: err });
       this.backendStatusService.updateGatewayStatus('kablan', false, false);
       this.startMockDataGeneration();
     }
@@ -210,7 +212,7 @@ export class KablanService implements OnDestroy {
     if (!this.socket) return;
     
     this.socket.on('connect', () => {
-      console.log('[KablanService] Socket connected');
+      this.logger.info('[KablanService] Socket connected', 'KablanService');
       this.connectionStatusSubject.next(true);
       this.backendStatusService.updateGatewayStatus('kablan', true, false);
       this.stopMockDataGeneration();
@@ -220,7 +222,7 @@ export class KablanService implements OnDestroy {
     });
     
     this.socket.on('disconnect', () => {
-      console.log('[KablanService] Socket disconnected');
+      this.logger.info('[KablanService] Socket disconnected', 'KablanService');
       this.connectionStatusSubject.next(false);
       this.backendStatusService.updateGatewayStatus('kablan', false, false);
       this.startMockDataGeneration();
@@ -228,10 +230,10 @@ export class KablanService implements OnDestroy {
     
     // Listen for board updates
     this.socket.on('boards-update', (response: SocketResponse<{boards: KablanBoard[], storageType: string}>) => {
-      console.log('[KablanService] Received boards update:', response);
+      this.logger.info('[KablanService] Received boards update:', 'KablanService', { response });
       if (response.status === 'success') {
         this.storageType = response.data.storageType || 'unknown';
-        console.log('[KablanService] Updated storage type to:', this.storageType);
+        this.logger.info('[KablanService] Updated storage type to: ' + this.storageType, 'KablanService');
         this.boardsSubject.next(response.data.boards);
       }
     });
@@ -255,7 +257,7 @@ export class KablanService implements OnDestroy {
   
   private disconnectSocket(): void {
     if (this.socket) {
-      console.log('[KablanService] Disconnecting socket');
+      this.logger.info('[KablanService] Disconnecting socket', 'KablanService');
       
       // Remove all event listeners
       this.socket.off('connect');
@@ -278,16 +280,16 @@ export class KablanService implements OnDestroy {
     if (this.reconnecting) return;
     this.reconnecting = true;
     
-    console.log('[KablanService] Attempting to reconnect to backend');
+    this.logger.info('[KablanService] Attempting to reconnect to backend', 'KablanService');
     
     // Explicitly use the global status endpoint, NOT kablan-specific
     // This ensures we're connecting to /api/status which exists in the backend
     const statusEndpoint = `${environment.apiBaseUrl}/status`;
-    console.log('[KablanService] Checking backend availability at:', statusEndpoint);
+    this.logger.info('[KablanService] Checking backend availability at: ' + statusEndpoint, 'KablanService');
     
     this.http.get(statusEndpoint).pipe(
       catchError((err) => {
-        console.error('[KablanService] Error checking backend status:', err);
+        this.logger.error('[KablanService] Error checking backend status:', 'KablanService', { error: err });
         return of(null);
       })
     ).subscribe(response => {
@@ -306,7 +308,7 @@ export class KablanService implements OnDestroy {
   private startMockDataGeneration(): void {
     if (this.mockDataInterval) return;
     
-    console.log('[KablanService] Starting mock data generation');
+    this.logger.info('[KablanService] Starting mock data generation', 'KablanService');
     
     // Create mock boards with columns organized by project phases
     const mockBoards: KablanBoard[] = [
@@ -507,7 +509,7 @@ export class KablanService implements OnDestroy {
   private stopMockDataGeneration(): void {
     if (!this.mockDataInterval) return;
     
-    console.log('[KablanService] Stopping mock data generation');
+    this.logger.info('[KablanService] Stopping mock data generation', 'KablanService');
     
     clearInterval(this.mockDataInterval);
     this.mockDataInterval = null;
@@ -577,10 +579,10 @@ export class KablanService implements OnDestroy {
         
         // Update the board
         this.boardsSubject.next(boards);
-        console.log('[KablanService] Card moved locally:', { cardId, from: sourceColId, to: targetColId, index: newIndex });
+        this.logger.info('[KablanService] Card moved locally:', 'KablanService', { cardId, from: sourceColId, to: targetColId, index: newIndex });
       }
     } catch (err) {
-      console.error('[KablanService] Error moving card:', err);
+      this.logger.error('[KablanService] Error moving card:', 'KablanService', { error: err });
     }
   }
 }

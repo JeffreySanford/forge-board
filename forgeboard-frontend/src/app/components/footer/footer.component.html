@@ -1,28 +1,40 @@
-<div class="callout-container" [class.animating]="animationsStarted" [class.visible]="showContextBlock && audioEnabled"
-  *ngIf="showContextBlock">
-  <div class="fieldset-label callout-label" *ngIf="showLayoutBorder">callout container</div>
-  
-  <div class="callout-meta" [class.animating]="animationsStarted">
-    <div class="meta-line" *ngFor="let line of calloutLines; let i = index">
-      <span class="key" [class.active-cursor]="isCursorActive('field', i)">
-        <span *ngIf="animationsStarted" class="typed-content">
-          <span letterAnimator [animationDelay]="line.keyDelay" [characterDelay]="line.keyCharDelay"
-            fieldType="key">
-            {{ line.key }}
+<div class="footer-wrapper blue-border">
+  <div class="footer-indicator">footer component</div>
+  <div class="footer-content">
+    <!-- System status icons section -->
+    <div class="system-status">
+      <div class="fieldset-label status-label" *ngIf="showLayoutBorder">system status</div>
+      <div class="status-icons">
+        <div *ngFor="let status of systemStatus" class="status-icon" [title]="getStatusTooltip(status)">
+          <span class="material-icons" [ngClass]="status.animationClass">{{ status.icon }}</span>
+          <div class="status-name">{{ status.name }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Callout container always present -->
+    <div class="callout-container" [class.animating]="animationsStarted" [class.visible]="showContextBlock && audioEnabled">
+      <div class="fieldset-label callout-label" *ngIf="showLayoutBorder">callout container</div>
+      <div class="callout-meta" [class.animating]="animationsStarted">
+        <div class="meta-line" *ngFor="let line of calloutLines; let i = index">
+          <span class="key" [class.active-cursor]="isCursorActive('field', i)">
+            <span *ngIf="animationsStarted" class="typed-content">
+              <span letterAnimator [animationDelay]="line.keyDelay" [characterDelay]="line.keyCharDelay" fieldType="key">
+                {{ line.key }}
+              </span>
+            </span>
           </span>
-        </span>
-      </span>
-      <span class="val" [class.active-cursor]="isCursorActive('value', i)">
-        <span *ngIf="animationsStarted" class="typed-content">
-          <span letterAnimator [animationDelay]="line.valDelay" [characterDelay]="line.valCharDelay"
-            fieldType="val" [playDingAtEnd]="true" [dingVolume]="line.dingVolume || 0.6">
-            {{ line.value }}
+          <span class="val" [class.active-cursor]="isCursorActive('value', i)">
+            <span *ngIf="animationsStarted" class="typed-content">
+              <span letterAnimator [animationDelay]="line.valDelay" [characterDelay]="line.valCharDelay" fieldType="val" [playDingAtEnd]="true" [dingVolume]="line.dingVolume || 0.6">
+                {{ line.value }}
+              </span>
+            </span>
           </span>
-        </span>
-      </span>
+        </div>
+      </div>
+      <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
+      <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
     </div>
   </div>
-
-  <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
-  <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
 </div>

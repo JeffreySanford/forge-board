@@ -2,45 +2,29 @@
 
 ## API Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                                                                          │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────┐  │
-│  │               │  │               │  │               │  │           │  │
-│  │ Metrics API   │  │ Diagnostics   │  │ Kablan Board  │  │ Logger    │  │
-│  │               │  │               │  │               │  │           │  │
-│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
-│          │                  │                  │                │        │
-│    REST  │                  │                  │                │        │
-│  Endpnts │                  │                  │                │        │
-│          │                  │                  │                │        │
-│  ┌───────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐  ┌─────▼─────┐  │
-│  │               │  │               │  │               │  │           │  │
-│  │ Metrics       │  │ Diagnostics   │  │ Kablan        │  │ Logger    │  │
-│  │ Gateway       │  │ Gateway       │  │ Gateway       │  │ Gateway   │  │
-│  │               │  │               │  │               │  │           │  │
-│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
-│          │                  │                  │                │        │
-│  WebSckt │                  │                  │                │        │
-│  Events  │                  │                  │                │        │
-│          ▼                  ▼                  ▼                ▼        │
-└──────────────────────────────────────────────────────────────────────────┘
-                              │
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                                                                          │
-│  Frontend Service Layer                                                  │
-│                                                                          │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────┐  │
-│  │               │  │               │  │               │  │           │  │
-│  │ MetricsService│  │ Diagnostics   │  │ KablanService │  │ Logger    │  │
-│  │               │  │ Service       │  │               │  │ Service   │  │
-│  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └─────┬─────┘  │
-│          │                  │                  │                │        │
-│          │                  │                  │                │        │
-│          ▼                  ▼                  ▼                ▼        │
-└──────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph REST [REST API]
+    direction TB
+    A[Metrics API]:::rest
+    B[Diagnostics API]:::rest
+    C[Kablan API]:::rest
+    D[Logger API]:::rest
+  end
+  subgraph WS [WebSocket Namespaces]
+    direction TB
+    E[/metrics]:::ws
+    F[/diagnostics]:::ws
+    G[/kablan]:::ws
+    H[/logs]:::ws
+  end
+  A --> E
+  B --> F
+  C --> G
+  D --> H
+
+  classDef rest fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef ws fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
 ```
 
 ## API Overview
@@ -66,7 +50,7 @@ This namespace provides real-time system performance metrics.
 
 #### Events
 
-**Server → Client:**
+**Server → Client (through Socket.IO namespace events):**
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
@@ -87,7 +71,7 @@ This namespace provides system diagnostic information.
 
 #### Events
 
-**Server → Client:**
+**Server → Client (through Socket.IO namespace events):**
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
@@ -111,7 +95,7 @@ This namespace provides project board data and interactions.
 
 #### Events
 
-**Server → Client:**
+**Server → Client (through Socket.IO namespace events):**
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
@@ -381,9 +365,53 @@ Update the tile order for a user's dashboard.
 }
 ```
 
+## Shared API Interfaces Library
+
+The `@forge-board/shared/api-interfaces` package provides shared TypeScript types and helper functions for both frontend and backend:
+
+### Installation
+```bash
+npm install @forge-board/shared/api-interfaces
+```
+
+### Exported Types
+- ApiResponse<T>         — Base REST response type
+- SuccessResponse<T>     — REST success wrapper
+- SocketResponse<T>      — WebSocket response wrapper
+- SocketEvent            — Basic socket event shape
+- SocketInfo             — Connection metadata record
+- SocketMetrics          — Connection metrics counters
+- SocketStatusUpdate     — Combined socket info + metrics
+- SocketConnectionError  — Error payload for socket streams
+- AuthCredentials        — Login request payload
+- AuthTokenResponse      — JWT token response shape
+- User                   — Application user record
+- UserRole               — `'admin' | 'user' | 'guest'`
+- JwtPayload             — JWT claims interface
+- AuthState              — In‑memory auth state (user, token)
+- MetricData             — System metric item
+- MetricResponse         — Metric REST response wrapper
+- MetricFilter           — Metric query parameters
+- MetricUpdate           — Metric batch format
+- DiagnosticEvent        — Diagnostic event record
+- HealthData             — System health snapshot
+- LogEntry               — Log record
+- LogFilter              — Log query parameters
+- LogQueryResponse       — Log query result wrapper
+- LogBatchResponse       — Batched log POST response
+- TileType               — Dashboard tile identifiers
+
+### Runtime Helpers
+- createSocketResponse(event, data)
+- createSocketErrorResponse(message, data)
+- __apiResponse (marker for response module)
+
+Refer to the library's [README](libs/shared/api-interfaces/README.md) for full API, examples, and integration guidance.
+
 ## Type Definitions
 
-### MetricData
+Below are the core shared types used by both frontend and backend (from `@forge-board/shared/api-interfaces`):
+
 ```typescript
 interface MetricData {
   cpu: number;      // CPU usage percentage
@@ -392,10 +420,7 @@ interface MetricData {
   network?: number; // Optional network usage percentage
   time: string;     // ISO timestamp
 }
-```
 
-### SocketInfo
-```typescript
 interface SocketInfo {
   id: string;
   namespace: string;
@@ -410,10 +435,7 @@ interface SocketInfo {
     data?: any;
   }[];
 }
-```
 
-### SocketMetrics
-```typescript
 interface SocketMetrics {
   totalConnections: number;
   activeConnections: number;
@@ -422,10 +444,7 @@ interface SocketMetrics {
   messagesSent: number;
   messagesReceived: number;
 }
-```
 
-### HealthData
-```typescript
 interface HealthData {
   status: string;
   uptime: number;
@@ -437,10 +456,7 @@ interface HealthData {
     [key: string]: string | undefined;
   };
 }
-```
 
-### KablanBoard
-```typescript
 interface KablanBoard {
   id: string;
   name: string;
@@ -456,10 +472,7 @@ interface KablanBoard {
   createdAt: string;
   updatedAt: string;
 }
-```
 
-### LogEntry
-```typescript
 interface LogEntry {
   id: string;
   level: 'debug' | 'info' | 'warning' | 'error';
@@ -468,9 +481,7 @@ interface LogEntry {
   timestamp: string;
   data?: Record<string, unknown>;
 }
-```
 
-### TileType
-```typescript
+// TileType used by the UI to identify dashboard tiles
 type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
 ```

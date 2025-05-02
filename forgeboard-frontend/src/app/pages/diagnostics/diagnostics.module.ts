@@ -9,6 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { DiagnosticsComponent } from './diagnostics.component';
 import { DiagnosticsService } from './diagnostics.service';
+import { JwtDiagnosticsComponent } from '../../components/jwt-diagnostics/jwt-diagnostics.component';
 
 @NgModule({
   declarations: [DiagnosticsComponent],
@@ -20,7 +21,8 @@ import { DiagnosticsService } from './diagnostics.service';
     MatIconModule,
     MatDividerModule,
     MatProgressBarModule,
-    MatChipsModule
+    MatChipsModule,
+    JwtDiagnosticsComponent // Add the component to imports since it's standalone
   ],
   exports: [DiagnosticsComponent],
   providers: [DiagnosticsService]

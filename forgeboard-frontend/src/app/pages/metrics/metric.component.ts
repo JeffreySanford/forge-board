@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, of, timer } from 'rxjs';
+import { catchError, tap, retryWhen, scan, delayWhen } from 'rxjs/operators';
 import { MetricData } from '@forge-board/shared/api-interfaces';
 import { MetricsService } from '../../services/metrics.service';
 import { BackendStatusService } from '../../services/backend-status.service';
@@ -19,6 +20,8 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   chartInitialized = false;
   usingMockData = false;
   isTransitioning = false; // Add a flag to track transitions
+  connectionAttempts = 0;
+  maxConnectionAttempts = 5;
   
   @ViewChild('chart') chartElement!: ElementRef<HTMLDivElement>;
   private subscription = new Subscription();
@@ -40,13 +43,45 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Subscribe to metrics stream to update chart data
     this.subscription.add(
-      this.metrics$.subscribe(metrics => {
+      this.metrics$.pipe(
+        // Add advanced retry logic with exponential backoff
+        retryWhen((errors: Observable<Error>) => errors.pipe(
+          scan((attempts: number, error: Error) => {
+            this.connectionAttempts++;
+            if (this.connectionAttempts > this.maxConnectionAttempts) {
+              throw error;
+            }
+            console.log(`Metrics connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
+            return attempts + 1;
+          }, 0),
+          delayWhen((attempts: number) => {
+            const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
+            console.log(`Retrying metrics connection in ${delay}ms`);
+            return timer(delay);
+          }),
+          tap(() => console.log('Attempting to reconnect to metrics service...'))
+        )),
+        // Handle errors without breaking the stream
+        catchError(error => {
+          console.warn('Error in metrics stream (falling back to mock data):', error);
+          // Notify backend status service about metrics failure
+          this.backendStatusService.updateGatewayStatus('metrics', false, true);
+          // Return empty metrics to avoid breaking the subscription
+          return of({ cpu: 0, memory: 0, time: new Date().toISOString() } as MetricData);
+        })
+      ).subscribe(metrics => {
         if (metrics) {
-          // Add new data point to chart arrays
-          this.chartData.push(metrics.cpu);
+          // Reset connection attempts on successful data
+          this.connectionAttempts = 0;
+          
+          // Add new data point to chart arrays with safety checks
+          const cpuValue = (metrics.cpu !== undefined && metrics.cpu !== null) ? metrics.cpu : 0;
+          const memValue = (metrics.memory !== undefined && metrics.memory !== null) ? metrics.memory : 0;
+          
+          this.chartData.push(cpuValue);
           this.chartData = this.chartData.slice(-this.maxDataPoints);
           
-          this.memoryData.push(metrics.memory);
+          this.memoryData.push(memValue);
           this.memoryData = this.memoryData.slice(-this.maxDataPoints);
           
           if (this.chartInitialized) {
@@ -116,10 +151,12 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (err) => {
         console.error('Error updating metrics interval:', err);
+        // Continue with local interval even if server update fails
+        console.log('Using local interval setting instead');
       }
     });
   }
-  
+
   private initializeChart(): void {
     if (!this.chartElement) return;
     
@@ -250,5 +287,18 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   getDataSourceClass(): string {
     if (this.isTransitioning) return 'transitioning';
     return this.usingMockData ? 'mock-data' : 'live-data';
+  }
+  
+  /**
+   * Get connection status text for display
+   */
+  getConnectionStatusText(): string {
+    if (!this.usingMockData) {
+      return 'Connected to metrics server';
+    } else if (this.connectionAttempts > 0) {
+      return `Connection issue - attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`;
+    } else {
+      return 'Using simulated metrics data';
+    }
   }
 }

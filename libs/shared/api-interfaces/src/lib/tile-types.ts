@@ -14,7 +14,7 @@ export type TileVisibility = Record<TileType, boolean>;
 export interface TileLayoutResponse {
   userId: string;
   order: TileType[];
-  visibility: Partial<TileVisibility>;
+  visibility: Record<TileType, boolean>;
   lastModified: string;
   success: boolean;
 }
@@ -25,7 +25,7 @@ export interface TileLayoutResponse {
 export interface TileLayoutRequest {
   userId: string;
   order: TileType[];
-  visibility?: Partial<TileVisibility>;
+  visibility?: Record<TileType, boolean>;
 }
 
 /**

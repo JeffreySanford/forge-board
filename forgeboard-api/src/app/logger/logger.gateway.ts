@@ -1,16 +1,9 @@
-import { 
-  WebSocketGateway, 
-  WebSocketServer, 
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  OnGatewayInit,
-  WsResponse
-} from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, WsResponse } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Logger } from '@nestjs/common';
 import { LoggerService } from './logger.service';
-import { LogEntry, LogFilter, LogResponse, LogStreamUpdate } from '@forge-board/shared/api-interfaces';
+import { type LogEntry, type LogFilter, type LogQueryResponse, type SocketResponse, type LogStreamUpdate, type LogLevelEnum, type LogLevelString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
+import { createSocketResponse } from '../utils/socket-utils';
 
 @WebSocketGateway({
   namespace: '/logs',
@@ -20,36 +13,30 @@ import { LogEntry, LogFilter, LogResponse, LogStreamUpdate } from '@forge-board/
   }
 })
 export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server: Server;
+  @WebSocketServer() server!: Server;
   private readonly logger = new Logger(LoggerGateway.name);
   private activeFilters = new Map<string, LogFilter>();
   
   constructor(private loggerService: LoggerService) {}
   
-  afterInit(server: Server) {
-    this.logger.log('Log WebSocket Gateway initialized');
+  afterInit(server: Server): void {
+    this.logger.log('Logger Gateway Initialized');
+    // Store server reference if needed
+    this.server = server;
   }
   
-  handleConnection(client: Socket) {
+  handleConnection(client: Socket): void {
     this.logger.log(`Client connected: ${client.id}`);
-    
-    // Send latest logs on connection
-    client.emit('logs', { 
-      logs: this.loggerService.getLogs({ limit: 50 }),
-      totalCount: this.loggerService.getLogs().length,
-      filtered: false
-    });
   }
   
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected: ${client.id}`);
-    
-    // Remove client's filter when they disconnect
+    // Clean up client's filter when they disconnect
     this.activeFilters.delete(client.id);
   }
   
   @SubscribeMessage('filter-logs')
-  handleFilterLogs(client: Socket, filter: LogFilter): WsResponse<LogResponse> {
+  handleFilterLogs(client: Socket, filter: LogFilter): WsResponse<SocketResponse<LogQueryResponse>> {
     this.logger.log(`Client ${client.id} set log filter: ${JSON.stringify(filter)}`);
     
     // Store client's filter
@@ -59,15 +46,20 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     const logs = this.loggerService.getLogs(filter);
     const totalCount = this.loggerService.getLogs().length;
     
+    // Return properly typed response
     return {
       event: 'logs',
       data: {
-        status: true,
-        logs,
-        total: totalCount,
-        totalCount: totalCount,  // Add totalCount property
-        timestamp: new Date().toISOString(),
-        filtered: true
+        status: 'success',
+        data: {
+          status: true,
+          logs,
+          totalCount,
+          // Removed the 'total' property as it doesn't exist in LogQueryResponse
+          timestamp: new Date().toISOString(),
+          filtered: true
+        },
+        timestamp: new Date().toISOString()
       }
     };
   }
@@ -76,57 +68,28 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   handleSubscribe(client: Socket): void {
     this.logger.log(`Client ${client.id} subscribed to log stream`);
     
-    // Client will now receive log updates via 'log-update' events
-    // No need to send a response here
+    // Client will now receive log updates via 'log-stream' events
   }
-  
-  /**
-   * Check if a log entry matches a filter
-   */
-  private logMatchesFilter(entry: LogEntry, filter: LogFilter): boolean {
-    if (!filter) {
-      return true;
-    }
+
+  @SubscribeMessage('update-filter')
+  handleUpdateFilter(client: Socket, filter: LogFilter): void {
+    this.logger.log(`Client ${client.id} updated log filter: ${JSON.stringify(filter)}`);
     
-    if (filter.levels?.length && !filter.levels.includes(entry.level)) {
-      return false;
-    }
+    // Update client's filter
+    this.activeFilters.set(client.id, filter);
     
-    if (filter.sources?.length && !filter.sources.includes(entry.source)) {
-      return false;
-    }
+    // Get logs based on updated filter
+    const logs = this.loggerService.getLogs(filter);
+    const totalCount = this.loggerService.getLogs().length;
     
-    if (filter.contexts?.length &&
-        (!entry.context || !filter.contexts.includes(entry.context))) {
-      return false;
-    }
+    // Send updated logs to client
+    const update: LogStreamUpdate = {
+      logs,
+      totalCount,
+      append: false
+    };
     
-    if (filter.tags?.length &&
-        (!entry.tags || !filter.tags.some(tag => entry.tags.includes(tag)))) {
-      return false;
-    }
-    
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      const messageMatch = entry.message.toLowerCase().includes(searchLower);
-      const sourceMatch = entry.source.toLowerCase().includes(searchLower);
-      const contextMatch = entry.context ? entry.context.toLowerCase().includes(searchLower) : false;
-      const dataMatch = entry.data ? JSON.stringify(entry.data).toLowerCase().includes(searchLower) : false;
-      
-      if (!(messageMatch || sourceMatch || contextMatch || dataMatch)) {
-        return false;
-      }
-    }
-    
-    if (filter.startDate && new Date(entry.timestamp) < new Date(filter.startDate)) {
-      return false;
-    }
-    
-    if (filter.endDate && new Date(entry.timestamp) > new Date(filter.endDate)) {
-      return false;
-    }
-    
-    return true;
+    client.emit('log-stream', createSocketResponse('log-stream', update));
   }
   
   /**
@@ -145,17 +108,65 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           const update: LogStreamUpdate = {
             log: logEntry,
             totalCount,
-            append: true // Add required property
+            append: true
           };
-          client.emit('log-update', update);
+          client.emit('log-stream', createSocketResponse('log-stream', update));
         }
       }
     });
     
     // Also broadcast to all clients without filters
-    this.server.emit('log-broadcast', {
-      log: logEntry,
-      totalCount
-    });
+    this.server.emit('new-log', createSocketResponse('new-log', logEntry));
+  }
+  
+  /**
+   * Check if a log entry matches a filter
+   */
+  private logMatchesFilter(entry: LogEntry, filter: LogFilter): boolean {
+    if (!filter) {
+      return true;
+    }
+    
+    // Check log level using the stringToLogLevelEnum function
+    if (filter.level && Array.isArray(filter.level) && filter.level.length) {
+      if (!filter.level.includes(entry.level)) {
+        return false;
+      }
+    } else if (filter.level && !Array.isArray(filter.level)) {
+      if (entry.level !== filter.level) {
+        return false;
+      }
+    }
+    
+    // Check service property instead of sources
+    if (filter.service && entry.source !== filter.service) {
+      return false;
+    }
+    
+    // Tags and contexts don't exist in LogFilter/LogEntry interfaces
+    // Removed checks for non-existent properties
+    
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      const messageMatch = entry.message.toLowerCase().includes(searchLower);
+      const sourceMatch = entry.source && entry.source.toLowerCase().includes(searchLower);
+      // Removed contexts check
+      const dataMatch = entry.data ? JSON.stringify(entry.data).toLowerCase().includes(searchLower) : false;
+      
+      if (!(messageMatch || sourceMatch || dataMatch)) {
+        return false;
+      }
+    }
+    
+    // Use standard date fields from the interface
+    if (filter.startDate && new Date(entry.timestamp) < new Date(filter.startDate)) {
+      return false;
+    }
+    
+    if (filter.endDate && new Date(entry.timestamp) > new Date(filter.endDate)) {
+      return false;
+    }
+    
+    return true;
   }
 }

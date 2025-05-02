@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { LogEntry, LogFilter } from '@forge-board/shared/api-interfaces';
+import { LogDispatchService } from './log-dispatch.service';
 import { v4 as uuid } from 'uuid';
-import { LogEntry, LogLevelType, LogFilter, LogResponse } from '@forge-board/shared/api-interfaces';
 
 /**
  * Log levels supported by the logger
@@ -18,6 +18,9 @@ export enum LogLevel {
   OFF = 6
 }
 
+// Define type for log level strings used in API
+export type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal' | 'trace';
+
 /**
  * Common log metadata structure
  */
@@ -30,10 +33,20 @@ export interface LogMetadata {
 /**
  * Logger configuration
  */
-export interface LoggerConfig {
+interface LoggerConfig {
   level: LogLevel;
   includeTimestamp: boolean;
   enableConsoleColors: boolean;
+}
+
+// Define response type for log requests
+export interface LogResponse {
+  logs: LogEntry[];
+  totalCount: number;
+  filtered: boolean;
+  status: boolean;
+  total: number;
+  timestamp: string;
 }
 
 @Injectable({
@@ -51,7 +64,10 @@ export class LoggerService {
   private logBuffer: LogEntry[] = [];
   private bufferSize = 10;
   private autoSendInterval = 5000; // ms
-  private autoSendTimer: ReturnType<typeof setTimeout> | null = null; // Initialize to avoid TS2564
+  private autoSendTimer: ReturnType<typeof setTimeout> | null = null;
+  
+  // Add the missing pendingLogs property to track logs that are still pending transmission
+  private pendingLogs: LogEntry[] = [];
 
   private config: LoggerConfig = {
     level: LogLevel.INFO,
@@ -59,8 +75,9 @@ export class LoggerService {
     enableConsoleColors: true
   };
 
-  constructor(private http: HttpClient) {
-    console.log('LoggerService initialized');
+  // Remove HttpClient dependency and only use LogDispatchService
+  constructor(private logDispatch: LogDispatchService) {
+    // Initialize the logger without using console.log
     
     // Check for log level in environment or localStorage
     const envLevel = localStorage.getItem('log_level');
@@ -75,6 +92,9 @@ export class LoggerService {
     
     // Generate some initial test logs
     this.generateTestLogs();
+    
+    // After initialization, now we can safely log
+    this.info('LoggerService initialized', 'LoggerService');
   }
 
   private startAutoSend(): void {
@@ -94,24 +114,57 @@ export class LoggerService {
    * Fetch logs from the server
    */
   fetchLogs(filter?: LogFilter): Observable<LogResponse> {
-    return this.http.get<LogResponse>(`${this.apiUrl}`, { params: { ...filter } }).pipe(
+    // Convert filter to params or use empty object if undefined
+    const params = filter ? this.buildFilterParams(filter) : {};
+    return this.logDispatch.fetchLogs(params).pipe(
       tap(response => {
         // Update local logs
         this.logs = [...response.logs];
         this.notifySubscribers();
-      }),
-      catchError(error => {
-        console.error('Error fetching logs:', error);
-        return of({ 
-          logs: [], 
-          totalCount: 0, 
-          filtered: false,
-          status: false,
-          total: 0,
-          timestamp: new Date().toISOString()
-        } as LogResponse);
       })
     );
+  }
+
+  /**
+   * Build filter parameters
+   */
+  private buildFilterParams(filter: LogFilter): Record<string, string> {
+    const params: Record<string, string> = {};
+    
+    // Use level instead of levels
+    if (filter.level) {
+      params['level'] = filter.level.toString();
+    }
+    
+    // Handle service instead of sources
+    if (filter.service) {
+      params['service'] = filter.service;
+    }
+    
+    // Use startDate instead of startTime
+    if (filter.startDate) {
+      params['startDate'] = filter.startDate;
+    }
+    
+    // Use endDate instead of endTime
+    if (filter.endDate) {
+      params['endDate'] = filter.endDate;
+    }
+    
+    if (filter.search) {
+      params['search'] = filter.search;
+    }
+    
+    if (filter.limit) {
+      params['limit'] = filter.limit.toString();
+    }
+    
+    // Use skip instead of offset
+    if (filter.skip) {
+      params['skip'] = filter.skip.toString();
+    }
+    
+    return params;
   }
 
   /**
@@ -145,12 +198,91 @@ export class LoggerService {
   generateTestLogs(count: number = 10, level: LogLevelType | 'random' = 'random'): void {
     if (level === 'random') {
       const levels: LogLevelType[] = ['debug', 'info', 'warning', 'error'];
+      
+      // Create complex debug logs
+      this.logMessage(
+        'debug',
+        'TESTING: Application initialization completed',
+        'testing',
+        { 
+          initTime: 1235.45,
+          modules: ['CoreModule', 'AuthModule', 'DashboardModule'],
+          configuration: {
+            environment: 'development',
+            features: {
+              darkMode: true,
+              analytics: false,
+              experimental: true
+            }
+          }
+        }
+      );
+      
+      this.logMessage(
+        'debug',
+        'TESTING: API response time analysis',
+        'testing',
+        { 
+          endpoint: '/api/metrics',
+          responseTime: 235.42,
+          samplingMethod: 'average',
+          sampleSize: 50,
+          details: {
+            min: 120.23,
+            max: 350.67,
+            median: 228.45,
+            percentile95: 312.87
+          }
+        }
+      );
+      
+      // Create complex error logs
+      this.logMessage(
+        'error',
+        'TESTING: Database connection failed',
+        'testing',
+        { 
+          connectionId: 'db-conn-39a45f',
+          attemptCount: 3,
+          lastAttempt: new Date().toISOString(),
+          error: {
+            code: 'ECONNREFUSED',
+            message: 'Unable to connect to database server',
+            details: 'Connection timeout after 5000ms'
+          },
+          stackTrace: 'Error: ECONNREFUSED at DatabaseService.connect (database.service.ts:58:23)...'
+        }
+      );
+      
+      this.logMessage(
+        'error',
+        'TESTING: JWT token validation failed',
+        'testing',
+        { 
+          tokenId: 'eyJhbGciOiJIUzI1NiIsIn...[truncated]',
+          issueType: 'TokenExpiredError',
+          expiredAt: new Date().toISOString(),
+          requestContext: {
+            url: '/api/secure-resource',
+            method: 'GET',
+            clientIp: '192.168.1.105',
+            userId: 'anonymous'
+          },
+          securityContext: {
+            severity: 'high',
+            action: 'deny-access',
+            auditTrail: true
+          }
+        }
+      );
+      
+      // Generate random logs as normal
       for (let i = 0; i < count; i++) {
         const randomLevel = levels[Math.floor(Math.random() * levels.length)];
         this.logMessage(
           randomLevel,
-          `Test log message ${i + 1}`,
-          'test-generator',
+          `Test ${randomLevel} log message ${i + 1}`,
+          randomLevel === 'error' || randomLevel === 'debug' ? 'testing' : 'test-generator',
           { testId: i, random: Math.random() }
         );
       }
@@ -158,9 +290,17 @@ export class LoggerService {
       for (let i = 0; i < count; i++) {
         this.logMessage(
           level,
-          `Test ${level} log message ${i + 1}`,
-          'test-generator',
-          { testId: i }
+          `TESTING: ${level} message ${i + 1}`,
+          'testing',
+          { 
+            testId: i, 
+            timestamp: Date.now(),
+            context: {
+              action: `test-action-${i}`,
+              component: `TestComponent${i}`,
+              user: i % 2 === 0 ? 'admin' : 'user'
+            }
+          }
         );
       }
     }
@@ -179,7 +319,7 @@ export class LoggerService {
    */
   debug(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('debug' as LogLevelType, message, sourceOrMetadata, data);
+      this.logMessage('debug', message, sourceOrMetadata, data);
     } else {
       this.log(LogLevel.DEBUG, message, sourceOrMetadata);
     }
@@ -198,7 +338,7 @@ export class LoggerService {
    */
   info(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('info' as LogLevelType, message, sourceOrMetadata, data);
+      this.logMessage('info', message, sourceOrMetadata, data);
     } else {
       this.log(LogLevel.INFO, message, sourceOrMetadata);
     }
@@ -217,7 +357,7 @@ export class LoggerService {
    */
   warning(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('warning' as LogLevelType, message, sourceOrMetadata, data);
+      this.logMessage('warning', message, sourceOrMetadata, data);
     } else {
       this.log(LogLevel.WARN, message, sourceOrMetadata);
     }
@@ -251,7 +391,7 @@ export class LoggerService {
    */
   error(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('error' as LogLevelType, message, sourceOrMetadata, data);
+      this.logMessage('error', message, sourceOrMetadata, data);
     } else {
       this.log(LogLevel.ERROR, message, sourceOrMetadata);
     }
@@ -296,44 +436,55 @@ export class LoggerService {
     const logsToSend = [...this.logBuffer];
     this.logBuffer = [];
     
-    console.log(`Sending ${logsToSend.length} logs to server`);
+    this.debug(`Sending ${logsToSend.length} logs to server`, 'LoggerService');
     
-    // Completely bypass TypeDiagnostics validation by using HttpClient directly
-    // with observe: 'response' option to get the full response object
-    this.http.post(`${this.apiUrl}/batch`, logsToSend, { 
-      observe: 'response',
-      // Prevents Angular from trying to parse the response as JSON
-      responseType: 'text'
-    })
-      .pipe(
-        catchError(error => {
-          console.error('Error sending logs to server:', error);
-          // Re-add logs to buffer for next attempt
-          this.logBuffer = [...logsToSend, ...this.logBuffer];
-          return of(null);
-        })
-      )
+    // Use LogDispatchService to send logs
+    this.logDispatch.sendLogs(logsToSend)
       .subscribe({
         next: (response) => {
           if (!response) {
-            console.warn('No response received from log batch request');
+            this.warning('No response received from log batch request', 'LoggerService');
             return;
           }
           
-          // Check response status code first
-          if (response.ok) {
-            // Success case - we don't need to do anything with the response body
-            console.debug('Successfully sent logs to server');
+          if (response.success) {
+            this.debug('Successfully sent logs to server', 'LoggerService');
           } else {
-            console.warn(`Failed to send logs to server: HTTP ${response.status}`);
+            this.warning(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService');
             // Re-add logs to buffer for next attempt
             this.logBuffer = [...logsToSend, ...this.logBuffer];
           }
         },
-        error: (error) => {
-          console.error('Error in log batch response:', error);
+        error: (err) => {
+          this.error('Error in log batch response', 'LoggerService', { error: err });
           // Re-add logs to buffer for next attempt
           this.logBuffer = [...logsToSend, ...this.logBuffer];
+        }
+      });
+  }
+
+  /**
+   * Send logs to server
+   */
+  private sendLogsToServer(logs: LogEntry[]): void {
+    if (!logs.length) return;
+    
+    this.logDispatch.sendLogs(logs)
+      .subscribe({
+        next: (response) => {
+          if (response.success) { // Fixed: Use success instead of ok
+            this.info(`Successfully sent ${logs.length} logs to server`, 'LoggerService');
+            // Fix: Add proper type for log parameter
+            this.pendingLogs = this.pendingLogs.filter(log => 
+              !logs.some(sentLog => sentLog.id === log.id));
+          } else {
+            this.error(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService', { response });
+            // Log will be retried on next batch
+          }
+        },
+        error: (err) => {
+          this.error('Error sending logs to server', 'LoggerService', { error: err });
+          // Logs will be retried on next batch
         }
       });
   }
@@ -370,22 +521,66 @@ export class LoggerService {
     // Create combined log data
     const logData = metadata ? { message, ...metadata } : { message };
     
-    // Use appropriate console method based on level
+    // Create a log entry
+    const source = metadata?.service || 'LoggerService';
+    const entry: LogEntry = {
+      id: uuid(),
+      timestamp: new Date().toISOString(),
+      level: this.getLogLevelString(level),
+      message,
+      source,
+      data: metadata
+    };
+    
+    // Add entry to logs
+    this.addLog(entry);
+    
+    // Output to browser console without calling ourselves (to avoid recursion)
+    // We use direct console methods to avoid recursive calls to our own logger
+    const consoleData = this.config.enableConsoleColors ? logData : null;
+    
     switch (level) {
       case LogLevel.TRACE:
       case LogLevel.DEBUG:
-        console.debug(formattedMessage, logData);
+        this.writeToConsole('debug', formattedMessage, consoleData);
         break;
       case LogLevel.INFO:
-        console.info(formattedMessage, logData);
+        this.writeToConsole('info', formattedMessage, consoleData);
         break;
       case LogLevel.WARN:
-        console.warn(formattedMessage, logData);
+        this.writeToConsole('warn', formattedMessage, consoleData);
         break;
       case LogLevel.ERROR:
       case LogLevel.FATAL:
-        console.error(formattedMessage, logData);
+        this.writeToConsole('error', formattedMessage, consoleData);
         break;
+    }
+  }
+  
+  /**
+   * Direct write to console to avoid recursive logging
+   * This is the only place in the codebase where we should use console directly
+   */
+  private writeToConsole(method: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
+    if (data) {
+      console[method](message, data);
+    } else {
+      console[method](message);
+    }
+  }
+  
+  /**
+   * Convert LogLevel enum to string
+   */
+  private getLogLevelString(level: LogLevel): LogLevelType {
+    switch (level) {
+      case LogLevel.TRACE: return 'trace';
+      case LogLevel.DEBUG: return 'debug';
+      case LogLevel.INFO: return 'info';
+      case LogLevel.WARN: return 'warning';
+      case LogLevel.ERROR: return 'error';
+      case LogLevel.FATAL: return 'fatal';
+      default: return 'info';
     }
   }
 }

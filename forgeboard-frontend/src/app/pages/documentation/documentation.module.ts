@@ -14,7 +14,7 @@ import { MatTabsModule } from '@angular/material/tabs';
     SharedModule,
     MatTabsModule,
     RouterModule.forChild([
-      { path: 'documentation', component: DocumentationComponent }
+      { path: '', component: DocumentationComponent }
     ])
   ],
   exports: [

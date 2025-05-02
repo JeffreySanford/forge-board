@@ -1,16 +1,15 @@
 <div class="home-container">
   <div class="blueprint-grid"></div>
-  
+
   <div class="header-section">
     <h1>ForgeBoard</h1>
-    <p>A modern monitoring and management dashboard with a vintage engineering blueprint aesthetic. Monitor system performance, visualize data, manage tasks, and track logs in real-time.</p>
+    <p>A modern monitoring and management dashboard with a vintage engineering blueprint aesthetic. Monitor system
+      performance, visualize data, manage tasks, and track logs in real-time.</p>
   </div>
-  
+
   <div class="features-grid">
-    <div *ngFor="let tile of featuredTiles" 
-         class="feature-tile" 
-         (click)="navigateTo(tile.route)"
-         [style.--tile-color]="tile.color">
+    <div *ngFor="let tile of featuredTiles" class="feature-tile" (click)="navigateTo(tile.route)"
+      [style.--tile-color]="tile.color">
       <div class="feature-content">
         <div class="feature-header">
           <div class="feature-icon">
@@ -26,10 +25,10 @@
         </div>
       </div>
       <div class="blueprint-details">REV.0{{tile.revNumber}}-{{tile.revLetter}}</div>
-     
+
     </div>
   </div>
-  
+
   <div class="system-status">
     <p><span class="status-indicator"></span> All systems operational</p>
     <div class="version-info">ForgeBoard v1.0.2</div>
