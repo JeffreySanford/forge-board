@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LogLevelEnum } from '@forge-board/shared/api-interfaces';
 
 interface LogLevelOption {
-  level: string;
+  level: LogLevelEnum;
   color: string;
   selected: boolean;
 }
@@ -15,15 +16,15 @@ interface LogLevelOption {
   imports: [CommonModule]
 })
 export class LogLevelSelectorComponent implements OnInit {
-  @Input() selectedLevels: string[] = [];
-  @Output() levelsChanged = new EventEmitter<string[]>();
+  @Input() selectedLevels: LogLevelEnum[] = [];
+  @Output() levelsChanged = new EventEmitter<LogLevelEnum[]>();
 
   levelOptions: LogLevelOption[] = [
-    { level: 'debug', color: '#9e9e9e', selected: false },
-    { level: 'info', color: '#2196f3', selected: false },
-    { level: 'warn', color: '#ff9800', selected: false },
-    { level: 'error', color: '#f44336', selected: false },
-    { level: 'fatal', color: '#9c27b0', selected: false }
+    { level: LogLevelEnum.DEBUG, color: '#9e9e9e', selected: false },
+    { level: LogLevelEnum.INFO, color: '#2196f3', selected: false },
+    { level: LogLevelEnum.WARN, color: '#ff9800', selected: false },
+    { level: LogLevelEnum.ERROR, color: '#f44336', selected: false },
+    { level: LogLevelEnum.FATAL, color: '#9c27b0', selected: false }
   ];
 
   ngOnInit(): void {

@@ -1,13 +1,63 @@
 <div class="footer-wrapper blue-border">
-  <div class="footer-indicator">footer component</div>
+  <!-- Container indicator in bottom left -->
+  <div class="container-indicator">
+    <mat-icon>dashboard</mat-icon>
+    <span>footer</span>
+  </div>
+  
   <div class="footer-content">
     <!-- System status icons section -->
     <div class="system-status">
       <div class="fieldset-label status-label" *ngIf="showLayoutBorder">system status</div>
       <div class="status-icons">
-        <div *ngFor="let status of systemStatus" class="status-icon" [title]="getStatusTooltip(status)">
-          <span class="material-icons" [ngClass]="status.animationClass">{{ status.icon }}</span>
-          <div class="status-name">{{ status.name }}</div>
+        <!-- Frontend memory status -->
+        <div class="status-icon" [title]="getStatusTooltip(frontendStatus)" (click)="showStatusDetails(frontendStatus)">
+          <span class="material-icons" [ngClass]="frontendStatus.animationClass">memory</span>
+          <div class="status-name">Frontend</div>
+        </div>
+        
+        <!-- Browser resources status -->
+        <div class="status-icon" [title]="getStatusTooltip(browserStatus)" (click)="showStatusDetails(browserStatus)">
+          <span class="material-icons" [ngClass]="browserStatus.animationClass">web</span>
+          <div class="status-name">Browser</div>
+        </div>
+        
+        <!-- Backend status -->
+        <div class="status-icon" [title]="getStatusTooltip(backendStatusSystem)" (click)="showStatusDetails(backendStatusSystem)">
+          <span class="material-icons" [ngClass]="backendStatusSystem.animationClass">dns</span>
+          <div class="status-name">Backend</div>
+        </div>
+        
+        <!-- Database status -->
+        <div class="status-icon" [title]="getStatusTooltip(databaseStatus)" (click)="showStatusDetails(databaseStatus)">
+          <span class="material-icons" [ngClass]="databaseStatus.animationClass">storage</span>
+          <div class="status-name">Database</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Status details overlay -->
+    <div class="status-overlay" *ngIf="activeStatus" (click)="closeStatusDetails()">
+      <div class="status-details" [ngClass]="activeStatus.status" (click)="$event.stopPropagation()">
+        <h3>{{activeStatus.name}} Status</h3>
+        <div class="details-status">
+          <span class="status-indicator" [ngClass]="activeStatus.status"></span>
+          <span>{{activeStatus.status | titlecase}}</span>
+        </div>
+        <div class="details-metrics">
+          <div class="metric" *ngFor="let metric of activeStatus.metrics">
+            <div class="metric-name">{{metric.name}}:</div>
+            <div class="metric-value" [ngClass]="metric.status">{{metric.value}}</div>
+          </div>
+        </div>
+        <div class="details-message" *ngIf="activeStatus.message">
+          <p>{{activeStatus.message}}</p>
+        </div>
+        <div class="details-actions">
+          <button mat-button (click)="closeStatusDetails()">Close</button>
+          <button mat-button color="primary" *ngIf="activeStatus.status === 'unhealthy'" (click)="attemptRecovery(activeStatus)">
+            Attempt Recovery
+          </button>
         </div>
       </div>
     </div>

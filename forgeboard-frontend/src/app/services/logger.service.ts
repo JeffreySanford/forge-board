@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { LogEntry, LogFilter } from '@forge-board/shared/api-interfaces';
+import { LogEntry, LogFilter, LogLevelEnum, logLevelEnumToString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
 import { LogDispatchService } from './log-dispatch.service';
 import { v4 as uuid } from 'uuid';
+import { environment } from '../../environments/environment';
 
 /**
  * Log levels supported by the logger
@@ -37,6 +38,8 @@ interface LoggerConfig {
   level: LogLevel;
   includeTimestamp: boolean;
   enableConsoleColors: boolean;
+  // New flag to control console output
+  enableConsoleOutput: boolean;
 }
 
 // Define response type for log requests
@@ -55,7 +58,7 @@ export interface LogResponse {
 export class LoggerService {
   private logs: LogEntry[] = [];
   private logsSubject = new BehaviorSubject<LogEntry[]>([]);
-  private readonly apiUrl = 'http://localhost:3000/api/logs';
+  private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
 
   // Maximum number of logs to keep in memory
   private readonly maxLogSize = 1000;
@@ -72,17 +75,28 @@ export class LoggerService {
   private config: LoggerConfig = {
     level: LogLevel.INFO,
     includeTimestamp: true,
-    enableConsoleColors: true
+    enableConsoleColors: true,
+    // Use environment configuration if available
+    enableConsoleOutput: environment.logging?.enableConsole !== undefined ? 
+      environment.logging.enableConsole : true
   };
 
   // Remove HttpClient dependency and only use LogDispatchService
   constructor(private logDispatch: LogDispatchService) {
     // Initialize the logger without using console.log
     
-    // Check for log level in environment or localStorage
-    const envLevel = localStorage.getItem('log_level');
-    if (envLevel && Object.values(LogLevel).includes(Number(envLevel))) {
-      this.config.level = Number(envLevel) as LogLevel;
+    // Set log level from environment if available
+    if (environment.logging?.level) {
+      const envLevel = this.stringToLogLevel(environment.logging.level);
+      if (envLevel !== undefined) {
+        this.config.level = envLevel;
+      }
+    }
+    
+    // Check for log level override in localStorage
+    const storedLevel = localStorage.getItem('log_level');
+    if (storedLevel && Object.values(LogLevel).includes(Number(storedLevel))) {
+      this.config.level = Number(storedLevel) as LogLevel;
     }
 
     // Start auto-send timer if configured
@@ -95,6 +109,21 @@ export class LoggerService {
     
     // After initialization, now we can safely log
     this.info('LoggerService initialized', 'LoggerService');
+  }
+
+  // Convert string log level to enum value
+  private stringToLogLevel(level: string): LogLevel | undefined {
+    switch (level.toLowerCase()) {
+      case 'trace': return LogLevel.TRACE;
+      case 'debug': return LogLevel.DEBUG;
+      case 'info': return LogLevel.INFO;
+      case 'warn':
+      case 'warning': return LogLevel.WARN;
+      case 'error': return LogLevel.ERROR;
+      case 'fatal': return LogLevel.FATAL;
+      case 'off': return LogLevel.OFF;
+      default: return undefined;
+    }
   }
 
   private startAutoSend(): void {
@@ -133,7 +162,12 @@ export class LoggerService {
     
     // Use level instead of levels
     if (filter.level) {
-      params['level'] = filter.level.toString();
+      // Convert enum to string using the shared helper function
+      if (Array.isArray(filter.level)) {
+        params['level'] = filter.level.map(l => logLevelEnumToString(l)).join(',');
+      } else {
+        params['level'] = logLevelEnumToString(filter.level);
+      }
     }
     
     // Handle service instead of sources
@@ -171,10 +205,13 @@ export class LoggerService {
    * Add a log entry to the local store and optionally send to server
    */
   logMessage(level: LogLevelType, message: string, source: string = 'app', data?: Record<string, unknown>): void {
+    // Convert the string level to enum using the shared helper function
+    const levelEnum = stringToLogLevelEnum(level);
+    
     const entry: LogEntry = {
       id: uuid(), // Now using the uuid function
       timestamp: new Date().toISOString(),
-      level,
+      level: levelEnum,
       message,
       source,
       data
@@ -523,10 +560,14 @@ export class LoggerService {
     
     // Create a log entry
     const source = metadata?.service || 'LoggerService';
+    
+    // Map internal LogLevel to shared LogLevelEnum
+    const logLevelEnum = this.mapLogLevelToLogLevelEnum(level);
+    
     const entry: LogEntry = {
       id: uuid(),
       timestamp: new Date().toISOString(),
-      level: this.getLogLevelString(level),
+      level: logLevelEnum,
       message,
       source,
       data: metadata
@@ -558,14 +599,31 @@ export class LoggerService {
   }
   
   /**
+   * Map internal LogLevel enum to the shared LogLevelEnum
+   */
+  private mapLogLevelToLogLevelEnum(level: LogLevel): LogLevelEnum {
+    switch (level) {
+      case LogLevel.TRACE: return LogLevelEnum.TRACE;
+      case LogLevel.DEBUG: return LogLevelEnum.DEBUG;
+      case LogLevel.INFO: return LogLevelEnum.INFO;
+      case LogLevel.WARN: return LogLevelEnum.WARN;
+      case LogLevel.ERROR: return LogLevelEnum.ERROR;
+      case LogLevel.FATAL: return LogLevelEnum.FATAL;
+      default: return LogLevelEnum.INFO;
+    }
+  }
+
+  /**
    * Direct write to console to avoid recursive logging
    * This is the only place in the codebase where we should use console directly
    */
   private writeToConsole(method: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
-    if (data) {
-      console[method](message, data);
-    } else {
-      console[method](message);
+    if (this.config.enableConsoleOutput) {
+      if (data) {
+        console[method](message, data);
+      } else {
+        console[method](message);
+      }
     }
   }
   

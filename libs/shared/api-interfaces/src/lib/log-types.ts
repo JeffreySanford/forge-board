@@ -56,18 +56,37 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
 export interface LogEntry {
   id: string;
   timestamp: string;
-  level: LogLevelString;
+  level: LogLevelEnum; // Changed from LogLevelString to LogLevelEnum
   message: string;
   service?: string;
   source?: string;
   data?: Record<string, unknown>;
+  // Extended display properties
+  displayMessage?: string;         // Human-readable formatted message
+  rawData?: string;                // JSON stringified data for expanded view
+  expanded?: boolean;              // Whether this log is expanded in the UI
+  categories?: string[];           // Categories for grouping logs
+  eventId?: string;                // Extracted event ID for correlation
+  
+  // Duplicate tracking
+  duplicateCount?: number;         // Number of duplicate logs
+  duplicates?: LogEntry[];         // Collection of duplicate logs
+  
+  // Category grouping
+  isCategory?: boolean;            // Whether this is a category group
+  categoryName?: string;           // Name of the category
+  categoryLogs?: LogEntry[];       // Logs in this category
+  categoryCount?: number;          // Number of logs in this category
+  
+  // Additional metadata for display
+  details?: Record<string, unknown>; // Additional details (backward compatibility)
 }
 
 /**
  * Log filter options
  */
 export interface LogFilter {
-  level?: LogLevelString | LogLevelString[];
+  level?: LogLevelEnum | LogLevelEnum[];
   service?: string;
   startDate?: string;
   endDate?: string;

@@ -2,6 +2,13 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, from, of } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators'; 
 
+/**
+ * Sound types available in the system
+ * These correspond to the MP3 files in assets/sounds/typewriter/
+ * 
+ * Note: Additional sound files can be obtained from Freesound.org
+ * See: assets/sounds/README.md for instructions on downloading sounds
+ */
 export enum SoundType {
   KEYSTRIKE = 'keystrike',
   DING = 'ding',
@@ -15,6 +22,18 @@ export interface SoundSettings {
   muted: boolean;
 }
 
+/**
+ * Service for managing sound playback throughout the application
+ * 
+ * Handles:
+ * - Loading sound files with fallbacks
+ * - Managing volume and mute settings
+ * - Playing sounds in response to events
+ * 
+ * Note: For more information on obtaining sound files, see:
+ * - assets/sounds/README.md (General information)
+ * - assets/sounds/README-USAGE.md (Usage guidelines)
+ */
 @Injectable({
   providedIn: 'root'
 })

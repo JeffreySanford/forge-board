@@ -1,5 +1,6 @@
+/* Ensure the footer uses flex and fits within parent container */
 :host {
-  display: block;
+  display: flex;
   width: 100%;
 }
 
@@ -8,15 +9,259 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  position: relative;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Add blue border to footer */
+.blue-border {
+  border: 1px solid #3498db;
+}
+
+/* Container indicator in bottom left */
+.container-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(52, 152, 219, 0.8);
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-top-right-radius: 4px;
+  z-index: 1;
+  
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+  }
 }
 
 .footer-content {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 20px;
-  padding: 10px;
   flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* System status section */
+.system-status {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.status-icons {
+  display: flex;
+  gap: 16px;
+}
+
+.status-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  .material-icons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .status-name {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+}
+
+/* Status animation classes */
+.pulse-green {
+  color: #2ecc71;
+  animation: pulse-green 2s infinite;
+}
+
+.pulse-yellow {
+  color: #f39c12;
+  animation: pulse-yellow 2s infinite;
+}
+
+.pulse-red {
+  color: #e74c3c;
+  animation: pulse-red 2s infinite;
+}
+
+.flicker-blue {
+  color: #3498db;
+  animation: flicker-blue 3s infinite;
+}
+
+/* Status overlay */
+.status-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.status-details {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  
+  &.healthy {
+    border-top: 6px solid #2ecc71;
+  }
+  
+  &.degraded {
+    border-top: 6px solid #f39c12;
+  }
+  
+  &.unhealthy {
+    border-top: 6px solid #e74c3c;
+  }
+  
+  h3 {
+    margin-top: 0;
+    font-size: 18px;
+  }
+}
+
+.details-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    
+    &.healthy {
+      background-color: #2ecc71;
+    }
+    
+    &.degraded {
+      background-color: #f39c12;
+    }
+    
+    &.unhealthy {
+      background-color: #e74c3c;
+    }
+  }
+}
+
+.details-metrics {
+  margin-bottom: 16px;
+  
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    
+    .metric-name {
+      font-weight: 500;
+    }
+    
+    .metric-value {
+      &.healthy {
+        color: #2ecc71;
+      }
+      
+      &.degraded {
+        color: #f39c12;
+      }
+      
+      &.unhealthy {
+        color: #e74c3c;
+      }
+    }
+  }
+}
+
+.details-message {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  
+  p {
+    margin: 0;
+  }
+}
+
+.details-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Animations */
+@keyframes pulse-green {
+  0% {
+    text-shadow: 0 0 0 rgba(46, 204, 113, 0);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(46, 204, 113, 0.6);
+  }
+  100% {
+    text-shadow: 0 0 0 rgba(46, 204, 113, 0);
+  }
+}
+
+@keyframes pulse-yellow {
+  0% {
+    text-shadow: 0 0 0 rgba(243, 156, 18, 0);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(243, 156, 18, 0.6);
+  }
+  100% {
+    text-shadow: 0 0 0 rgba(243, 156, 18, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    text-shadow: 0 0 0 rgba(231, 76, 60, 0);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(231, 76, 60, 0.6);
+  }
+  100% {
+    text-shadow: 0 0 0 rgba(231, 76, 60, 0);
+  }
+}
+
+@keyframes flicker-blue {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* System status section styles */

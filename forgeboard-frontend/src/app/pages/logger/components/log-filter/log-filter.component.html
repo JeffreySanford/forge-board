@@ -1,23 +1,20 @@
-<div class="filter-container">
+<div class="filter-container blue-border">
+  <!-- Container indicator in bottom left -->
+  <div class="container-indicator">
+    <mat-icon>filter_list</mat-icon>
+    <span>filter</span>
+  </div>
+  
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>Filter by Source</mat-label>
-    <mat-select [formControl]="sourcesControl" multiple (selectionChange)="onSourcesChange()">
-      <mat-select-trigger>
-        {{sourcesControl.value?.length ? sourcesControl.value[0] : ''}}
-        <span *ngIf="sourcesControl.value?.length > 1" class="additional-selection">
-          (+{{sourcesControl.value.length - 1}} {{sourcesControl.value.length === 2 ? 'other' : 'others'}})
-        </span>
-      </mat-select-trigger>
-      <mat-option *ngFor="let source of availableSources" [value]="source">{{source}}</mat-option>
+    <mat-select [(ngModel)]="service" (selectionChange)="onSourceChange(service)">
+      <mat-option *ngFor="let source of availableSources" [value]="source.value">{{source.label}}</mat-option>
     </mat-select>
     <mat-hint>Filter logs by their source</mat-hint>
   </mat-form-field>
 
   <div class="filter-actions">
-    <button mat-stroked-button color="primary" (click)="selectAllSources()" [disabled]="!availableSources.length">
-      Select All
-    </button>
-    <button mat-stroked-button color="warn" (click)="clearSources()" [disabled]="!sourcesControl.value?.length">
+    <button mat-stroked-button color="warn" (click)="clearSources()" [disabled]="!service">
       Clear
     </button>
   </div>

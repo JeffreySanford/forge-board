@@ -16,6 +16,37 @@ import {
 import { BackendStatusService } from './backend-status.service';
 import { TypeDiagnosticsService } from './type-diagnostics.service';
 
+// Add enhanced health data interfaces
+export interface DatabaseHealth {
+  status: 'ok' | 'warning' | 'error';
+  message?: string;
+  connections?: {
+    total: number;
+    active: number;
+    idle: number;
+    status: 'healthy' | 'degraded' | 'unhealthy';
+  };
+  performance?: {
+    avgQueryTime: number;
+    slowQueries: number;
+    status: 'healthy' | 'degraded' | 'unhealthy';
+  };
+  storage?: {
+    total: number;
+    used: number;
+    free: number;
+    status: 'healthy' | 'degraded' | 'unhealthy';
+  };
+}
+
+// Fix the interface extension issue by making it properly extend HealthData
+export interface EnhancedHealthData extends Omit<HealthData, 'details'> {
+  details?: {
+    database?: DatabaseHealth;
+    [key: string]: unknown; // Use unknown instead of any for better type safety
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -30,7 +61,7 @@ export class DiagnosticsService implements OnDestroy {
   // Socket data subjects
   private socketStatusSubject = new Subject<SocketStatusUpdate>();
   private socketLogsSubject = new Subject<SocketLogEvent[]>();
-  private healthSubject = new BehaviorSubject<HealthData>({
+  private healthSubject = new BehaviorSubject<EnhancedHealthData>({
     status: 'unknown',
     uptime: 0,
     timestamp: new Date().toISOString(),
@@ -394,7 +425,7 @@ export class DiagnosticsService implements OnDestroy {
   /**
    * Get health data as an observable
    */
-  getHealthUpdates(): Observable<HealthData> {
+  getHealthUpdates(): Observable<EnhancedHealthData> {
     // Request latest health data
     this.socket?.emit('get-health');
     return this.healthSubject.asObservable();

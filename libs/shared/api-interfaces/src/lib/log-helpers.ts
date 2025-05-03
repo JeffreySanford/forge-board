@@ -16,13 +16,13 @@ import {
 export function createLogEntry(
   message: string,
   level: LogLevelString = 'info',
-  source: string = 'app',
+  source = 'app',
   data?: Record<string, unknown>
 ): LogEntry {
   return {
     id: generateId(),
     timestamp: new Date().toISOString(),
-    level,
+    level: stringToLogLevelEnum(level), // Convert string to enum
     message,
     source,
     data
@@ -34,8 +34,7 @@ export function createLogEntry(
  */
 export function createDefaultFilter(): LogFilter {
   return {
-    // Use string 'info' instead of enum value to match LogLevelString type
-    level: 'info',
+    level: LogLevelEnum.INFO,  // Use enum value directly
     service: undefined,
     startDate: undefined,
     endDate: undefined,
@@ -75,8 +74,8 @@ export class LogLevelHelper {
    */
   static createFilter(): LogFilter {
     return {
-      // Changed from 'loglevels' to 'level' and made it an array
-      level: [logLevelEnumToString(LogLevelEnum.INFO)]
+      // Use LogLevelEnum array directly
+      level: [LogLevelEnum.INFO]
     };
   }
 }

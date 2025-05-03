@@ -1,5 +1,5 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { LogEntry } from '@forge-board/shared/api-interfaces';
+import { LogEntry, LogLevelEnum, logLevelEnumToString } from '@forge-board/shared/api-interfaces';
 
 @Component({
   selector: 'app-log-entry',
@@ -7,7 +7,7 @@ import { LogEntry } from '@forge-board/shared/api-interfaces';
     <div class="log-entry" [ngClass]="getLevelClass(log.level)">
       <div class="log-meta">
         <span class="log-time">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</span>
-        <span class="log-level">{{ log.level | uppercase }}</span>
+        <span class="log-level">{{ getLogLevelString(log.level) | uppercase }}</span>
         <span class="log-source" [ngClass]="{'testing-source': isTestSource()}">{{ log.source }}</span>
       </div>
       <div class="log-message" [innerHTML]="highlightTestingText(log.message)"></div>
@@ -23,15 +23,20 @@ import { LogEntry } from '@forge-board/shared/api-interfaces';
 export class LogEntryComponent {
   @Input() log!: LogEntry;
 
-  getLevelClass(level: string): string {
-    switch (level.toLowerCase()) {
-      case 'error': return 'log-error';
-      case 'warn':
-      case 'warning': return 'log-warning';
-      case 'info': return 'log-info';
-      case 'debug': return 'log-debug';
+  getLevelClass(level: LogLevelEnum): string {
+    switch (level) {
+      case LogLevelEnum.ERROR: return 'log-error';
+      case LogLevelEnum.WARN: return 'log-warning';
+      case LogLevelEnum.INFO: return 'log-info';
+      case LogLevelEnum.DEBUG: return 'log-debug';
+      case LogLevelEnum.TRACE: return 'log-trace';
+      case LogLevelEnum.FATAL: return 'log-fatal';
       default: return '';
     }
+  }
+  
+  getLogLevelString(level: LogLevelEnum): string {
+    return logLevelEnumToString(level);
   }
   
   isTestSource(): boolean {

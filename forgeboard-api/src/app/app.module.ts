@@ -34,6 +34,7 @@ import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
 import { SeedService } from './seed.service';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
@@ -52,8 +53,7 @@ import { SeedService } from './seed.service';
         }
         return {
           uri,
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
+          // Removing deprecated options that are no longer needed in MongoDB driver v4.0+
         };
       },
       inject: [ConfigService],
@@ -73,6 +73,7 @@ import { SeedService } from './seed.service';
     TileStateModule,
     AuthModule,
     UserModule,
+    LogsModule,
     // JwtModule removed for v10+
   ],
   controllers: [

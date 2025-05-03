@@ -1,70 +1,189 @@
 <div class="log-viewer-container">
-  <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z0">
-    <!-- Timestamp Column -->
-    <ng-container matColumnDef="timestamp">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Timestamp</th>
-      <td mat-cell *matCellDef="let log">{{ log.timestamp | date:'medium' }}</td>
-    </ng-container>
-
-    <!-- Level Column -->
-    <ng-container matColumnDef="level">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Level</th>
-      <td mat-cell *matCellDef="let log">
-        <span class="level-badge" [ngClass]="getLevelClass(log.level)">
-          {{ log.level | uppercase }}
-        </span>
-      </td>
-    </ng-container>
-
-    <!-- Source Column -->
-    <ng-container matColumnDef="source">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Source</th>
-      <td mat-cell *matCellDef="let log">{{ log.source }}</td>
-    </ng-container>
-
-    <!-- Message Column -->
-    <ng-container matColumnDef="message">
-      <th mat-header-cell *matHeaderCellDef>Message</th>
-      <td mat-cell *matCellDef="let log">{{ log.message }}</td>
-    </ng-container>
+  <div class="control-panel">
+    <div class="view-controls">
+      <mat-button-toggle-group [(ngModel)]="viewMode" (change)="onViewModeChange()" aria-label="View Mode">
+        <mat-button-toggle value="standard" matTooltip="Show all logs individually">Standard</mat-button-toggle>
+        <mat-button-toggle value="grouped" matTooltip="Group duplicate logs">Grouped</mat-button-toggle>
+        <mat-button-toggle value="categorized" matTooltip="Group logs by category">Categorized</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
     
-    <!-- Actions Column -->
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let log">
-        <button mat-icon-button color="primary" (click)="toggleDetails(log)" [attr.aria-label]="'Toggle details for log ' + log.id">
-          <mat-icon>{{ expandedLog === log ? 'expand_less' : 'expand_more' }}</mat-icon>
-        </button>
-      </td>
-    </ng-container>
-    
-    <!-- Expanded Content Column -->
-    <ng-container matColumnDef="expandedDetail">
-      <td mat-cell *matCellDef="let log" [attr.colspan]="displayedColumns.length">
-        <div class="expanded-detail" [@detailExpand]="expandedLog === log ? 'expanded' : 'collapsed'">
-          <div *ngIf="expandedLog === log">
-            <h4>Log Details</h4>
-            <pre>{{ formatDetails(log.details) }}</pre>
-          </div>
-        </div>
-      </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-    <tr mat-row *matRowDef="let log; columns: displayedColumns;"
-        [class.expanded-row]="expandedLog === log"
-        (click)="toggleDetails(log)"></tr>
-    <tr mat-row *matRowDef="let log; columns: ['expandedDetail']; when: expandedLog === log"
-        class="detail-row"></tr>
-  </table>
-
-  <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
-                  showFirstLastButtons 
-                  aria-label="Select page of logs">
-  </mat-paginator>
-  
-  <div *ngIf="logs.length === 0" class="no-logs-message">
-    <mat-icon>article</mat-icon>
-    <p>No logs found matching your criteria</p>
+    <div class="filter-controls">
+      <mat-form-field appearance="outline" class="service-filter">
+        <mat-label>Service Filter</mat-label>
+        <mat-select [(ngModel)]="selectedService" (selectionChange)="filterByService()">
+          <mat-option value="all">All Services</mat-option>
+          <mat-option *ngFor="let service of availableServices" [value]="service">
+            {{ service }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <mat-slide-toggle 
+        [(ngModel)]="autoRefresh"
+        color="primary"
+        class="refresh-toggle"
+        matTooltip="Toggle automatic updates of log entries">
+        Auto-refresh
+      </mat-slide-toggle>
+      
+      <button mat-icon-button (click)="refreshData()" matTooltip="Refresh logs manually">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
   </div>
+
+  <div class="logs-table-wrapper">
+    <table mat-table [dataSource]="dataSource" matSort class="logs-table">
+      <!-- Timestamp Column -->
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Time </th>
+        <td mat-cell *matCellDef="let log" [ngClass]="{'category-row': log.isCategory}" (click)="rowClick(log, $event)"> 
+          <ng-container *ngIf="!log.isCategory; else categoryTimestamp">
+            {{ log.timestamp | date:'medium' }}
+          </ng-container>
+          <ng-template #categoryTimestamp>
+            <mat-icon class="category-icon">folder</mat-icon>
+          </ng-template>
+        </td>
+      </ng-container>
+
+      <!-- Level Column -->
+      <ng-container matColumnDef="level">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Level </th>
+        <td mat-cell *matCellDef="let log" [ngClass]="getLevelClass(log.level)" (click)="rowClick(log, $event)"> 
+          <ng-container *ngIf="!log.isCategory; else categoryLevel">
+            {{ log.level }}
+          </ng-container>
+          <ng-template #categoryLevel>
+            <span class="category-count">{{ log.count }}</span>
+          </ng-template>
+        </td>
+      </ng-container>
+
+      <!-- Source Column -->
+      <ng-container matColumnDef="source">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Source </th>
+        <td mat-cell *matCellDef="let log" (click)="rowClick(log, $event)"> 
+          <div class="source-cell">
+            <span>{{ log.source }}</span>
+            <mat-icon *ngIf="isBackendLog(log)" 
+                     matTooltip="Backend log" 
+                     class="source-icon backend-icon">dns</mat-icon>
+            <mat-icon *ngIf="!isBackendLog(log)" 
+                     matTooltip="Frontend log" 
+                     class="source-icon frontend-icon">computer</mat-icon>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Message Column -->
+      <ng-container matColumnDef="message">
+        <th mat-header-cell *matHeaderCellDef> Message </th>
+        <td mat-cell *matCellDef="let log" (click)="rowClick(log, $event)" class="message-cell">
+          <div class="message-content">
+            {{ log.message }}
+            <span *ngIf="log.count && log.count > 1" class="duplicate-count">({{ log.count }})</span>
+          </div>
+          <div *ngIf="hasExpandableContent(log)" class="expand-indicator">
+            <mat-icon>{{ log.expanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let log">
+          <button mat-icon-button *ngIf="hasExpandableContent(log)" (click)="toggleLogExpansion(log, $event)" 
+                  matTooltip="Toggle details">
+            <mat-icon>{{ log.expanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <!-- Expanded Detail Column -->
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let log" [attr.colspan]="displayedColumns.length" class="expanded-detail-cell">
+          <div class="expanded-detail" *ngIf="log.expanded">
+            <mat-button-toggle-group [value]="activeTab" aria-label="Log Details View">
+              <mat-button-toggle value="data" (click)="setActiveTab('data')">Data</mat-button-toggle>
+              <mat-button-toggle value="analysis" (click)="setActiveTab('analysis')">Analysis</mat-button-toggle>
+              <mat-button-toggle *ngIf="log.duplicates?.length" value="duplicates" (click)="setActiveTab('duplicates')">
+                Duplicates ({{ log.duplicates?.length || 0 }})
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+            
+            <!-- Data Tab Content -->
+            <div *ngIf="activeTab === 'data'" class="tab-content data-tab">
+              <div *ngIf="log.data || log.rawData" class="data-section">
+                <h4>Log Data</h4>
+                <pre>{{ log.rawData || formatDetails(log.data) }}</pre>
+              </div>
+              
+              <div *ngIf="log.stackTrace" class="stack-trace-section">
+                <h4>Stack Trace</h4>
+                <pre>{{ log.stackTrace }}</pre>
+              </div>
+              
+              <div *ngIf="log.tags?.length" class="tags-section">
+                <h4>Tags</h4>
+                <div class="tags">
+                  <span *ngFor="let tag of log.tags" class="tag">{{ tag }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Analysis Tab Content -->
+            <div *ngIf="activeTab === 'analysis'" class="tab-content analysis-tab">
+              <div class="analysis-section">
+                <h4>Log Analysis</h4>
+                <div class="analysis-item">
+                  <strong>Purpose:</strong> {{ analyzeLogPurpose(log) }}
+                </div>
+                <div class="analysis-item">
+                  <strong>Origin:</strong> {{ isBackendLog(log) ? 'Backend' : 'Frontend' }}
+                </div>
+                <div class="analysis-item" *ngIf="log.context">
+                  <strong>Context:</strong> {{ log.context }}
+                </div>
+                <div class="analysis-item" *ngIf="log.eventId">
+                  <strong>Event ID:</strong> {{ log.eventId }}
+                </div>
+                <div class="analysis-item" *ngIf="log.data?.['action']">
+                  <strong>Action:</strong> {{ log.data?.['action'] }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Duplicates Tab Content -->
+            <div *ngIf="activeTab === 'duplicates' && log.duplicates?.length" class="tab-content duplicates-tab">
+              <h4>Duplicate Log Entries ({{ log.duplicates?.length }})</h4>
+              <div class="duplicate-list">
+                <div *ngFor="let duplicate of log.duplicates" class="duplicate-item">
+                  <div class="duplicate-timestamp">{{ duplicate.timestamp | date:'medium' }}</div>
+                  <div class="duplicate-message">{{ duplicate.message }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Row Definitions -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let log; columns: displayedColumns"
+          [ngClass]="{'expanded-row': log.expanded, 'category-row': log.isCategory}"></tr>
+      <!-- Fix for the "when" expression syntax error -->
+      <tr mat-row *matRowDef="let log; columns: ['expandedDetail']; when: isExpanded"
+          class="detail-row"></tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 25, 50, 100]"
+    showFirstLastButtons
+    aria-label="Select page of logs">
+  </mat-paginator>
 </div>

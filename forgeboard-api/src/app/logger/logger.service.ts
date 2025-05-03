@@ -10,6 +10,7 @@ import {
   LogBatchResponse
 } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
+import { Subject } from 'rxjs';
 
 // Extended interfaces for internal use
 interface ExtendedLogEntry extends LogEntry {
@@ -35,6 +36,9 @@ export class LoggerService {
   private readonly nestLogger = new NestLogger(LoggerService.name);
   private logs: ExtendedLogEntry[] = [];
   private readonly maxLogs = 1000; // Maximum number of logs to keep in memory
+  
+  // Subject to notify subscribers when a new log is created
+  public readonly newLogEntry$ = new Subject<ExtendedLogEntry>();
 
   constructor() {
     // Initialize with some sample logs
@@ -44,7 +48,7 @@ export class LoggerService {
   /**
    * Create a log entry with the specified level
    */
-  log(level: LogLevelString, message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  log(level: LogLevelEnum, message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
     // Create log entry
     const entry: ExtendedLogEntry = {
       id: uuid(),
@@ -60,7 +64,7 @@ export class LoggerService {
     entry.tags = meta.tags as string[] | undefined;
     
     // Add stack trace for errors
-    if (level === 'error' || level === 'fatal') {
+    if (level === LogLevelEnum.ERROR || level === LogLevelEnum.FATAL) {
       entry.stackTrace = new Error().stack;
     }
     
@@ -72,22 +76,25 @@ export class LoggerService {
       this.logs = this.logs.slice(0, this.maxLogs);
     }
     
-    // Also log to console using NestJS logger
-    switch (level) {
-      case 'debug':
+    // Log to NestJS logger as well
+    const levelString = logLevelEnumToString(level);
+    switch (levelString) {
+      case 'debug': {
         this.nestLogger.debug(message, context);
         break;
-      case 'info':
+      }
+      case 'info': {
         this.nestLogger.log(message, context);
         break;
-      case 'warning':
-      case 'warn':
+      }
+      case 'warning': 
+      case 'warn': {
         this.nestLogger.warn(message, context);
         break;
-      case 'error':
+      }
+      case 'error': 
       case 'fatal': {
-        // Fix: Safely access stack property on meta.error by checking type
-        const errorStack = meta?.error && 
+        const errorStack = meta.error && 
           typeof meta.error === 'object' && 
           meta.error !== null && 
           'stack' in meta.error ? 
@@ -95,37 +102,41 @@ export class LoggerService {
         this.nestLogger.error(message, errorStack, context);
         break;
       }
-      case 'trace':
+      case 'trace': {
         this.nestLogger.verbose(message, context);
         break;
+      }
     }
+    
+    // Notify subscribers of new log entry
+    this.newLogEntry$.next(entry);
     
     return entry;
   }
   
   // Convenience methods
   debug(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('debug', message, context, meta);
+    return this.log(LogLevelEnum.DEBUG, message, context, meta);
   }
   
   info(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('info', message, context, meta);
+    return this.log(LogLevelEnum.INFO, message, context, meta);
   }
   
   warning(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('warning', message, context, meta);
+    return this.log(LogLevelEnum.WARN, message, context, meta);
   }
   
   error(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('error', message, context, meta);
+    return this.log(LogLevelEnum.ERROR, message, context, meta);
   }
 
   fatal(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('fatal', message, context, meta);
+    return this.log(LogLevelEnum.FATAL, message, context, meta);
   }
 
   trace(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log('trace', message, context, meta);
+    return this.log(LogLevelEnum.TRACE, message, context, meta);
   }
   
   /**
@@ -134,7 +145,7 @@ export class LoggerService {
    * @param filter Filter criteria for log entries
    * @returns Filtered log entries
    */
-  getLogs(filter: ExtendedFilter = { level: logLevelEnumToString(LogLevelEnum.INFO) }): ExtendedLogEntry[] {
+  getLogs(filter: ExtendedFilter = { level: LogLevelEnum.INFO }): ExtendedLogEntry[] {
     // Start with all logs
     let filteredLogs = [...this.logs];
     
@@ -154,7 +165,7 @@ export class LoggerService {
     // Legacy support for loglevels property - handle both cases
     if (filter.loglevels && Array.isArray(filter.loglevels) && filter.loglevels.length) {
       filteredLogs = filteredLogs.filter(log =>
-        filter.loglevels && filter.loglevels.includes(stringToLogLevelEnum(log.level))
+        filter.loglevels && filter.loglevels.includes(log.level)
       );
     }
     
@@ -272,16 +283,23 @@ export class LoggerService {
     this.info('Application started', 'AppModule', { version: '1.0.0', service: 'forgeboard-api' });
     this.warning('Running in development mode', 'ConfigService');
     this.debug('Initializing services', 'Bootstrap');
-    this.error('Failed to connect to external service', 'ExternalService', { 
-      error: new Error('Connection timeout'), 
-      url: 'https://api.example.com' 
+    
+    // Use clear mock prefix for sample errors to avoid confusion
+    this.error('[SAMPLE] Example error - not a real issue', 'ExampleService', { 
+      error: new Error('This is a sample error for demonstration purposes only'), 
+      url: 'https://api.example.com',
+      sampleLog: true
     });
+    
     this.trace('Detailed initialization sequence', 'SystemLoader', { 
       steps: ['ConfigLoader', 'DatabaseConnection', 'MigrationCheck', 'RouteRegistration'] 
     });
-    this.fatal('Critical system failure detected', 'HealthMonitor', {
+    
+    // Use clear mock prefix for sample errors to avoid confusion
+    this.fatal('[SAMPLE] Example critical error - not a real issue', 'ExampleMonitor', {
       subsystem: 'Storage',
-      errorCode: 'OUT_OF_SPACE'
+      errorCode: 'OUT_OF_SPACE',
+      sampleLog: true
     });
     
     // Create a sample log with tags

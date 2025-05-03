@@ -9,7 +9,7 @@
         [class]="getLevelClass(level)"
         [class.selected]="isLevelSelected(level)"
         (click)="toggleLevel(level)">
-        {{ level }}
+        {{ getLogLevelString(level) }}
       </div>
     </div>
     
@@ -37,7 +37,7 @@
         <div class="log-entry" [class]="getLevelClass(log.level)">
           <div class="log-header">
             <div class="log-time">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</div>
-            <div class="log-type">{{ log.level }}</div>
+            <div class="log-type">{{ getLogLevelString(log.level) }}</div>
             <div class="log-source">{{ log.source }}</div>
           </div>
           <div class="log-message">{{ log.message }}</div>

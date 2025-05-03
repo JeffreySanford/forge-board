@@ -2,10 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Observable, combineLatest, of } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
-import { LogEntry } from '@forge-board/shared/api-interfaces';
-
-// Local log level type definition
-type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal' | 'trace';
+import { LogEntry, LogLevelEnum, logLevelEnumToString } from '@forge-board/shared/api-interfaces';
 
 @Component({
   selector: 'app-logger-tile',
@@ -21,13 +18,11 @@ export class LoggerTileComponent implements OnInit {
 
   // Form controls
   searchControl = new FormControl<string>('');
-  // Now 'warning' is properly included in LogLevelType
-  levelFilter = new FormControl<LogLevelType[]>(['info', 'warning', 'error']);
+  levelFilter = new FormControl<LogLevelEnum[]>([LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR]);
   searchFilter = new FormControl<string>('');
   
   // Available log levels
-  // This is now correctly typed
-  readonly logLevels: LogLevelType[] = ['debug', 'info', 'warning', 'error'];
+  readonly logLevels: LogLevelEnum[] = [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR];
 
   // Filtered logs observable
   filteredLogs$!: Observable<LogEntry[]>;
@@ -50,10 +45,9 @@ export class LoggerTileComponent implements OnInit {
     this.filteredLogs$ = combineLatest([
       this.logs$,
       this.searchControl.valueChanges.pipe(startWith('')),
-      // Fix: Handle null values in the pipe and explicitly cast default value to LogLevelType[]
       this.levelFilter.valueChanges.pipe(
-        startWith<LogLevelType[] | null>(this.levelFilter.value),
-        map(value => (value || ['info', 'warning', 'error'] as LogLevelType[]))
+        startWith<LogLevelEnum[] | null>(this.levelFilter.value),
+        map(value => (value || [LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR]))
       )
     ]).pipe(
       map(([logs, search, levels]) => this.filterLogs(logs, search || '', levels))
@@ -63,10 +57,10 @@ export class LoggerTileComponent implements OnInit {
   /**
    * Filter logs based on search text and selected levels
    */
-  filterLogs(logs: LogEntry[], search: string, levels: LogLevelType[]): LogEntry[] {
+  filterLogs(logs: LogEntry[], search: string, levels: LogLevelEnum[]): LogEntry[] {
     return logs
       // Filter by selected levels
-      .filter(log => levels.includes(log.level as LogLevelType))
+      .filter(log => levels.includes(log.level))
       // Filter by search text
       .filter(log => {
         if (!search) return true;
@@ -74,7 +68,7 @@ export class LoggerTileComponent implements OnInit {
         return (
           log.message.toLowerCase().includes(searchLower) ||
           (log.source ?? '').toLowerCase().includes(searchLower) ||
-          log.level.toLowerCase().includes(searchLower)
+          logLevelEnumToString(log.level).toLowerCase().includes(searchLower)
         );
       })
       // Limit number of logs displayed
@@ -84,7 +78,7 @@ export class LoggerTileComponent implements OnInit {
   /**
    * Check if a log level is currently selected in the filter
    */
-  isLevelSelected(level: LogLevelType): boolean {
+  isLevelSelected(level: LogLevelEnum): boolean {
     const selectedLevels = this.levelFilter.value || [];
     return selectedLevels.includes(level);
   }
@@ -92,7 +86,7 @@ export class LoggerTileComponent implements OnInit {
   /**
    * Toggle a log level in the filter
    */
-  toggleLevel(level: LogLevelType): void {
+  toggleLevel(level: LogLevelEnum): void {
     const currentLevels = this.levelFilter.value || [];
     
     if (this.isLevelSelected(level)) {
@@ -114,7 +108,22 @@ export class LoggerTileComponent implements OnInit {
   /**
    * Get CSS class for log level
    */
-  getLevelClass(level: LogLevelType): string {
-    return `log-level-${level}`;
+  getLevelClass(level: LogLevelEnum): string {
+    switch (level) {
+      case LogLevelEnum.DEBUG: return 'log-level-debug';
+      case LogLevelEnum.INFO: return 'log-level-info';
+      case LogLevelEnum.WARN: return 'log-level-warning';
+      case LogLevelEnum.ERROR: return 'log-level-error';
+      case LogLevelEnum.FATAL: return 'log-level-fatal';
+      case LogLevelEnum.TRACE: return 'log-level-trace';
+      default: return '';
+    }
+  }
+  
+  /**
+   * Get string representation of LogLevelEnum for display
+   */
+  getLogLevelString(level: LogLevelEnum): string {
+    return logLevelEnumToString(level);
   }
 }

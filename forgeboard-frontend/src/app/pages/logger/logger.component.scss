@@ -5,6 +5,113 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// Enhanced log entry styles with vibrant colors
+.log-entry {
+  border-left: 4px solid transparent;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  &.backend {
+    border-left-color: #3f51b5; // Indigo
+    background-color: rgba(63, 81, 181, 0.05);
+    
+    .log-source {
+      color: #3f51b5;
+      font-weight: 500;
+    }
+  }
+  
+  &.frontend {
+    border-left-color: #ff9800; // Orange
+    background-color: rgba(255, 152, 0, 0.05);
+    
+    .log-source {
+      color: #ff9800;
+      font-weight: 500;
+    }
+  }
+  
+  // Log level styling with vibrant colors
+  &.level-debug {
+    .log-level {
+      background-color: #78909c; // Blue grey
+      color: white;
+    }
+  }
+  
+  &.level-info {
+    .log-level {
+      background-color: #00b0ff; // Light blue
+      color: white;
+    }
+  }
+  
+  &.level-warn {
+    .log-level {
+      background-color: #ffb300; // Amber
+      color: black;
+    }
+  }
+  
+  &.level-error {
+    .log-level {
+      background-color: #f44336; // Red
+      color: white;
+    }
+  }
+  
+  &.level-fatal {
+    .log-level {
+      background-color: #7b1fa2; // Purple
+      color: white;
+    }
+  }
+  
+  &.level-trace {
+    .log-level {
+      background-color: #9e9e9e; // Grey
+      color: white;
+    }
+  }
+}
+
+.log-level {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-right: 8px;
+}
+
+.log-timestamp {
+  color: #616161;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.log-source {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-right: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.log-message {
+  font-family: 'Roboto Mono', monospace;
 }
 
 .logger-header {
@@ -80,9 +187,11 @@
 
 .logger-main {
   flex: 1;
+  width: 100%;
   
   .logs-card {
     height: 100%;
+    width: 100%;
     
     mat-card-header {
       display: flex;
@@ -98,6 +207,7 @@
       height: calc(100% - 64px);
       padding: 0;
       overflow: hidden;
+      width: 100%;
     }
   }
 }

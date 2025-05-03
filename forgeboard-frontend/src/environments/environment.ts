@@ -19,8 +19,7 @@ export const environment = {
   mongo: {
     uri: '', // Loaded from environment variable or runtime config
     options: {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
+      // Removed deprecated options that are no longer needed in MongoDB driver v4.0+
     }
   },
   useInMemoryMongo: true,

@@ -2,8 +2,9 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit, OnG
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { LoggerService } from './logger.service';
-import { type LogEntry, type LogFilter, type LogQueryResponse, type SocketResponse, type LogStreamUpdate, type LogLevelEnum, type LogLevelString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
+import { type LogEntry, type LogFilter, type LogQueryResponse, type SocketResponse, type LogStreamUpdate } from '@forge-board/shared/api-interfaces';
 import { createSocketResponse } from '../utils/socket-utils';
+import { OnModuleInit } from '@nestjs/common';
 
 @WebSocketGateway({
   namespace: '/logs',
@@ -12,12 +13,19 @@ import { createSocketResponse } from '../utils/socket-utils';
     methods: ['GET', 'POST']
   }
 })
-export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(LoggerGateway.name);
   private activeFilters = new Map<string, LogFilter>();
   
   constructor(private loggerService: LoggerService) {}
+  
+  onModuleInit() {
+    // Subscribe to new log entries from LoggerService
+    this.loggerService.newLogEntry$.subscribe(logEntry => {
+      this.broadcastLogEntry(logEntry);
+    });
+  }
   
   afterInit(server: Server): void {
     this.logger.log('Logger Gateway Initialized');
@@ -115,8 +123,8 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       }
     });
     
-    // Also broadcast to all clients without filters
-    this.server.emit('new-log', createSocketResponse('new-log', logEntry));
+    // Also broadcast to all clients without filters - with renamed event name
+    this.server.emit('backend-log-entry', createSocketResponse('backend-log-entry', logEntry));
   }
   
   /**

@@ -41,6 +41,3 @@ This will check for missing files and create silent fallbacks if needed.
 ## License Information
 
 Sound files downloaded from Freesound.org may have specific licenses. Please review the license for each sound on its Freesound page if you plan to use this application in a commercial context.
-
----
-**Note:** The sound system is tightly integrated with the UI and respects user preferences (mute, volume). All audio elements include error handling and fallback logic as described in [README-USAGE.md](./README-USAGE.md).

@@ -1,8 +1,61 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, timer } from 'rxjs';
-import { LogEntry, LogLevelType, LogLevel, LogQueryResponse, LogSocketResponse, LogFilter } from '@forge-board/shared/api-interfaces';
+import { BehaviorSubject, Observable, Subscription, timer, Subject } from 'rxjs';
+import { LogLevel, LogSocketResponse } from './log-types';
 import { LogDispatchService } from '../../services/log-dispatch.service';
 import { Socket, io } from 'socket.io-client';
+import { environment } from '../../../environments/environment';
+import { LogLevelEnum, logLevelEnumToString } from '@forge-board/shared/api-interfaces';
+
+// Define the LogEntry interface locally since it's missing from shared
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  level: LogLevelEnum;  // Changed from LogLevelType to LogLevelEnum
+  message: string;
+  source?: string;
+  service?: string;
+  data?: Record<string, unknown>;
+  // Extended display properties
+  displayMessage?: string;
+  rawData?: string;
+  expanded?: boolean;
+  categories?: string[];
+  eventId?: string;
+  
+  // Duplicate tracking
+  duplicateCount?: number;
+  duplicates?: LogEntry[];
+  
+  // Category grouping
+  isCategory?: boolean;
+  categoryName?: string;
+  categoryLogs?: LogEntry[];
+  categoryCount?: number;
+  
+  // Additional metadata for display
+  details?: Record<string, unknown>;
+}
+
+// Define query response interface
+export interface LogQueryResponse {
+  status: boolean;
+  logs: LogEntry[];
+  totalCount: number;
+  filtered?: boolean;
+  timestamp?: string;
+}
+
+// Define filter interface
+export interface LogFilter {
+  level?: LogLevelEnum | LogLevelEnum[];
+  loglevels?: LogLevelEnum[]; // Updated to use enum
+  service?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  limit?: number;
+  skip?: number;
+}
 
 // Define types that aren't in the shared interfaces
 export interface LogStreamUpdate {
@@ -22,8 +75,9 @@ export interface LogFetchResponse extends LogQueryResponse {
   providedIn: 'root'
 })
 export class LoggerService implements OnDestroy {
-  private readonly apiUrl = 'http://localhost:3000/api/logs';
-  private readonly socketUrl = 'http://localhost:3000';
+  // Use environment variables for URLs
+  private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
+  private readonly socketUrl = environment.socketBaseUrl;
   
   // Socket connection
   private socket: Socket | null = null;
@@ -41,11 +95,11 @@ export class LoggerService implements OnDestroy {
   
   // Filter subject
   private filterSubject = new BehaviorSubject<LogFilter>({
-    level: 'debug', // Change from array to string - use a single level value
-    loglevels: [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL], // Required property
-    service: '', // Service instead of sources
-    startDate: undefined, // Using startDate 
-    endDate: undefined, // Using endDate
+    level: LogLevelEnum.DEBUG,
+    loglevels: [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR, LogLevelEnum.FATAL],
+    service: '', 
+    startDate: undefined,
+    endDate: undefined,
     search: ''
   });
   
@@ -161,6 +215,24 @@ export class LoggerService implements OnDestroy {
         }
       }
     });
+
+    // Updated event name from "new-log" to "backend-log-entry"
+    this.socket.on('backend-log-entry', (response: LogSocketResponse<LogEntry>) => {
+      if (response.status === 'success') {
+        const logEntry = response.data;
+        // Process and beautify the log entry for human readability
+        const processedEntry = this.processLogEntryForDisplay(logEntry);
+        // Add to logs (at the beginning for newest-first)
+        const currentLogs = this.logsSubject.getValue();
+        this.logsSubject.next([processedEntry, ...currentLogs]);
+        
+        // Update stats
+        const currentStats = this.logStatsSubject.getValue();
+        const mappedLevel = this.mapApiLevelToLocalEnum(processedEntry.level);
+        currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
+        this.logStatsSubject.next({...currentStats});
+      }
+    });
   }
   
   /**
@@ -210,7 +282,13 @@ export class LoggerService implements OnDestroy {
       'Rate limit exceeded',
       'Session expired'
     ];
-    const levels: LogLevelType[] = ['debug', 'info', 'info', 'warning', 'error']; // Use string literals
+    const levels: LogLevelEnum[] = [
+      LogLevelEnum.DEBUG,
+      LogLevelEnum.INFO,
+      LogLevelEnum.WARN,
+      LogLevelEnum.ERROR,
+      LogLevelEnum.FATAL
+    ];
     
     // Generate some initial logs
     for (let i = 0; i < 20; i++) {
@@ -270,31 +348,24 @@ export class LoggerService implements OnDestroy {
       
       // Update stats
       const currentStats = this.logStatsSubject.getValue();
-      const mappedLevel = this.stringToEnumLevel(level);
+      const mappedLevel = this.mapApiLevelToLocalEnum(level);
       currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
       this.logStatsSubject.next({...currentStats});
     });
   }
   
   /**
-   * Map API log level type (LogLevelType) to our local LogLevel enum
-   * This resolves the type incompatibility between the API's string literals and our enum
+   * Map API log level (LogLevelEnum) to our local LogLevel enum
+   * This resolves the type incompatibility between the shared LogLevelEnum and our local enum
    */
-  private mapApiLevelToLocalEnum(level: string): LogLevel {
-    return this.stringToEnumLevel(level as LogLevelType);
-  }
-  
-  /**
-   * Convert LogLevelType string to LogLevel enum
-   */
-  private stringToEnumLevel(level: LogLevelType): LogLevel {
-    switch(level.toLowerCase()) {
-      case 'debug': return LogLevel.DEBUG;
-      case 'info': return LogLevel.INFO;
-      case 'warning': 
-      case 'warn': return LogLevel.WARN;
-      case 'error': return LogLevel.ERROR;
-      case 'fatal': return LogLevel.FATAL;
+  private mapApiLevelToLocalEnum(level: LogLevelEnum): LogLevel {
+    switch(level) {
+      case LogLevelEnum.DEBUG: return LogLevel.DEBUG;
+      case LogLevelEnum.INFO: return LogLevel.INFO;
+      case LogLevelEnum.WARN: return LogLevel.WARN;
+      case LogLevelEnum.ERROR: return LogLevel.ERROR;
+      case LogLevelEnum.FATAL: return LogLevel.FATAL;
+      case LogLevelEnum.TRACE: return LogLevel.TRACE;
       default: return LogLevel.INFO; // Default fallback
     }
   }
@@ -334,8 +405,14 @@ export class LoggerService implements OnDestroy {
   private applyFilter(logs: LogEntry[], filter: LogFilter): LogEntry[] {
     return logs.filter(log => {
       // Filter by level (use level instead of levels)
-      if (filter.level && !filter.level.toString().includes(log.level)) {
-        return false;
+      if (filter.level) {
+        if (Array.isArray(filter.level)) {
+          if (!filter.level.includes(log.level)) {
+            return false;
+          }
+        } else if (filter.level !== log.level) {
+          return false;
+        }
       }
       
       // Filter by service (use service instead of sources)
@@ -412,7 +489,12 @@ export class LoggerService implements OnDestroy {
     
     // Use level instead of levels
     if (filter.level) {
-      params['level'] = filter.level.toString();
+      // Convert enum to string using the shared helper function
+      if (Array.isArray(filter.level)) {
+        params['level'] = filter.level.map(l => logLevelEnumToString(l)).join(',');
+      } else {
+        params['level'] = logLevelEnumToString(filter.level);
+      }
     }
     
     // Use service instead of sources
@@ -528,5 +610,344 @@ export class LoggerService implements OnDestroy {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileName);
     linkElement.click();
+  }
+
+  /**
+   * Process a log entry for human-readable display
+   * Converts complex JSON data into a more readable format
+   */
+  private processLogEntryForDisplay(logEntry: LogEntry): LogEntry {
+    if (!logEntry) return logEntry;
+    
+    // Create a copy of the log entry to avoid modifying the original
+    const processedEntry = { ...logEntry };
+    
+    // Process complex data objects into a more human-readable format
+    if (processedEntry.data && typeof processedEntry.data === 'object') {
+      // Extract key information based on known patterns
+      const data = processedEntry.data as Record<string, unknown>;
+      
+      // Create a humanized message from the data
+      let humanizedMessage = processedEntry.message;
+      
+      // Handle type validation logs (like in your example)
+      if (data['typeName'] && data['valid'] !== undefined) {
+        const validityStatus = data['valid'] ? 'Valid' : 'Invalid';
+        const context = data['callerInfo'] ? ` (from ${data['callerInfo']})` : '';
+        humanizedMessage = `${validityStatus} ${data['typeName']}${context}`;
+      }
+      
+      // Handle service/action pattern
+      if (data['service'] && data['action']) {
+        humanizedMessage = `${data['service']}.${data['action']}`;
+        
+        // Add additional context if available
+        if (data['typeName']) {
+          humanizedMessage += ` for ${data['typeName']}`;
+        }
+        
+        // Add status information when available
+        if (data['valid'] !== undefined) {
+          humanizedMessage += ` - ${data['valid'] ? 'Success' : 'Failed'}`;
+        } else if (data['status']) {
+          humanizedMessage += ` - ${data['status']}`;
+        }
+      }
+      
+      // Add important properties to the message
+      if (data['userId']) {
+        humanizedMessage += ` [User: ${data['userId']}]`;
+      }
+      
+      if (data['eventId']) {
+        processedEntry.eventId = data['eventId'] as string;
+      }
+      
+      // Generate categories based on the log entry
+      const categories: string[] = [];
+      
+      // Add source as a category
+      if (processedEntry.source) {
+        categories.push(processedEntry.source);
+      }
+      
+      // Add specific categories based on data properties
+      if (data['typeName']) {
+        categories.push(`type:${data['typeName']}`);
+      }
+      
+      if (data['action']) {
+        categories.push(`action:${data['action']}`);
+      }
+      
+      if (data['service']) {
+        categories.push(`service:${data['service']}`);
+      }
+      
+      // Add error category if appropriate
+      if ((processedEntry.level === LogLevelEnum.ERROR || processedEntry.level === LogLevelEnum.FATAL) ||
+          data['error'] || data['valid'] === false) {
+        categories.push('errors');
+      }
+      
+      // Store the processed data
+      processedEntry.message = humanizedMessage;
+      processedEntry.displayMessage = humanizedMessage;
+      processedEntry.rawData = JSON.stringify(data, null, 2);
+      processedEntry.categories = categories;
+      processedEntry.expanded = false; // Initially collapsed
+    }
+    
+    return processedEntry;
+  }
+  
+  /**
+   * Group logs by category or detect duplicates
+   * @param logs List of logs to process
+   * @param groupByCategory Whether to group by category instead of detecting duplicates
+   * @returns Grouped logs
+   */
+  groupLogs(logs: LogEntry[], groupByCategory: boolean = false): LogEntry[] {
+    if (!groupByCategory) {
+      // Group duplicate logs (based on content)
+      return this.groupDuplicateLogs(logs);
+    } else {
+      // Group logs by category
+      return this.groupLogsByCategory(logs);
+    }
+  }
+  
+  /**
+   * Group logs that have identical content, showing only one with a count
+   */
+  private groupDuplicateLogs(logs: LogEntry[]): LogEntry[] {
+    if (!logs || logs.length === 0) return [];
+    
+    // Group logs by a signature composed of level, source, and message
+    const groups = new Map<string, LogEntry[]>();
+    
+    for (const log of logs) {
+      // Create a signature for this log
+      const signature = `${log.level}|${log.source}|${log.message}`;
+      
+      if (!groups.has(signature)) {
+        groups.set(signature, []);
+      }
+      
+      // Get the group safely - we know it exists because we just created it if missing
+      const group = groups.get(signature);
+      if (group) {
+        group.push(log);
+      }
+    }
+    
+    // Convert groups back to an array of logs with duplicate count
+    return Array.from(groups.entries()).map(([signature, groupLogs]) => {
+      
+      
+      
+      const baseLog = { ...groupLogs[0] };
+      
+      // If there are duplicates, add count information
+      if (groupLogs.length > 1) {
+        baseLog.duplicates = groupLogs.slice(1);
+        baseLog.duplicateCount = groupLogs.length;
+      }
+      
+      baseLog.id = `group-${signature}-${Date.now()}`; // Unique ID for the group
+      baseLog.timestamp = new Date().toISOString(); // Update timestamp to now
+      baseLog.level = LogLevelEnum.INFO; // Set to INFO for grouped logs
+      baseLog.source = 'logger'; // Set source to logger for grouped logs
+      baseLog.message = `Grouped log entry: ${signature}`; // Set a generic message for the group
+      baseLog.isCategory = true; // Mark as a category group
+      baseLog.categoryName = 'Grouped Logs'; // Set a category name for the group
+      baseLog.categoryLogs = groupLogs; // Store the original logs in the group
+      baseLog.categoryCount = groupLogs.length; // Count of logs in this group
+      baseLog.categories = groupLogs[0].categories; // Use the categories from the first log
+      this.processLogEntryForDisplay(baseLog); // Process for display
+      
+      return baseLog;
+    });
+  }
+  
+  /**
+   * Group logs by their categories
+   */
+  private groupLogsByCategory(logs: LogEntry[]): LogEntry[] {
+    if (!logs || logs.length === 0) return [];
+    
+    // First, ensure all logs have processed categories
+    const processedLogs = logs.map(log => {
+      if (!log.categories) {
+        const processed = this.processLogEntryForDisplay(log);
+        return processed;
+      }
+      return log;
+    });
+    
+    // Find all unique categories
+    const allCategories = new Set<string>();
+    processedLogs.forEach(log => {
+      (log.categories || []).forEach(category => allCategories.add(category));
+    });
+    
+    // For each category, create a virtual group log entry
+    const groupedLogs: LogEntry[] = [];
+    
+    allCategories.forEach(category => {
+      // Find all logs in this category
+      const logsInCategory = processedLogs.filter(log => 
+        log.categories && log.categories.includes(category)
+      );
+      
+      if (logsInCategory.length > 1) {
+        // Create a category group entry
+        const groupLog: LogEntry = {
+          id: `category-${category}-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          level: LogLevelEnum.INFO,
+          source: 'logger',
+          message: `Category: ${category}`,
+          isCategory: true,
+          categoryName: category,
+          categoryLogs: logsInCategory,
+          categoryCount: logsInCategory.length
+        };
+        
+        groupedLogs.push(groupLog);
+      } else if (logsInCategory.length === 1) {
+        // Just add the single log
+        if (!groupedLogs.find(l => l.id === logsInCategory[0].id)) {
+          groupedLogs.push(logsInCategory[0]);
+        }
+      }
+    });
+    
+    return groupedLogs;
+  }
+  
+  /**
+   * Toggle the expanded state of a log entry
+   */
+  toggleLogExpansion(log: LogEntry): void {
+    log.expanded = !log.expanded;
+    // Update the log in the subject
+    const logs = this.logsSubject.getValue();
+    this.logsSubject.next([...logs]);
+  }
+
+  /**
+   * Get latest logs from the source
+   * Returns an observable of the latest logs
+   */
+  getLatestLogs(): Observable<LogEntry[]> {
+    // If connected to socket, request latest logs
+    if (this.socket?.connected) {
+      this.socket.emit('get-latest-logs');
+      // The response will come through the log-stream event
+      // which already updates the logsSubject
+    } else {
+      // If not connected, use the dispatcher to fetch logs
+      this.logDispatch.fetchLogs(this.buildFilterParams(this.filterSubject.getValue()))
+        .subscribe(response => {
+          if (response.status) {
+            this.logsSubject.next(response.logs);
+          }
+        });
+    }
+    
+    // Return the current value of logsSubject
+    return this.logsSubject.asObservable();
+  }
+  
+  /**
+   * New log entry observable for real-time updates
+   */
+  get newLogEntry$(): Observable<LogEntry> {
+    // Create a new subject for new log entries
+    const newLogEntrySubject = new Subject<LogEntry>();
+    
+    // Listen for socket events to forward new log entries
+    if (this.socket) {
+      this.socket.on('backend-log-entry', (response: LogSocketResponse<LogEntry>) => {
+        if (response.status === 'success') {
+          const processedEntry = this.processLogEntryForDisplay(response.data);
+          newLogEntrySubject.next(processedEntry);
+        }
+      });
+    }
+    
+    // For mock data generation, we'll simulate new log entries
+    this.mockDataSubscription?.add(timer(3000, 10000).subscribe(() => {
+      if (!this.socket?.connected) {
+        const mockEntry = this.generateMockLogEntry();
+        newLogEntrySubject.next(mockEntry);
+      }
+    }));
+    
+    return newLogEntrySubject.asObservable();
+  }
+  
+  /**
+   * Generate a mock log entry for testing
+   */
+  private generateMockLogEntry(): LogEntry {
+    const sources = ['AppModule', 'TypeDiagnosticsService', 'ConfigService', 'ExampleService', 'SystemLoader'];
+    const levels = [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR];
+    const actions = ['initialize', 'registerValidator', 'update', 'query', 'validate'];
+    
+    const level = levels[Math.floor(Math.random() * levels.length)];
+    const source = sources[Math.floor(Math.random() * sources.length)];
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    
+    let message = '';
+    let data: Record<string, unknown> = {};
+    
+    // Define all possible variables outside of switch cases to avoid ESLint warnings
+    const typeNames = ['MetricData', 'LogResponse', 'UserProfile', 'ConnectionSettings'];
+    const typeName = typeNames[Math.floor(Math.random() * typeNames.length)];
+    
+    switch (source) {
+      case 'TypeDiagnosticsService':
+        message = `${action === 'registerValidator' ? 'Registered validator for type: ' : 'Validating type: '}${typeName}`;
+        data = {
+          service: 'TypeDiagnosticsService',
+          action: action,
+          typeName: typeName,
+          validatorsCount: Math.floor(Math.random() * 10) + 1
+        };
+        break;
+        
+      case 'ConfigService':
+        message = 'Running in development mode';
+        data = {
+          service: 'ConfigService',
+          action: 'checkEnvironment',
+          environment: 'development',
+          features: {
+            realtime: true,
+            analytics: false
+          }
+        };
+        break;
+        
+      default:
+        message = `${source} ${action}ed successfully`;
+        data = {
+          service: source,
+          action: action,
+          timestamp: new Date().toISOString()
+        };
+        break;
+    }
+    
+    return {
+      id: `mock-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      level,
+      source,
+      message,
+      data
+    };
   }
 }

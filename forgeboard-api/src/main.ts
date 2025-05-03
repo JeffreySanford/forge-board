@@ -3,15 +3,59 @@
  * This is only a minimal backend to get started.
  */
 
-import { Logger } from '@nestjs/common';
+import { Logger, LoggerService } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 
+/**
+ * Custom logger implementation with filtering capabilities
+ */
+class FilteredLogger implements LoggerService {
+  /**
+   * Should this message be filtered out?
+   */
+  private shouldFilter(context: string, message: string): boolean {
+    // Skip log messages about receiving log entries
+    if (context === 'LogsController' && 
+        message.includes('Received') && 
+        message.includes('log entries')) {
+      return true;
+    }
+    return false;
+  }
+
+  log(message: unknown, context?: string): void {
+    if (context && this.shouldFilter(context, String(message))) {
+      return;
+    }
+    console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [${context}] ${message}`);
+  }
+
+  error(message: unknown, trace?: string, context?: string): void {
+    console.error(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     ERROR [${context}] ${message}`, trace);
+  }
+
+  warn(message: unknown, context?: string): void {
+    console.warn(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     WARN [${context}] ${message}`);
+  }
+
+  debug(message: unknown, context?: string): void {
+    console.debug(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     DEBUG [${context}] ${message}`);
+  }
+
+  verbose(message: unknown, context?: string): void {
+    console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     VERBOSE [${context}] ${message}`);
+  }
+}
+
 async function bootstrap() {
+  // Create a custom logger that filters out specific messages
+  const app = await NestFactory.create(AppModule, {
+    logger: new FilteredLogger(),
+  });
+  
   const logger = new Logger('Bootstrap');
   logger.log('Starting ForgeBoard API...');
-  
-  const app = await NestFactory.create(AppModule);
   
   // Configure CORS for HTTP requests
   app.enableCors({
