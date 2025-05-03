@@ -186,7 +186,10 @@ export class AuthService {
         
         // Here you would normally check password hash
         // For now we'll skip actual password verification
-        console.log('Processing credentials for:', username, 'with password length:', password.length);
+        this.logger.debug(`Processing authentication request for: ${username}`, { 
+          usernameLength: username.length,
+          passwordProvided: password.length > 0
+        });
         
         // Update last login time
         return this.userService.updateLastLogin(user.id).pipe(

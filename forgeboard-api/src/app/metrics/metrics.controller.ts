@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, Logger } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
-import { MetricData, MetricResponse } from '@forge-board/shared/api-interfaces';
+import type { MetricData, MetricResponse } from '@forge-board/shared/api-interfaces';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 

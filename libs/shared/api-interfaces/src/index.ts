@@ -20,7 +20,8 @@ export { __authInterfaces } from './lib/auth-interfaces';
 export type { AuthCredentials, AuthTokenResponse } from './lib/auth-interfaces';
 
 // User and auth state definitions
-export type { User, UserRole, JwtPayload, AuthState } from './lib/user-types';
+export { UserRole } from './lib/user-types'; // Changed from type export to direct export
+export type { User, JwtPayload, AuthState } from './lib/user-types';
 
 // Tile interfaces
 export type * from './lib/tile-types';
