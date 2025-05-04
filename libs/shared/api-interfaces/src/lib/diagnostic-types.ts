@@ -17,16 +17,6 @@ export interface DiagnosticEvent {
 }
 
 /**
- * Health data interface
- */
-export interface HealthData {
-  status: string;
-  uptime: number;
-  timestamp: string;
-  details: Record<string, any>;
-}
-
-/**
  * Diagnostic event response
  */
 export interface DiagnosticEventResponse {

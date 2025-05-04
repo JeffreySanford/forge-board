@@ -1,0 +1,187 @@
+@use '../shared/tile-styles' as tile;
+
+:host {
+  @include tile.tile-base;
+  
+  .tile-content {
+    border-left-color: #4eff91; // Green for health
+  }
+  
+  .tile-header .icon {
+    background: rgba(78, 255, 145, 0.2);
+    
+    mat-icon {
+      color: #4eff91;
+    }
+  }
+  
+  .health-summary {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    
+    .overall-health {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin-bottom: 1rem;
+      
+      .health-score {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        margin-right: 1rem;
+        
+        &.healthy {
+          background: rgba(78, 255, 145, 0.15);
+          .score { color: #4eff91; }
+        }
+        
+        &.good {
+          background: rgba(46, 204, 113, 0.15);
+          .score { color: #2ecc71; }
+        }
+        
+        &.moderate {
+          background: rgba(255, 224, 102, 0.15);
+          .score { color: #ffe066; }
+        }
+        
+        &.degraded {
+          background: rgba(230, 126, 34, 0.15);
+          .score { color: #e67e22; }
+        }
+        
+        &.critical {
+          background: rgba(231, 76, 60, 0.15);
+          .score { color: #e74c3c; }
+        }
+        
+        .score {
+          font-size: 28px;
+          font-weight: bold;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .label {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+      
+      .health-status {
+        flex: 1;
+        
+        .status-message {
+          font-size: 16px;
+          font-weight: 500;
+          color: #ffffff;
+        }
+      }
+    }
+    
+    .health-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      .metric {
+        .metric-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 0.25rem;
+          
+          mat-icon {
+            font-size: 16px;
+            height: 16px;
+            width: 16px;
+            margin-right: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+          }
+          
+          span {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+          }
+        }
+        
+        .metric-gauge {
+          display: flex;
+          align-items: center;
+          
+          .gauge-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-right: 0.5rem;
+            
+            .gauge-fill {
+              height: 100%;
+              transition: width 0.3s ease;
+              border-radius: 4px;
+              
+              &.healthy {
+                background: #4eff91;
+              }
+              
+              &.warning {
+                background: #ffe066;
+              }
+              
+              &.critical {
+                background: #e74c3c;
+              }
+            }
+          }
+          
+          .gauge-value {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            font-family: 'IBM Plex Mono', monospace;
+            color: rgba(255, 255, 255, 0.9);
+          }
+        }
+      }
+    }
+  }
+  
+  .system-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    
+    .detail-item {
+      .detail-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 4px;
+      }
+      
+      .detail-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: 'IBM Plex Mono', monospace;
+      }
+    }
+  }
+  
+  .chart-container {
+    height: 80px;
+    width: 100%;
+  }
+  
+  // Loading overlay
+  .loading-overlay {
+    @include tile.loading-overlay;
+  }
+}

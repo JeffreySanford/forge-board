@@ -1,7 +1,7 @@
 /**
  * Available tile types
  */
-export type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
+export type TileType = 'health' | 'memory' | 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
 
 /**
  * Tile visibility settings
@@ -54,4 +54,15 @@ export interface TileDragEvent {
   previousIndex: number;
   currentIndex: number;
   tileType: TileType;
+}
+
+/**
+ * Memory data structure for system memory monitoring
+ */
+export interface MemoryData {
+  category: string;
+  usage: number;
+  total: number;
+  icon: string;
+  details?: Record<string, unknown>;
 }

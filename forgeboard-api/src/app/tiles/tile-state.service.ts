@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TileType, TileLayoutResponse, TileLayoutRequest } from '@forge-board/shared/api-interfaces';
+import { TileType, TileLayoutResponse } from '@forge-board/shared/api-interfaces';
 
 @Injectable()
 export class TileStateService {
@@ -11,6 +11,8 @@ export class TileStateService {
     // Initialize with default values
     const defaultOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[];
     const defaultVisibility = {
+      health: true,  // Added health
+      memory: true,  // Added memory
       metrics: true,
       connection: true,
       logs: true,
@@ -28,6 +30,8 @@ export class TileStateService {
       // Default tile order
       const defaultOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[];
       const defaultVisibility = {
+        health: true,  // Added health
+        memory: true,  // Added memory
         metrics: true,
         connection: true,
         logs: true,
@@ -44,6 +48,8 @@ export class TileStateService {
       userId,
       order: this.tileOrders.get(userId),
       visibility: this.tileVisibility.get(userId) || {
+        health: true,  // Added health
+        memory: true,  // Added memory
         metrics: true,
         connection: true,
         logs: true,
@@ -64,6 +70,8 @@ export class TileStateService {
       userId,
       order: this.tileOrders.get(userId),
       visibility: this.tileVisibility.get(userId) || {
+        health: true,  // Added health
+        memory: true,  // Added memory
         metrics: true,
         connection: true,
         logs: true,
@@ -84,6 +92,8 @@ export class TileStateService {
       userId,
       order: this.tileOrders.get(userId) || ['metrics', 'connection', 'logs', 'uptime', 'activity'],
       visibility: this.tileVisibility.get(userId) || {
+        health: true,  // Added health
+        memory: true,  // Added memory
         metrics: true,
         connection: true,
         logs: true,

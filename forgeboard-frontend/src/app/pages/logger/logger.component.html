@@ -4,6 +4,12 @@
     <div class="connection-status">
       <span class="status-indicator" [ngClass]="{'connected': isConnected}"></span>
       <span>{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+      <button mat-icon-button 
+              class="refresh-button" 
+              matTooltip="Disconnect all services except logger"
+              (click)="disconnectOtherServices()">
+        <mat-icon>refresh</mat-icon>
+      </button>
     </div>
   </div>
   

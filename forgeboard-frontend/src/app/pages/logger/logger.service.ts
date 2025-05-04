@@ -5,6 +5,8 @@ import { LogDispatchService } from '../../services/log-dispatch.service';
 import { Socket, io } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { LogLevelEnum, logLevelEnumToString } from '@forge-board/shared/api-interfaces';
+import { SocketRegistryService } from '../../services/socket-registry.service';
+import { RefreshIntervalService } from '../../services/refresh-interval.service';
 
 // Define the LogEntry interface locally since it's missing from shared
 export interface LogEntry {
@@ -110,7 +112,13 @@ export class LoggerService implements OnDestroy {
   private mockDataInterval: ReturnType<typeof setInterval> | null = null; // Fixed: using proper type instead of any
   private mockDataSubscription: Subscription | null = null;
 
-  constructor(private logDispatch: LogDispatchService) {
+  private subscriptions = new Subscription();
+
+  constructor(
+    private logDispatch: LogDispatchService,
+    private socketRegistry: SocketRegistryService,
+    private refreshIntervalService: RefreshIntervalService
+  ) {
     // Initialize socket connection
     this.initSocket();
     
@@ -118,6 +126,15 @@ export class LoggerService implements OnDestroy {
     this.filterSubject.subscribe(filter => {
       this.refreshLogs(filter);
     });
+
+    // Subscribe to refresh interval and fetch logs on each trigger
+    this.subscriptions.add(
+      this.refreshIntervalService.getRefreshTrigger().subscribe(() => {
+        if (this.autoRefresh) {
+          this.getLatestLogs().subscribe();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -132,6 +149,21 @@ export class LoggerService implements OnDestroy {
     
     // Stop mock data generation if active
     this.stopMockDataGeneration();
+
+    this.subscriptions.unsubscribe();
+  }
+
+  /**
+   * Ensure the socket is connected
+   */
+  ensureConnection(): void {
+    if (!this.socket || !this.socket.connected) {
+      console.log('LoggerService: Ensuring connection');
+      this.cleanupSocket(); // Clean up any existing connection
+      this.initSocket();    // Initialize new socket connection
+    } else {
+      console.log('LoggerService: Socket already connected');
+    }
   }
 
   /**
@@ -141,14 +173,21 @@ export class LoggerService implements OnDestroy {
     try {
       console.log('LoggerService: Initializing socket connection');
       
-      // Create socket connection
+      // Create socket connection with connection retry
       this.socket = io(`${this.socketUrl}/logs`, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
-        timeout: 5000,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000
       });
+      
+      // Register socket with the registry service
+      if (this.socket) {
+        this.socketRegistry.registerSocket('logs', this.socket);
+      }
       
       // Set up event handlers
       this.setupSocketEvents();
@@ -156,7 +195,7 @@ export class LoggerService implements OnDestroy {
       console.error('Failed to connect to logger socket:', err);
       this.connectionStatusSubject.next(false);
       
-      // Start mock data generation
+      // Start mock data generation only if not connected
       this.startMockDataGeneration();
     }
   }
@@ -216,23 +255,66 @@ export class LoggerService implements OnDestroy {
       }
     });
 
-    // Updated event name from "new-log" to "backend-log-entry"
+    // Updated event handler for backend-log-entry with loop prevention
     this.socket.on('backend-log-entry', (response: LogSocketResponse<LogEntry>) => {
       if (response.status === 'success') {
         const logEntry = response.data;
+        
+        // LOOP PREVENTION: Check if this log is about log processing itself
+        if (this.isLogProcessingLog(logEntry)) {
+          // Mark these logs with a special flag and style them with red background
+          logEntry.isLoggingLoop = true;
+          console.warn('Potential logging loop detected:', logEntry);
+        }
+        
         // Process and beautify the log entry for human readability
         const processedEntry = this.processLogEntryForDisplay(logEntry);
+        
         // Add to logs (at the beginning for newest-first)
         const currentLogs = this.logsSubject.getValue();
         this.logsSubject.next([processedEntry, ...currentLogs]);
         
-        // Update stats
-        const currentStats = this.logStatsSubject.getValue();
-        const mappedLevel = this.mapApiLevelToLocalEnum(processedEntry.level);
-        currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
-        this.logStatsSubject.next({...currentStats});
+        // Update stats using a separate function that doesn't create new logs
+        this.updateStatsWithoutLogging(processedEntry);
       }
     });
+  }
+
+  /**
+   * Check if a log entry is about log processing itself
+   */
+  private isLogProcessingLog(log: LogEntry): boolean {
+    // Detect logs about logging to prevent loops
+    const loggingKeywords = [
+      'received log', 'processing log', 'log stream', 
+      'log filter', 'log updated', 'logger service'
+    ];
+    
+    // Check if message contains logging keywords
+    const messageHasLoggingKeywords = loggingKeywords.some(keyword => 
+      log.message?.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    // Check if source is related to logging
+    const isLoggerSource = log.source?.toLowerCase().includes('log') || 
+                          log.source?.toLowerCase().includes('socket');
+    
+    return messageHasLoggingKeywords && isLoggerSource;
+  }
+
+  /**
+   * Update stats without generating new logs
+   */
+  private updateStatsWithoutLogging(logEntry: LogEntry): void {
+    try {
+      // Update stats directly without logging the action
+      const currentStats = this.logStatsSubject.getValue();
+      const mappedLevel = this.mapApiLevelToLocalEnum(logEntry.level);
+      currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
+      this.logStatsSubject.next({...currentStats});
+    } catch (error) {
+      // Silent catch - don't generate more logs about logging errors
+    }
   }
   
   /**
@@ -838,20 +920,39 @@ export class LoggerService implements OnDestroy {
 
   /**
    * Get latest logs from the source
-   * Returns an observable of the latest logs
+   * Only fetch logs newer than the most recent one we have
    */
   getLatestLogs(): Observable<LogEntry[]> {
     // If connected to socket, request latest logs
     if (this.socket?.connected) {
-      this.socket.emit('get-latest-logs');
+      const currentLogs = this.logsSubject.getValue();
+      let lastTimestamp: string | undefined;
+      
+      if (currentLogs.length > 0) {
+        // Find the most recent timestamp in our logs
+        lastTimestamp = currentLogs[0].timestamp;
+      }
+      
+      // Only request logs newer than our most recent one
+      this.socket.emit('get-latest-logs', { afterTimestamp: lastTimestamp });
       // The response will come through the log-stream event
       // which already updates the logsSubject
     } else {
       // If not connected, use the dispatcher to fetch logs
-      this.logDispatch.fetchLogs(this.buildFilterParams(this.filterSubject.getValue()))
+      const filter = this.filterSubject.getValue();
+      const currentLogs = this.logsSubject.getValue();
+      
+      if (currentLogs.length > 0) {
+        // Only fetch logs newer than our most recent one
+        filter.afterTimestamp = currentLogs[0].timestamp;
+      }
+      
+      this.logDispatch.fetchLogs(this.buildFilterParams(filter))
         .subscribe(response => {
           if (response.status) {
-            this.logsSubject.next(response.logs);
+            // Append new logs to existing ones
+            const updatedLogs = [...response.logs, ...currentLogs];
+            this.logsSubject.next(updatedLogs);
           }
         });
     }

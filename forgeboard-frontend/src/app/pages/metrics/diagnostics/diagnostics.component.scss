@@ -14,10 +14,53 @@
   overflow: hidden;
   box-sizing: border-box;
   background: rgba(255,255,255,0.7) !important;
+  position: relative;
+  border: 2px dashed transparent;
+  padding: 1rem;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  
+  &:not(.hide-border) {
+    border-color: rgba(52, 152, 219, 0.5);
+    padding-top: 1.5rem;
+  }
 }
 
 .layout-container.hide-border {
   border: none !important;
+}
+
+.layout-controls {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  z-index: 10;
+  
+  .toggle-button {
+    display: flex;
+    align-items: center;
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+    border: 1px solid #3498db;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(52, 152, 219, 0.3);
+    }
+    
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+    }
+  }
 }
 
 /* ==========================================================================
@@ -37,6 +80,15 @@
   border-radius: 0.75em;
   overflow: visible;
   background: none;
+  position: relative;
+  border: 1px dashed transparent;
+  flex: 1;
+  overflow: hidden;
+  
+  &:not(.hide-border) {
+    border-color: rgba(52, 152, 219, 0.3);
+    padding-top: 0.75rem;
+  }
 }
 
 .tile-grid-container.hide-border {
@@ -71,6 +123,25 @@
   box-sizing: border-box;
   z-index: 1;
   background: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(300px, auto));
+  gap: 1rem;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.5rem;
+  
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 1199px) and (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tile-grid > * {
@@ -88,6 +159,86 @@
   flex-direction: column;
   transition: box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(52,152,219,0.10);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  background: #0d1b2a;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  
+  &:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+  }
+}
+
+.tile-grid > * .tile-drag-handle {
+  cursor: grab;
+  padding: 0.25em 0.5em;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.9em;
+  border-bottom: 1px solid #fff;
+  border-radius: 0.5em 0.5em 0 0;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  cursor: grab;
+  background: #0d1b2a;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: rgba(52, 152, 219, 0.1);
+  }
+  
+  mat-icon {
+    margin-right: 0.5rem;
+  }
+}
+
+.tile-grid > * .tile-visibility-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 0;
+  }
 }
 
 /* Responsive breakpoints for tile grid */
@@ -142,6 +293,21 @@
 .tile-drag {
   cursor: move;
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  background: #0d1b2a;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  
+  &:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+  }
 }
 
 .tile-drag.cdk-drag-preview {
@@ -172,6 +338,13 @@
   align-items: center;
   justify-content: center;
   color: #4eff91;
+  background: rgba(52, 152, 219, 0.1);
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .placeholder-content {
@@ -179,6 +352,9 @@
   text-transform: uppercase;
   font-size: 1.2em;
   letter-spacing: 0.1em;
+  color: rgba(52, 152, 219, 0.7);
+  font-size: 1.2rem;
+  font-weight: 500;
 }
 
 /* Visibility toggle button */
@@ -222,6 +398,16 @@
   z-index: 10;
   border: 2px solid #3498db;
   box-shadow: 0 2px 8px rgba(52,152,219,0.05);
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  background: #0d1b2a;
+  padding: 0 0.5rem;
+  font-size: 0.6rem;
+  color: rgba(52, 152, 219, 0.8);
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .layout-label {
@@ -239,22 +425,95 @@
   width: 100%;
   height: 100%;
   border: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  
+  .center-line-h {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 0;
+    border-top: 1.5px dashed #888;
+    opacity: 0.18;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(52, 152, 219, 0.3);
+    border-top: 1px dashed rgba(52, 152, 219, 0.5);
+  }
+  
+  .center-line-v {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 0;
+    border-left: 1.5px dashed #888;
+    opacity: 0.18;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: 100%;
+    width: 1px;
+    background: rgba(52, 152, 219, 0.3);
+    border-left: 1px dashed rgba(52, 152, 219, 0.5);
+  }
 }
 
-.center-line-h {
-  position: absolute;
-  left: 0; right: 0;
-  top: 50%;
-  height: 0;
-  border-top: 1.5px dashed #888;
-  opacity: 0.18;
+.tile-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0;
+  
+  button {
+    color: #3498db;
+    border-radius: 4px;
+    
+    &.add-tile-button {
+      background-color: rgba(52, 152, 219, 0.1);
+      border: 1px solid #3498db;
+      
+      &:hover {
+        background-color: rgba(52, 152, 219, 0.2);
+      }
+    }
+    
+    &.reset-layout-button {
+      background-color: rgba(231, 76, 60, 0.1);
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
+      
+      &:hover {
+        background-color: rgba(231, 76, 60, 0.2);
+      }
+    }
+  }
 }
 
-.center-line-v {
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 50%;
-  width: 0;
-  border-left: 1.5px dashed #888;
-  opacity: 0.18;
+// Make the tile content fill the available space
+:host ::ng-deep app-system-health,
+:host ::ng-deep app-memory-donut,
+:host ::ng-deep app-connection-status,
+:host ::ng-deep app-recent-logs,
+:host ::ng-deep app-uptime-summary,
+:host ::ng-deep app-activity-feed {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+// Ensure content flows correctly
+:host ::ng-deep {
+  .tile-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
 }

@@ -4,6 +4,18 @@ import { catchError, tap, retryWhen, scan, delayWhen } from 'rxjs/operators';
 import { MetricData } from '@forge-board/shared/api-interfaces';
 import { MetricsService } from '../../services/metrics.service';
 import { BackendStatusService } from '../../services/backend-status.service';
+import { RefreshIntervalService } from '../../services/refresh-interval.service';
+
+// Define extended metric data interface
+interface ExtendedMetricData extends MetricData {
+  responseTime?: number;
+  activeUsers?: number;
+  systemLoad?: string;
+  diskReadRate?: number;
+  diskWriteRate?: number;
+  processMemory?: number;
+  requestRate?: number;
+}
 
 @Component({
   selector: 'app-metric',
@@ -12,8 +24,8 @@ import { BackendStatusService } from '../../services/backend-status.service';
   standalone: false
 })
 export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
-  metrics$: Observable<MetricData>;
-  refreshInterval: number = 500; // Default refresh interval in milliseconds
+  metrics$: Observable<ExtendedMetricData>; // Changed from MetricData to ExtendedMetricData
+  refreshInterval: number = 3000; // Default refresh interval changed to 3000ms (3 seconds)
   chartData: number[] = [];
   memoryData: number[] = [];
   maxDataPoints = 30;
@@ -23,12 +35,22 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   connectionAttempts = 0;
   maxConnectionAttempts = 5;
   
+  // Additional metrics tracking
+  private activeUsersCount = Math.floor(Math.random() * 20) + 5; // Starting value for active users
+  private requestRateValue = Math.floor(Math.random() * 50) + 10; // Starting value for req/sec
+  private lastRequestCount = 0;
+  private systemLoadValue = (Math.random() * 2 + 0.5).toFixed(2); // Random starting system load
+  private diskIOReadRate = Math.floor(Math.random() * 500) + 100; // KB/s
+  private diskIOWriteRate = Math.floor(Math.random() * 300) + 50; // KB/s
+  private processMemoryValue = Math.floor(Math.random() * 1024) + 256; // MB
+  
   @ViewChild('chart') chartElement!: ElementRef<HTMLDivElement>;
   private subscription = new Subscription();
   
   constructor(
     private metricsService: MetricsService,
-    private backendStatusService: BackendStatusService
+    private backendStatusService: BackendStatusService,
+    private refreshIntervalService: RefreshIntervalService
   ) {
     this.metrics$ = this.metricsService.getMetricsStream();
     
@@ -38,8 +60,15 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    // Initialize component
-    console.log('Metric component initialized');
+    // Get the current global interval
+    this.refreshInterval = this.refreshIntervalService.getInterval();
+    
+    // Subscribe to interval changes
+    this.subscription.add(
+      this.refreshIntervalService.getIntervalObservable().subscribe(interval => {
+        this.refreshInterval = interval;
+      })
+    );
     
     // Subscribe to metrics stream to update chart data
     this.subscription.add(
@@ -84,6 +113,9 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
           this.memoryData.push(memValue);
           this.memoryData = this.memoryData.slice(-this.maxDataPoints);
           
+          // Update additional metrics values (based on real data or simulated)
+          this.updateAdditionalMetrics(metrics);
+          
           if (this.chartInitialized) {
             this.updateChart();
           }
@@ -119,6 +151,141 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
     );
   }
   
+
+  formatResponseTime(metrics: ExtendedMetricData): string {
+    // Use real data if available, otherwise use simulated
+    // this should parse to days, house, minutes, seconds, milliseconds
+
+    // live data stream
+    if (metrics.responseTime) {
+      const responseTime = metrics.responseTime;
+      const days = Math.floor(responseTime / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((responseTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((responseTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((responseTime % (1000 * 60)) / 1000);
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    // simulated data stream
+    const simulatedResponseTime = Math.floor(Math.random() * 1000) + 100; // Random between 100ms and 1100ms
+
+    const days = Math.floor(simulatedResponseTime / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((simulatedResponseTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); 
+    const minutes = Math.floor((simulatedResponseTime % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((simulatedResponseTime % (1000 * 60)) / 1000);
+    
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  }
+  
+  /**
+   * Format the response time for display
+   */
+  formatResponseTimeDisplay(metrics: ExtendedMetricData): string {
+    return this.formatResponseTime(metrics);
+  }
+
+  /**
+   * Updates the additional metrics with simulated or real data
+   */
+  private updateAdditionalMetrics(metrics: ExtendedMetricData): void {
+    // Update active users - small changes over time
+    if (Math.random() > 0.7) {
+      const change = Math.random() > 0.5 ? 1 : -1;
+      this.activeUsersCount = Math.max(2, this.activeUsersCount + change);
+    }
+    
+    // Update request rate - correlate to CPU load
+    const baseRequests = metrics.cpu ? Math.floor(metrics.cpu / 2) + 5 : 10;
+    this.requestRateValue = baseRequests + Math.floor(Math.random() * 10);
+    
+    // Update system load - correlate to CPU but smoother
+    const targetLoad = metrics.cpu ? (metrics.cpu / 50 + 0.5) : 1.0;
+    const currentLoad = parseFloat(this.systemLoadValue);
+    // Smooth changes to system load
+    const newLoad = currentLoad + (targetLoad - currentLoad) * 0.3;
+    this.systemLoadValue = newLoad.toFixed(2);
+    
+    // Update disk I/O rates
+    if (metrics.disk) {
+      // Higher disk usage correlates to higher I/O
+      const diskFactor = metrics.disk / 100;
+      this.diskIOReadRate = Math.floor(200 + 800 * diskFactor + Math.random() * 100);
+      this.diskIOWriteRate = Math.floor(100 + 400 * diskFactor + Math.random() * 50);
+    } else {
+      // Random fluctuations if no real data
+      if (Math.random() > 0.8) {
+        const factor = 0.8 + Math.random() * 0.4;
+        this.diskIOReadRate = Math.floor(this.diskIOReadRate * factor);
+        this.diskIOWriteRate = Math.floor(this.diskIOWriteRate * factor);
+      }
+    }
+    
+    // Update process memory - correlated to memory usage but with limits
+    if (metrics.memory) {
+      const targetMemory = 256 + Math.floor(metrics.memory * 10);
+      this.processMemoryValue = this.processMemoryValue + 
+        Math.floor((targetMemory - this.processMemoryValue) * 0.2);
+    } else if (Math.random() > 0.8) {
+      // Random fluctuations if no real data
+      const change = Math.floor((Math.random() * 20) - 5);
+      this.processMemoryValue = Math.max(256, this.processMemoryValue + change);
+    }
+  }
+  
+  /**
+   * Format the active users count for display
+   */
+  formatActiveUsers(): string {
+    return `${this.activeUsersCount}`;
+  }
+  
+  /**
+   * Format the request rate for display
+   */
+  formatRequestRate(metrics: ExtendedMetricData): string {
+    // Use real data if available, otherwise use simulated
+    const rate = metrics.requestRate || this.requestRateValue;
+    return `${rate}`;
+  }
+  
+  /**
+   * Format the system load for display
+   */
+  formatSystemLoad(): string {
+    return this.systemLoadValue;
+  }
+  
+  /**
+   * Format the disk I/O for display
+   */
+  formatDiskIO(metrics: ExtendedMetricData): string {
+    // Use real data if available
+    const readRate = metrics.diskReadRate || this.diskIOReadRate;
+    const writeRate = metrics.diskWriteRate || this.diskIOWriteRate;
+    
+    // Format as KB/s or MB/s depending on size
+    if (readRate >= 1024) {
+      return `${(readRate / 1024).toFixed(1)}/${(writeRate / 1024).toFixed(1)} MB/s`;
+    } else {
+      return `${readRate}/${writeRate} KB/s`;
+    }
+  }
+  
+  /**
+   * Format the process memory for display
+   */
+  formatProcessMemory(metrics: ExtendedMetricData): string {
+    // Use real data if available
+    const memory = metrics.processMemory || this.processMemoryValue;
+    
+    // Format as MB or GB depending on size
+    if (memory >= 1024) {
+      return `${(memory / 1024).toFixed(1)} GB`;
+    } else {
+      return `${memory} MB`;
+    }
+  }
+  
   ngAfterViewInit(): void {
     // Initialize chart after view is ready
     setTimeout(() => {
@@ -138,23 +305,8 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   onIntervalChange(event: Event): void {
     const value = parseInt((event.target as HTMLInputElement).value, 10);
-    this.refreshInterval = value;
-    
-    // Update the metrics service with the new interval
-    this.metricsService.setMetricsInterval(value).subscribe({
-      next: (response) => {
-        if (response.success) {
-          console.log(`Metrics interval updated to ${value}ms`);
-        } else {
-          console.warn('Failed to update metrics interval');
-        }
-      },
-      error: (err) => {
-        console.error('Error updating metrics interval:', err);
-        // Continue with local interval even if server update fails
-        console.log('Using local interval setting instead');
-      }
-    });
+    // Use the central refresh interval service instead of the metrics service directly
+    this.refreshIntervalService.setInterval(value);
   }
 
   private initializeChart(): void {
@@ -285,8 +437,11 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getDataSourceClass(): string {
-    if (this.isTransitioning) return 'transitioning';
-    return this.usingMockData ? 'mock-data' : 'live-data';
+    let classes = this.usingMockData ? 'mock-data' : 'live-data';
+    if (this.isTransitioning) {
+      classes += ' transitioning';
+    }
+    return classes;
   }
   
   /**
@@ -300,5 +455,13 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
     } else {
       return 'Using simulated metrics data';
     }
+  }
+
+  /**
+   * Toggle between live and mock data
+   */
+  toggleDataSource(event: Event): void {
+    const useMockData = (event.target as HTMLInputElement).checked;
+    this.metricsService.toggleMockData(useMockData);
   }
 }

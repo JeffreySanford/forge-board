@@ -6,11 +6,19 @@
 import { Logger, LoggerService } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import { shouldEnableConsoleLogging } from './bootstrap';
 
 /**
  * Custom logger implementation with filtering capabilities
  */
 class FilteredLogger implements LoggerService {
+  private readonly enableConsoleOutput: boolean;
+  
+  constructor() {
+    // Read from environment config
+    this.enableConsoleOutput = shouldEnableConsoleLogging();
+  }
+
   /**
    * Should this message be filtered out?
    */
@@ -25,6 +33,7 @@ class FilteredLogger implements LoggerService {
   }
 
   log(message: unknown, context?: string): void {
+    if (!this.enableConsoleOutput) return;
     if (context && this.shouldFilter(context, String(message))) {
       return;
     }
@@ -32,18 +41,22 @@ class FilteredLogger implements LoggerService {
   }
 
   error(message: unknown, trace?: string, context?: string): void {
+    if (!this.enableConsoleOutput) return;
     console.error(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     ERROR [${context}] ${message}`, trace);
   }
 
   warn(message: unknown, context?: string): void {
+    if (!this.enableConsoleOutput) return;
     console.warn(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     WARN [${context}] ${message}`);
   }
 
   debug(message: unknown, context?: string): void {
+    if (!this.enableConsoleOutput) return;
     console.debug(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     DEBUG [${context}] ${message}`);
   }
 
   verbose(message: unknown, context?: string): void {
+    if (!this.enableConsoleOutput) return;
     console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     VERBOSE [${context}] ${message}`);
   }
 }

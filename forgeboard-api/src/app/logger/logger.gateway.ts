@@ -100,10 +100,40 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     client.emit('log-stream', createSocketResponse('log-stream', update));
   }
   
+  @SubscribeMessage('get-latest-logs')
+  handleGetLatestLogs(client: Socket, options: { afterTimestamp?: string }): void {
+    // Get all logs after the specified timestamp
+    const filter: LogFilter = { 
+      ...this.activeFilters.get(client.id) || {},
+      afterTimestamp: options?.afterTimestamp
+    };
+    
+    // Store the updated filter
+    this.activeFilters.set(client.id, filter);
+    
+    // Get filtered logs
+    const logs = this.loggerService.getLogs(filter);
+    
+    // Send logs to the client
+    client.emit('log-stream', createSocketResponse({
+      logs,
+      append: true, // Important: tell client to append these logs
+      totalCount: logs.length,
+      filtered: true,
+      timestamp: new Date().toISOString()
+    }));
+  }
+  
   /**
    * Emit a new log entry to all subscribed clients
    */
   broadcastLogEntry(logEntry: LogEntry): void {
+    // LOOP PREVENTION: Don't broadcast logs about logging itself
+    if (this.isLogProcessingLog(logEntry)) {
+      this.logger.debug(`Prevented loop broadcast for log: ${logEntry.message}`);
+      return;
+    }
+    
     // Get total logs count
     const totalCount = this.loggerService.getLogs().length;
     
@@ -125,6 +155,28 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     
     // Also broadcast to all clients without filters - with renamed event name
     this.server.emit('backend-log-entry', createSocketResponse('backend-log-entry', logEntry));
+  }
+
+  /**
+   * Check if a log entry is about log processing itself
+   */
+  private isLogProcessingLog(log: LogEntry): boolean {
+    // Detect logs about logging to prevent loops
+    const loggingKeywords = [
+      'received log', 'processing log', 'log stream', 
+      'log filter', 'log updated', 'logger service'
+    ];
+    
+    // Check if message contains logging keywords
+    const messageHasLoggingKeywords = loggingKeywords.some(keyword => 
+      log.message?.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    // Check if source is related to logging
+    const isLoggerSource = log.source?.toLowerCase().includes('log') || 
+                          log.source?.toLowerCase().includes('socket');
+    
+    return messageHasLoggingKeywords && isLoggerSource;
   }
   
   /**

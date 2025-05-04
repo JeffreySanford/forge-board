@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { catchError, tap, retry } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, retry, tap } from 'rxjs/operators';
 import { TileType, TileLayoutResponse } from '../models/tile.model';
 
 @Injectable({
@@ -190,6 +190,8 @@ export class TileStateService {
    */
   private getDefaultVisibility(): Record<TileType, boolean> {
     return {
+      health: true,
+      memory: true,
       metrics: true,
       connection: true,
       logs: true,

@@ -11,6 +11,7 @@ import {
 } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
 import { Subject } from 'rxjs';
+import { shouldEnableConsoleLogging } from '../../bootstrap';
 
 // Extended interfaces for internal use
 interface ExtendedLogEntry extends LogEntry {
@@ -29,6 +30,7 @@ interface ExtendedFilter extends Partial<LogFilter> {
   offset?: number;
   skip?: number;
   loglevels?: LogLevelEnum[]; // This property is needed for our internal implementation
+  afterTimestamp?: string; // Explicitly add it here for TypeScript clarity
 }
 
 @Injectable()
@@ -36,11 +38,15 @@ export class LoggerService {
   private readonly nestLogger = new NestLogger(LoggerService.name);
   private logs: ExtendedLogEntry[] = [];
   private readonly maxLogs = 1000; // Maximum number of logs to keep in memory
+  private readonly enableConsoleOutput: boolean;
   
   // Subject to notify subscribers when a new log is created
   public readonly newLogEntry$ = new Subject<ExtendedLogEntry>();
 
   constructor() {
+    // Read from environment config
+    this.enableConsoleOutput = shouldEnableConsoleLogging();
+    
     // Initialize with some sample logs
     this.createSampleLogs();
   }
@@ -49,6 +55,13 @@ export class LoggerService {
    * Create a log entry with the specified level
    */
   log(level: LogLevelEnum, message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+    // LOOP PREVENTION: Check if this is a log about logs
+    const isLoggingLog = 
+      (context.toLowerCase().includes('log') || 
+       message.toLowerCase().includes('log entry') ||
+       message.toLowerCase().includes('received log')) &&
+      !meta['allowLogging']; // Special flag to allow critical logging logs
+    
     // Create log entry
     const entry: ExtendedLogEntry = {
       id: uuid(),
@@ -68,6 +81,11 @@ export class LoggerService {
       entry.stackTrace = new Error().stack;
     }
     
+    // If this is a logging log, mark it specially for the UI
+    if (isLoggingLog) {
+      entry.isLoggingLoop = true;
+    }
+    
     // Add to in-memory logs
     this.logs.unshift(entry);
     
@@ -76,40 +94,44 @@ export class LoggerService {
       this.logs = this.logs.slice(0, this.maxLogs);
     }
     
-    // Log to NestJS logger as well
-    const levelString = logLevelEnumToString(level);
-    switch (levelString) {
-      case 'debug': {
-        this.nestLogger.debug(message, context);
-        break;
-      }
-      case 'info': {
-        this.nestLogger.log(message, context);
-        break;
-      }
-      case 'warning': 
-      case 'warn': {
-        this.nestLogger.warn(message, context);
-        break;
-      }
-      case 'error': 
-      case 'fatal': {
-        const errorStack = meta.error && 
-          typeof meta.error === 'object' && 
-          meta.error !== null && 
-          'stack' in meta.error ? 
-          String(meta.error.stack) : '';
-        this.nestLogger.error(message, errorStack, context);
-        break;
-      }
-      case 'trace': {
-        this.nestLogger.verbose(message, context);
-        break;
+    // Log to NestJS logger as well, but only if console output is enabled
+    if (this.enableConsoleOutput) {
+      const levelString = logLevelEnumToString(level);
+      switch (levelString) {
+        case 'debug': {
+          this.nestLogger.debug(message, context);
+          break;
+        }
+        case 'info': {
+          this.nestLogger.log(message, context);
+          break;
+        }
+        case 'warning': 
+        case 'warn': {
+          this.nestLogger.warn(message, context);
+          break;
+        }
+        case 'error': 
+        case 'fatal': {
+          const errorStack = meta.error && 
+            typeof meta.error === 'object' && 
+            meta.error !== null && 
+            'stack' in meta.error ? 
+            String(meta.error.stack) : '';
+          this.nestLogger.error(message, errorStack, context);
+          break;
+        }
+        case 'trace': {
+          this.nestLogger.verbose(message, context);
+          break;
+        }
       }
     }
     
-    // Notify subscribers of new log entry
-    this.newLogEntry$.next(entry);
+    // Notify subscribers, but only if this isn't a logging log (prevent loops)
+    if (!isLoggingLog) {
+      this.newLogEntry$.next(entry);
+    }
     
     return entry;
   }
@@ -140,7 +162,7 @@ export class LoggerService {
   }
   
   /**
-   * Get logs with optional filtering
+   * Get logs with optional filtering and optimized for incremental updates
    * 
    * @param filter Filter criteria for log entries
    * @returns Filtered log entries
@@ -148,6 +170,14 @@ export class LoggerService {
   getLogs(filter: ExtendedFilter = { level: LogLevelEnum.INFO }): ExtendedLogEntry[] {
     // Start with all logs
     let filteredLogs = [...this.logs];
+    
+    // If afterTimestamp is specified, only return logs newer than that timestamp
+    // This is a key optimization for incremental updates
+    if (filter.afterTimestamp) {
+      filteredLogs = filteredLogs.filter(log => 
+        new Date(log.timestamp) > new Date(filter.afterTimestamp as string)
+      );
+    }
     
     // Apply level filter based on the type of level provided
     if (filter.level) {

@@ -5,6 +5,7 @@ import { LogEntry, LogLevelEnum } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from './logger.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { SocketRegistryService } from '../../services/socket-registry.service';
 
 // Import the necessary components
 import { LogViewerComponent } from './components/log-viewer/log-viewer.component';
@@ -49,7 +50,10 @@ export class LoggerComponent implements OnInit, OnDestroy {
   isConnected = false;
   private subscriptions = new Subscription();
 
-  constructor(public loggerService: LoggerService) {}
+  constructor(
+    public loggerService: LoggerService,
+    private socketRegistry: SocketRegistryService // Add socket registry service
+  ) {}
 
   ngOnInit(): void {
     // Subscribe to logs
@@ -83,6 +87,9 @@ export class LoggerComponent implements OnInit, OnDestroy {
     
     // Initialize selected service
     this.selectedService = currentFilter.service || '';
+
+    // Force connect logger socket when component initializes
+    this.loggerService.ensureConnection();
   }
 
   ngOnDestroy(): void {
@@ -141,5 +148,14 @@ export class LoggerComponent implements OnInit, OnDestroy {
    */
   onExportCsv(): void {
     this.loggerService.exportLogsToCsv();
+  }
+
+  /**
+   * Disconnect all services except logger
+   */
+  disconnectOtherServices(): void {
+    this.socketRegistry.disconnectAllExcept('logs');
+    // Ensure the logger is still connected
+    this.loggerService.ensureConnection();
   }
 }

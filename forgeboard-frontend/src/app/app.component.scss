@@ -1300,3 +1300,51 @@ app-footer {
 .tooltip-top-right:hover {
   transform: translateX(0) translateY(0);
 }
+
+/* ==========================================================================
+   GLOBAL REFRESH CONTROL
+   ========================================================================== */
+
+.global-refresh-control {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 24px;
+  padding: 4px 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  
+  .refresh-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 12px;
+    white-space: nowrap;
+  }
+  
+  .refresh-slider {
+    width: 120px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #2196f3;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    &::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: #2196f3;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+  }
+}

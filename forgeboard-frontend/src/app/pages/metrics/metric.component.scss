@@ -239,6 +239,14 @@
     padding-bottom: 0.5em;
   }
   
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1em;
+    margin: 1em 0 0.5em 0;
+    color: #3498db;
+    letter-spacing: 0.05em;
+  }
+  
   &.mock-data {
     border: 2px solid #ffe066;
     position: relative;
@@ -351,6 +359,69 @@
   }
 }
 
+// New additional metrics styles
+.additional-metrics {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  
+  .metric-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    
+    .metric-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 0.75rem;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      .metric-icon {
+        background: rgba(52, 152, 219, 0.2);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        
+        mat-icon {
+          color: #3498db;
+          font-size: 20px;
+          height: 20px;
+          width: 20px;
+        }
+      }
+      
+      .metric-content {
+        flex: 1;
+        
+        .metric-value {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 1rem;
+          font-weight: 500;
+          color: #ffe066;
+          margin-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.6);
+        }
+      }
+    }
+  }
+}
+
 .metrics-chart-container {
   flex: 1;
   display: flex;
@@ -401,6 +472,16 @@
       height: auto;
     }
   }
+  
+  .additional-metrics {
+    .metric-row {
+      flex-wrap: wrap;
+      
+      .metric-box {
+        min-width: 150px;
+      }
+    }
+  }
 }
 
 @media (max-width: 768px) {
@@ -417,6 +498,16 @@
       
       .refresh-label {
         align-items: flex-start;
+      }
+    }
+  }
+  
+  .additional-metrics {
+    .metric-row {
+      flex-direction: column;
+      
+      .metric-box {
+        width: 100%;
       }
     }
   }
@@ -541,6 +632,118 @@
   }
 }
 
+.data-source-banner {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-radius: 8px;
+  color: white;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  
+  &.live-data {
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  }
+  
+  &.mock-data {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
+    animation: pulse-red 2s infinite;
+  }
+  
+  &.transitioning {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+  
+  mat-icon {
+    font-size: 28px;
+    height: 28px;
+    width: 28px;
+    margin-right: 16px;
+  }
+  
+  .banner-content {
+    flex: 1;
+    
+    h3 {
+      margin: 0 0 5px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+  }
+  
+  .data-source-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    
+    span {
+      margin: 0 8px;
+    }
+  }
+}
+
+// Toggle switch styles
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .toggle-slider {
+      background-color: rgba(255, 255, 255, 0.3);
+      
+      &:before {
+        transform: translateX(24px);
+        background-color: #ff5252;
+      }
+    }
+    
+    &:focus + .toggle-slider {
+      box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+    }
+  }
+  
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    transition: .4s;
+    border-radius: 24px;
+    
+    &:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+  }
+}
+
 @keyframes pulse-banner {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.4);
@@ -574,6 +777,18 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgba(255, 149, 0, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(198, 40, 40, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(198, 40, 40, 0);
   }
 }
 

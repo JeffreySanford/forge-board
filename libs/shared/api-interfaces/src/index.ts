@@ -30,12 +30,15 @@ export type * from './lib/tile-types';
 export type * from './lib/health.type';
 
 // Diagnostic interfaces
-export type { DiagnosticEvent, DiagnosticEventResponse, HealthData } from './lib/diagnostic-types';
+export type { DiagnosticEvent, DiagnosticEventResponse } from './lib/diagnostic-types';
 
 // Log interfaces
 export { LogLevelEnum } from './lib/log-types';
 export type { LogLevelString, LogEntry, LogFilter, LogQueryResponse, LogResponse, LogBatchResponse, LogStreamUpdate } from './lib/log-types';
 export { stringToLogLevelEnum, logLevelEnumToString } from './lib/log-types';
+
+// Export log types
+export * from './lib/log-types';
 
 // Metric interfaces
 export type { MetricData, MetricResponse, MetricFilter, MetricUpdate } from './lib/metrics-types';

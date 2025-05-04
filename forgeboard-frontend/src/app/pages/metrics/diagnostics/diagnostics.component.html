@@ -1,5 +1,11 @@
 <div class="layout-container" [class.hide-border]="!showLayoutBorder">
-  <div class="fieldset-label layout-label" *ngIf="showLayoutBorder">layout container</div>
+  <div class="layout-controls" *ngIf="showLayoutBorder">
+    <div class="toggle-button" (click)="toggleLayoutBorder()">
+      <mat-icon>{{ showLayoutBorder ? 'grid_off' : 'grid_on' }}</mat-icon>
+      <span>{{ showLayoutBorder ? 'Hide Layout' : 'Show Layout' }}</span>
+    </div>
+  </div>
+  
   <!-- Layout border with center lines -->
   <div class="layout-border" *ngIf="showLayoutBorder">
     <div class="center-line-h"></div>
@@ -16,27 +22,49 @@
       [cdkDropListData]="tileOrder"
       (cdkDropListDropped)="onTileDrop($event)"
     >
-      <!-- Metrics tile - updated selector -->
+      <!-- System Health tile -->
       <div
-        *ngIf="showMetricsTile"
+        *ngIf="showHealthTile"
         cdkDrag
         class="tile-drag"
-        [cdkDragData]="'metrics'"
+        [cdkDragData]="'health'"
       >
         <div class="tile-drag-handle" cdkDragHandle>
-          <mat-icon>drag_indicator</mat-icon> Metrics
-          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('metrics')">
-            <mat-icon>{{ showMetricsTile ? 'visibility' : 'visibility_off' }}</mat-icon>
+          <mat-icon>drag_indicator</mat-icon> Health
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('health')">
+            <mat-icon>{{ showHealthTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
+        <app-system-health></app-system-health>
         <!-- Placeholder for drag preview -->
         <div *cdkDragPlaceholder class="tile-placeholder">
-          <div class="placeholder-content">Metrics</div>
+          <div class="placeholder-content">Health</div>
+        </div>
+      </div>
+      
+      <!-- Memory Donut tile -->
+      <div
+        *ngIf="showMemoryTile"
+        cdkDrag
+        class="tile-drag"
+        [cdkDragData]="'memory'"
+      >
+        <div class="tile-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon> Memory
+          <button class="tile-visibility-toggle" (click)="toggleTileVisibility('memory')">
+            <mat-icon>{{ showMemoryTile ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
+        <app-memory-donut></app-memory-donut>
+        <!-- Placeholder for drag preview -->
+        <div *cdkDragPlaceholder class="tile-placeholder">
+          <div class="placeholder-content">Memory</div>
         </div>
       </div>
       
       <!-- Connection tile -->
       <div 
+        *ngIf="showConnectionTile"
         cdkDrag 
         class="tile-drag"
         [cdkDragData]="'connection'"
@@ -44,7 +72,7 @@
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Connection
           <button class="tile-visibility-toggle" (click)="toggleTileVisibility('connection')">
-            <mat-icon>visibility</mat-icon>
+            <mat-icon>{{ showConnectionTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
         <app-connection-status></app-connection-status>
@@ -56,6 +84,7 @@
       
       <!-- Logs tile -->
       <div 
+        *ngIf="showLogsTile"
         cdkDrag 
         class="tile-drag"
         [cdkDragData]="'logs'"
@@ -63,7 +92,7 @@
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Logs
           <button class="tile-visibility-toggle" (click)="toggleTileVisibility('logs')">
-            <mat-icon>visibility</mat-icon>
+            <mat-icon>{{ showLogsTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
         <app-recent-logs></app-recent-logs>
@@ -75,6 +104,7 @@
       
       <!-- Uptime tile -->
       <div 
+        *ngIf="showUptimeTile"
         cdkDrag 
         class="tile-drag"
         [cdkDragData]="'uptime'"
@@ -82,7 +112,7 @@
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Uptime
           <button class="tile-visibility-toggle" (click)="toggleTileVisibility('uptime')">
-            <mat-icon>visibility</mat-icon>
+            <mat-icon>{{ showUptimeTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
         <app-uptime-summary></app-uptime-summary>
@@ -94,6 +124,7 @@
       
       <!-- Activity tile -->
       <div 
+        *ngIf="showActivityTile"
         cdkDrag 
         class="tile-drag"
         [cdkDragData]="'activity'"
@@ -101,7 +132,7 @@
         <div class="tile-drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon> Activity
           <button class="tile-visibility-toggle" (click)="toggleTileVisibility('activity')">
-            <mat-icon>visibility</mat-icon>
+            <mat-icon>{{ showActivityTile ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
         <app-activity-feed></app-activity-feed>
@@ -111,5 +142,36 @@
         </div>
       </div>
     </div>
+  </div>
+  
+  <!-- Tile controls -->
+  <div class="tile-controls">
+    <button mat-button [matMenuTriggerFor]="tileMenu" class="add-tile-button">
+      <mat-icon>add</mat-icon> Add Tile
+    </button>
+    <mat-menu #tileMenu="matMenu">
+      <button mat-menu-item (click)="toggleTileVisibility('health')" *ngIf="!showHealthTile">
+        <mat-icon>health_and_safety</mat-icon> System Health
+      </button>
+      <button mat-menu-item (click)="toggleTileVisibility('memory')" *ngIf="!showMemoryTile">
+        <mat-icon>memory</mat-icon> Memory Usage
+      </button>
+      <button mat-menu-item (click)="toggleTileVisibility('connection')" *ngIf="!showConnectionTile">
+        <mat-icon>router</mat-icon> Connection Status
+      </button>
+      <button mat-menu-item (click)="toggleTileVisibility('logs')" *ngIf="!showLogsTile">
+        <mat-icon>list</mat-icon> Recent Logs
+      </button>
+      <button mat-menu-item (click)="toggleTileVisibility('uptime')" *ngIf="!showUptimeTile">
+        <mat-icon>schedule</mat-icon> Uptime Summary
+      </button>
+      <button mat-menu-item (click)="toggleTileVisibility('activity')" *ngIf="!showActivityTile">
+        <mat-icon>event_note</mat-icon> Activity Feed
+      </button>
+    </mat-menu>
+    
+    <button mat-button (click)="resetTileLayout()" class="reset-layout-button">
+      <mat-icon>restore</mat-icon> Reset Layout
+    </button>
   </div>
 </div>

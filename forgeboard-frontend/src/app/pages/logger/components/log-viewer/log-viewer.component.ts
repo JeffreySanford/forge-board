@@ -13,9 +13,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { LoggerService, LogEntry } from '../../logger.service';
-import { LogLevelEnum } from '@forge-board/shared/api-interfaces';
-import { Subject, interval, takeUntil } from 'rxjs';
+import { LoggerService } from '../../logger.service';
+import { LogEntry, LogLevelEnum } from '@forge-board/shared/api-interfaces';
+import { logLevelToString } from '../../logger.utils';
+import { Subject, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { RefreshIntervalService } from '../../../../services/refresh-interval.service';
 
 type ViewMode = 'standard' | 'grouped' | 'categorized';
 type TabType = 'data' | 'analysis' | 'duplicates';
@@ -60,6 +63,7 @@ export class LogViewerComponent implements OnInit, AfterViewInit, OnChanges, OnD
   private _processedLogs: LogEntry[] = [];
   private _filteredLogs: LogEntry[] = [];
   private destroy$ = new Subject<void>();
+  private subscriptions = new Subscription();
   
   // Service filtering
   availableServices: string[] = [];
@@ -67,7 +71,6 @@ export class LogViewerComponent implements OnInit, AfterViewInit, OnChanges, OnD
   
   // Auto-refresh
   autoRefresh = true;
-  refreshInterval = 2000; // ms
   
   // Analysis tabs
   activeTab: TabType = 'data';
@@ -82,11 +85,22 @@ export class LogViewerComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   
-  constructor(private loggerService: LoggerService) {}
+  constructor(
+    private loggerService: LoggerService,
+    private refreshIntervalService: RefreshIntervalService
+  ) {}
   
   ngOnInit(): void {
     this.processLogs();
-    this.setupAutoRefresh();
+    
+    // Subscribe to the refresh trigger from central service
+    this.subscriptions.add(
+      this.refreshIntervalService.getRefreshTrigger().subscribe(() => {
+        if (this.autoRefresh) {
+          this.refreshData();
+        }
+      })
+    );
     
     // Subscribe to new log entries from the service
     this.loggerService.newLogEntry$.pipe(
@@ -126,19 +140,7 @@ export class LogViewerComponent implements OnInit, AfterViewInit, OnChanges, OnD
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-  
-  /**
-   * Set up auto-refresh interval
-   */
-  setupAutoRefresh(): void {
-    interval(this.refreshInterval)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        if (this.autoRefresh) {
-          this.refreshData();
-        }
-      });
+    this.subscriptions.unsubscribe();
   }
   
   /**

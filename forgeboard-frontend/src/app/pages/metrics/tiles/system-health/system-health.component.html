@@ -1,0 +1,67 @@
+<div class="metric-tile">
+  <div class="tile-content">
+    <div class="tile-header">
+      <div class="icon">
+        <mat-icon>{{icon}}</mat-icon>
+      </div>
+      <div class="title-container">
+        <h3>{{title}}</h3>
+        <p>{{subtitle}}</p>
+      </div>
+      <div class="actions">
+        <button (click)="refresh()" title="Refresh">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+    
+    <div class="health-summary">
+      <div class="overall-health">
+        <div class="health-score" [ngClass]="getHealthClass()">
+          <span class="score">{{overallHealth}}%</span>
+          <span class="label">Overall Health</span>
+        </div>
+        <div class="health-status">
+          <span class="status-message">{{statusMessage}}</span>
+        </div>
+      </div>
+      
+      <div class="health-metrics">
+        <div class="metric" *ngFor="let data of healthData">
+          <div class="metric-header">
+            <mat-icon>{{data.icon}}</mat-icon>
+            <span>{{data.category}}</span>
+          </div>
+          <div class="metric-gauge">
+            <div class="gauge-bar">
+              <div class="gauge-fill" 
+                  [style.width.%]="data.score" 
+                  [ngClass]="getMetricHealthClass(data.score, data.threshold)">
+              </div>
+            </div>
+            <div class="gauge-value">
+              {{data.score | number:'1.0-0'}}%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="system-details">
+      <div class="detail-item">
+        <div class="detail-label">Uptime</div>
+        <div class="detail-value">{{serverUptime}}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Last Incident</div>
+        <div class="detail-value">{{lastIncidentTime}}</div>
+      </div>
+    </div>
+    
+    <div #chart class="chart-container"></div>
+    
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>

@@ -1,3 +1,183 @@
+@use '../shared/tile-styles' as tile;
+
+:host {
+  @include tile.tile-base;
+  
+  .tile-content {
+    border-left-color: #3498db; // Blue for connection status
+  }
+  
+  .tile-header .icon {
+    background: rgba(52, 152, 219, 0.2);
+    
+    mat-icon {
+      color: #3498db;
+    }
+  }
+  
+  .status-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    
+    &.connected {
+      background: rgba(46, 204, 113, 0.1);
+      .status-circle { background-color: #2ecc71; }
+      .status-text { color: #2ecc71; }
+    }
+    
+    &.disconnected {
+      background: rgba(231, 76, 60, 0.1);
+      .status-circle { background-color: #e74c3c; }
+      .status-text { color: #e74c3c; }
+    }
+    
+    &.error {
+      background: rgba(231, 76, 60, 0.1);
+      .status-circle { 
+        background-color: #e74c3c; 
+        animation: pulse 2s infinite;
+      }
+      .status-text { color: #e74c3c; }
+    }
+    
+    &.mock {
+      background: rgba(230, 126, 34, 0.1);
+      .status-circle { background-color: #e67e22; }
+      .status-text { color: #e67e22; }
+    }
+    
+    .status-circle {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.75rem;
+    }
+    
+    .status-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+  }
+  
+  .connection-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    
+    .metric-item {
+      flex: 1;
+      min-width: calc(33% - 0.75rem);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 0.5rem;
+      
+      .metric-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.25rem;
+      }
+      
+      .metric-value {
+        font-size: 16px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: 'IBM Plex Mono', monospace;
+      }
+    }
+  }
+  
+  .activity-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    
+    .activity-item {
+      flex: 1;
+      min-width: calc(50% - 0.75rem);
+      background: rgba(52, 152, 219, 0.1);
+      border-radius: 6px;
+      padding: 0.5rem;
+      
+      .activity-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.25rem;
+      }
+      
+      .activity-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #3498db;
+        font-family: 'IBM Plex Mono', monospace;
+      }
+    }
+  }
+  
+  .connection-footer {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    
+    &.connected {
+      background: rgba(46, 204, 113, 0.1);
+      .footer-icon mat-icon { color: #2ecc71; }
+    }
+    
+    &.disconnected {
+      background: rgba(231, 76, 60, 0.1);
+      .footer-icon mat-icon { color: #e74c3c; }
+    }
+    
+    &.error {
+      background: rgba(231, 76, 60, 0.1);
+      .footer-icon mat-icon { 
+        color: #e74c3c;
+        animation: pulse 2s infinite;
+      }
+    }
+    
+    &.mock {
+      background: rgba(230, 126, 34, 0.1);
+      .footer-icon mat-icon { color: #e67e22; }
+    }
+    
+    .footer-icon {
+      margin-right: 0.5rem;
+      
+      mat-icon {
+        font-size: 18px;
+        height: 18px;
+        width: 18px;
+      }
+    }
+    
+    .footer-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+}
+
 .connection-status-container {
   display: flex;
   flex-direction: column;
@@ -138,18 +318,6 @@
     mat-icon {
       animation: pulse 2s infinite;
     }
-  }
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.6;
   }
 }
 

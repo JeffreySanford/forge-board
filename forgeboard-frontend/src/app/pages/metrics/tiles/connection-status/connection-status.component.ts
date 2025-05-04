@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import { DiagnosticsService } from '../../../../services/diagnostics.service';
 import { SocketStatusUpdate } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from '../../../../services/backend-status.service';
+import { Tile } from '@forge-board/shared/api-interfaces';
 
 @Component({
   selector: 'app-connection-status',
@@ -10,7 +11,15 @@ import { BackendStatusService } from '../../../../services/backend-status.servic
   styleUrls: ['./connection-status.component.scss'],
   standalone: false
 })
-export class ConnectionStatusComponent implements OnInit, OnDestroy {
+export class ConnectionStatusComponent implements OnInit, OnDestroy, Tile {
+  // Tile interface implementation
+  position: number = 0;
+  id: string = 'connection-status';
+  type = 'connection' as const;
+  title: string = 'Connection Status';
+  order: number = 2;
+  visible: boolean = true;
+  
   // Socket information
   socketStatus: 'connected' | 'disconnected' | 'error' = 'disconnected';
   connectionTime: Date | null = null;
@@ -19,11 +28,16 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   activeConnections = 0;
   totalConnections = 0;
   
+  // Data transfer stats
+  messagesSent = 0;
+  messagesReceived = 0;
+  bytesTransferred = 0;
+  
   // Mock data status
   usingMockData = false;
   
   // Update timer for duration
-  private durationTimer: any;
+  private durationTimer: number | null = null;
   
   // Subscriptions
   private subscriptions = new Subscription();
@@ -79,6 +93,24 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   }
   
   /**
+   * Refresh connection metrics
+   */
+  refreshMetrics(): void {
+    // Request fresh socket metrics via WebSocket
+    this.diagnosticsService.getSocketStatus();
+    
+    // If using mock data, simulate a refresh with random data
+    if (this.usingMockData) {
+      this.activeConnections = Math.floor(Math.random() * 5) + 1;
+      this.totalConnections += Math.floor(Math.random() * 3);
+      this.messagesSent += Math.floor(Math.random() * 10) + 5;
+      this.messagesReceived += Math.floor(Math.random() * 10) + 5;
+      this.bytesTransferred += Math.floor(Math.random() * 1024) + 512;
+      this.lastActivity = new Date();
+    }
+  }
+  
+  /**
    * Update socket metrics from status update
    */
   private updateSocketMetrics(status: SocketStatusUpdate): void {
@@ -87,6 +119,13 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
     // Update connection counts
     this.activeConnections = status.metrics.activeConnections;
     this.totalConnections = status.metrics.totalConnections;
+    
+    // Update message counts
+    this.messagesSent = status.metrics.messagesSent || 0;
+    this.messagesReceived = status.metrics.messagesReceived || 0;
+    
+    // Estimate bytes transferred (assuming average message size of 512 bytes)
+    this.bytesTransferred = (this.messagesSent + this.messagesReceived) * 512;
     
     // If we have active sockets, update the last activity time
     if (status.activeSockets && status.activeSockets.length > 0) {
@@ -98,6 +137,21 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
       if (mostRecentActivity > 0) {
         this.lastActivity = new Date(mostRecentActivity);
       }
+    }
+  }
+  
+  /**
+   * Format data transfer information
+   */
+  formatDataTransfer(): string {
+    const totalMessages = this.messagesSent + this.messagesReceived;
+    
+    if (this.bytesTransferred < 1024) {
+      return `${totalMessages} msgs (${this.bytesTransferred} B)`;
+    } else if (this.bytesTransferred < 1024 * 1024) {
+      return `${totalMessages} msgs (${(this.bytesTransferred / 1024).toFixed(1)} KB)`;
+    } else {
+      return `${totalMessages} msgs (${(this.bytesTransferred / (1024 * 1024)).toFixed(1)} MB)`;
     }
   }
   

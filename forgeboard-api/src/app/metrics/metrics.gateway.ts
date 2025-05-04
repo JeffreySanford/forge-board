@@ -32,10 +32,10 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   handleConnection(client: Socket): void {
     this.logger.log(`Client connected to metrics: ${client.id}`);
     
-    // Initialize client data with default interval but no subscription yet
+    // Initialize client data with the default global interval (3000ms)
     this.clientSubscriptions.set(client.id, { 
-      interval: 1000, // Default interval
-      subscription: null
+      interval: 3000, // Set default to 3000ms
+      subscription: null 
     });
   }
 
@@ -65,7 +65,7 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     let clientData = this.clientSubscriptions.get(client.id);
     if (!clientData) {
       clientData = { 
-        interval: 1000, 
+        interval: 3000, // Set default to 3000ms
         subscription: null 
       };
       this.clientSubscriptions.set(client.id, clientData);
@@ -101,14 +101,28 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   @SubscribeMessage('set-interval')
   handleSetInterval(@ConnectedSocket() client: Socket, payload: number): void {
     try {
-      const interval = typeof payload === 'number' ? payload : 1000;
+      const interval = typeof payload === 'number' ? payload : 3000; // Default to 3000ms
       this.logger.log(`Client ${client.id} set interval to ${interval}ms`);
+      
+      // Update the client's stored interval
+      const clientData = this.clientSubscriptions.get(client.id);
+      if (clientData) {
+        clientData.interval = interval;
+        this.clientSubscriptions.set(client.id, clientData);
+      }
       
       // Inform the client the interval was accepted
       client.emit('interval-set', createSocketResponse('interval-set', { interval }));
       
-      // No need to change service interval as we're now using the global metrics stream
-      // The interval is controlled at the service level, not per client
+      // Update the metrics service with the new interval
+      this.metricsService.setUpdateInterval(interval).subscribe({
+        next: (newInterval) => {
+          this.logger.log(`Updated metrics service interval to ${newInterval}ms`);
+        },
+        error: (err) => {
+          this.logger.error(`Failed to update metrics service interval: ${err.message}`);
+        }
+      });
     } catch (error) {
       this.logger.error(`Error setting interval for client ${client.id}: ${error.message}`);
       client.emit('error', createSocketResponse('error', { message: 'Failed to set interval' }));

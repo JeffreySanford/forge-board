@@ -1,3 +1,105 @@
+@use '../shared/tile-styles' as tile;
+
+:host {
+  @include tile.tile-base;
+  
+  .tile-content {
+    border-left-color: #9b59b6; // Purple for logs
+  }
+  
+  .tile-header .icon {
+    background: rgba(155, 89, 182, 0.2);
+    
+    mat-icon {
+      color: #9b59b6;
+    }
+  }
+  
+  .logs-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 8px;
+    
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(155, 89, 182, 0.5);
+      border-radius: 2px;
+    }
+    
+    .log-entry {
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 3px solid;
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      animation: slideIn 0.3s ease-in-out;
+      
+      &.info {
+        border-left-color: tile.$primary-blue;
+      }
+      
+      &.warn {
+        border-left-color: tile.$vibrant-yellow;
+      }
+      
+      &.error {
+        border-left-color: tile.$vibrant-red;
+      }
+      
+      &.debug {
+        border-left-color: #95a5a6;
+      }
+      
+      .log-time {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 3px;
+      }
+      
+      .log-source {
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      
+      .log-message {
+        color: rgba(255, 255, 255, 0.8);
+        word-break: break-word;
+      }
+    }
+  }
+  
+  .empty-logs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.4);
+    
+    mat-icon {
+      font-size: 24px;
+      height: 24px;
+      width: 24px;
+      margin-bottom: 8px;
+    }
+    
+    p {
+      font-size: 14px;
+    }
+  }
+}
+
 .recent-logs-tile {
   background: #00695c;
   color: #ffffff;
@@ -103,4 +205,9 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }

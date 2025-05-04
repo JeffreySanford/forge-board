@@ -161,6 +161,21 @@
       color: #ef6c00;
     }
   }
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #f44336;  // Red for disconnected
+    
+    &.connected {
+      background-color: #4caf50;  // Green for connected
+    }
+  }
+  
+  .refresh-button {
+    margin-left: 8px;
+  }
 }
 
 .filters-and-stats {

@@ -5,19 +5,36 @@ import { MetricData } from '@forge-board/shared/api-interfaces';
 @Injectable()
 export class MetricsService implements OnModuleInit {
   private readonly logger = new Logger(MetricsService.name);
-  private updateInterval = 1000; // Default update interval in milliseconds
+  private updateInterval = 3000; // Default update interval of 3000ms
   
   // Use BehaviorSubject to track metrics state
   private metricsSubject = new BehaviorSubject<MetricData>(this.generateMetrics());
   private updateSubscription: Subscription;
   
+  // Previous values for smooth transitions
+  private prevCpu = 50;
+  private prevMemory = 65;
+  private prevDisk = 55;
+  private prevNetwork = 30;
+  
+  // Simulation parameters
+  private cpuTrend = 0;
+  private memoryTrend = 0;
+  private simulatedLoad = 0;
+  
   constructor() {
-    this.logger.log('Metrics Service initialized');
+    this.logger.log('Metrics Service initialized with 3000ms default interval');
   }
   
   onModuleInit() {
-    // Start the metrics update interval
+    // Start the metrics update timer
     this.startMetricsTimer();
+    
+    // Initialize with semi-random but realistic values
+    this.prevCpu = 45 + Math.random() * 15;
+    this.prevMemory = 60 + Math.random() * 10;
+    this.prevDisk = 50 + Math.random() * 10;
+    this.prevNetwork = 25 + Math.random() * 10;
   }
 
   setUpdateInterval(interval: number): Observable<number> {
@@ -52,26 +69,58 @@ export class MetricsService implements OnModuleInit {
       this.updateSubscription.unsubscribe();
     }
     
+    this.logger.log(`Starting metrics timer with ${this.updateInterval}ms interval`);
+    
     // Create new interval subscription that updates metrics regularly
     this.updateSubscription = interval(this.updateInterval).subscribe(() => {
       const newMetrics = this.generateMetrics();
       this.metricsSubject.next(newMetrics);
+      this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`);
     });
   }
   
   /**
-   * Generate random metrics
+   * Generate realistic metrics data with temporal correlation
    */
   private generateMetrics(): MetricData {
-    // Generate mock metric data
-    const metrics: MetricData = {
-      time: new Date().toISOString(),
-      cpu: Math.random() * 100,
-      memory: Math.random() * 100,
-      disk: Math.random() * 100,
-      network: Math.random() * 100
-    };
+    // Simulate occasional load changes (10% chance)
+    if (Math.random() < 0.1) {
+      this.simulatedLoad = Math.min(100, Math.max(0, this.simulatedLoad + (Math.random() * 30 - 15)));
+    }
     
-    return metrics;
+    // Update trends (slowly shifting directions)
+    if (Math.random() < 0.2) {
+      this.cpuTrend = Math.min(5, Math.max(-5, this.cpuTrend + (Math.random() * 2 - 1)));
+      this.memoryTrend = Math.min(2, Math.max(-1, this.memoryTrend + (Math.random() * 0.6 - 0.3)));
+    }
+    
+    // Calculate new values with temporal correlation to previous values
+    // CPU changes more rapidly but stays within realistic bounds
+    const cpuDelta = (Math.random() * 3 - 1.5) + (this.cpuTrend * 0.5) + (this.simulatedLoad * 0.1);
+    this.prevCpu = Math.min(95, Math.max(5, this.prevCpu + cpuDelta));
+    
+    // Memory tends to grow slowly and decline quickly (GC events)
+    let memoryDelta = (Math.random() * 0.8 - 0.3) + (this.memoryTrend * 0.2);
+    // Occasional memory drop (simulating garbage collection)
+    if (Math.random() < 0.05 && this.prevMemory > 70) {
+      memoryDelta = -Math.random() * 8;
+    }
+    this.prevMemory = Math.min(98, Math.max(40, this.prevMemory + memoryDelta));
+    
+    // Disk and network change very little between readings
+    const diskDelta = Math.random() * 0.6 - 0.3;
+    this.prevDisk = Math.min(95, Math.max(20, this.prevDisk + diskDelta));
+    
+    const networkDelta = Math.random() * 5 - 2.5 + (this.simulatedLoad * 0.05);
+    this.prevNetwork = Math.min(95, Math.max(1, this.prevNetwork + networkDelta));
+    
+    // Return the metric data with rounded values for cleaner display
+    return {
+      time: new Date().toISOString(),
+      cpu: Math.round(this.prevCpu * 10) / 10,
+      memory: Math.round(this.prevMemory * 10) / 10,
+      disk: Math.round(this.prevDisk * 10) / 10,
+      network: Math.round(this.prevNetwork * 10) / 10
+    };
   }
 }

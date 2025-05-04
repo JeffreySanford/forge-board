@@ -173,8 +173,11 @@
       <!-- Row Definitions -->
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let log; columns: displayedColumns"
-          [ngClass]="{'expanded-row': log.expanded, 'category-row': log.isCategory}"></tr>
-      <!-- Fix for the "when" expression syntax error -->
+          [ngClass]="{
+            'expanded-row': log.expanded, 
+            'category-row': log.isCategory, 
+            'logging-loop': log.isLoggingLoop
+          }"></tr>
       <tr mat-row *matRowDef="let log; columns: ['expandedDetail']; when: isExpanded"
           class="detail-row"></tr>
     </table>

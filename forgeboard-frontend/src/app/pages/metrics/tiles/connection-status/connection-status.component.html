@@ -1,45 +1,82 @@
-<div class="connection-status-container">
-  <div class="status-header" [ngClass]="getConnectionStatusClass()">
-    <div class="status-indicator"></div>
-    <div class="status-text">
-      <ng-container *ngIf="socketStatus === 'connected' && !usingMockData">Connected</ng-container>
-      <ng-container *ngIf="socketStatus === 'disconnected' && !usingMockData">Disconnected</ng-container>
-      <ng-container *ngIf="socketStatus === 'error' && !usingMockData">Connection Error</ng-container>
-      <ng-container *ngIf="usingMockData">Using Simulated Data</ng-container>
+<div class="tile-content">
+  <div class="tile-header">
+    <div class="icon">
+      <mat-icon>router</mat-icon>
+    </div>
+    <div class="title-container">
+      <h3>Connection Status</h3>
+      <p>Real-time socket metrics</p>
+    </div>
+    <div class="actions">
+      <button (click)="refreshMetrics()" title="Refresh">
+        <mat-icon>refresh</mat-icon>
+      </button>
     </div>
   </div>
   
-  <div class="connection-details">
-    <div class="detail-row" *ngIf="socketStatus === 'connected' || usingMockData">
-      <div class="detail-label">Duration:</div>
-      <div class="detail-value">{{ formatDuration(connectionDuration) }}</div>
+  <div class="status-container">
+    <div class="status-indicator" [ngClass]="getConnectionStatusClass()">
+      <div class="status-circle"></div>
+      <div class="status-text">
+        <ng-container *ngIf="socketStatus === 'connected' && !usingMockData">Connected</ng-container>
+        <ng-container *ngIf="socketStatus === 'disconnected' && !usingMockData">Disconnected</ng-container>
+        <ng-container *ngIf="socketStatus === 'error' && !usingMockData">Connection Error</ng-container>
+        <ng-container *ngIf="usingMockData">Using Simulated Data</ng-container>
+      </div>
     </div>
     
-    <div class="detail-row">
-      <div class="detail-label">Active:</div>
-      <div class="detail-value">{{ activeConnections }}</div>
+    <div class="connection-metrics">
+      <div class="metric-item" *ngIf="socketStatus === 'connected' || usingMockData">
+        <div class="metric-label">Connection Time</div>
+        <div class="metric-value">{{ formatDuration(connectionDuration) }}</div>
+      </div>
+      
+      <div class="metric-item">
+        <div class="metric-label">Active Connections</div>
+        <div class="metric-value">{{ activeConnections }}</div>
+      </div>
+      
+      <div class="metric-item">
+        <div class="metric-label">Total Connections</div>
+        <div class="metric-value">{{ totalConnections }}</div>
+      </div>
     </div>
     
-    <div class="detail-row">
-      <div class="detail-label">Total:</div>
-      <div class="detail-value">{{ totalConnections }}</div>
-    </div>
-    
-    <div class="detail-row" *ngIf="lastActivity">
-      <div class="detail-label">Last Activity:</div>
-      <div class="detail-value">{{ lastActivity | date:'HH:mm:ss' }}</div>
+    <div class="activity-metrics">
+      <div class="activity-item" *ngIf="lastActivity">
+        <div class="activity-label">Last Activity</div>
+        <div class="activity-value">{{ lastActivity | date:'HH:mm:ss' }}</div>
+      </div>
+      
+      <div class="activity-item">
+        <div class="activity-label">Data Transfer</div>
+        <div class="activity-value">{{ formatDataTransfer() }}</div>
+      </div>
     </div>
   </div>
   
   <div class="connection-footer" [ngClass]="getConnectionStatusClass()">
-    <ng-container *ngIf="usingMockData">
-      <mat-icon>sync_problem</mat-icon> Simulated metrics (backend unavailable)
-    </ng-container>
-    <ng-container *ngIf="!usingMockData && socketStatus === 'connected'">
-      <mat-icon>sync</mat-icon> Receiving real-time updates
-    </ng-container>
-    <ng-container *ngIf="!usingMockData && socketStatus !== 'connected'">
-      <mat-icon>sync_disabled</mat-icon> Waiting for connection
-    </ng-container>
+    <div class="footer-icon">
+      <ng-container *ngIf="usingMockData">
+        <mat-icon>sync_problem</mat-icon>
+      </ng-container>
+      <ng-container *ngIf="!usingMockData && socketStatus === 'connected'">
+        <mat-icon>sync</mat-icon>
+      </ng-container>
+      <ng-container *ngIf="!usingMockData && socketStatus !== 'connected'">
+        <mat-icon>sync_disabled</mat-icon>
+      </ng-container>
+    </div>
+    <div class="footer-text">
+      <ng-container *ngIf="usingMockData">
+        Simulated metrics (backend unavailable)
+      </ng-container>
+      <ng-container *ngIf="!usingMockData && socketStatus === 'connected'">
+        Receiving real-time updates
+      </ng-container>
+      <ng-container *ngIf="!usingMockData && socketStatus !== 'connected'">
+        Waiting for connection
+      </ng-container>
+    </div>
   </div>
 </div>

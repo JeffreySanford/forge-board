@@ -1,23 +1,33 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, BehaviorSubject, Subscription, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { Socket, io } from 'socket.io-client';
-import type { MetricData, MetricResponse, SocketResponse } from '@forge-board/shared/api-interfaces';
+import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
+import { MetricData } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
+import { RefreshIntervalService } from './refresh-interval.service';
+import { Socket, io } from 'socket.io-client';
 
-/**
- * This service uses two core libraries:
- * 
- * - RxJS: Provides Observables and Subjects for real-time data streams, error handling, and resource cleanup.
- * - socket.io-client: Manages the WebSocket connection to the backend.
- * 
- * Together, these libraries allow the service to:
- *   - Open a persistent WebSocket connection to the backend.
- *   - Listen for metric events and push them into an RxJS Subject.
- *   - Expose a real-time Observable stream of metrics to Angular components.
- *   - Clean up all resources (unsubscribe, disconnect) automatically in ngOnDestroy.
- */
+// Console styling for better debugging experience
+const CONSOLE_STYLES = {
+  success: 'background: #43a047; color: white; padding: 2px 6px; border-radius: 2px;',
+  error: 'background: #e53935; color: white; padding: 2px 6px; border-radius: 2px;',
+  warning: 'background: #ff9800; color: white; padding: 2px 6px; border-radius: 2px;',
+  info: 'background: #2196f3; color: white; padding: 2px 6px; border-radius: 2px;',
+  mock: 'background: linear-gradient(to right, #ff9800, #f44336); color: white; padding: 2px 6px; border-radius: 2px;'
+};
+
+// Interface for socket response data
+interface MetricSocketResponse {
+  status: string;
+  data: MetricData;
+}
+
+// Interface for socket connection errors
+interface SocketConnectionError {
+  message: string;
+  type?: string;
+  description?: string;
+  code?: number | string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -28,252 +38,170 @@ export class MetricsService implements OnDestroy {
   private readonly apiUrl = 'http://localhost:3000/api/metrics';
   private metricsSubject = new Subject<MetricData>();
   private subscriptions = new Subscription();
-  private intervalSubject = new BehaviorSubject<number>(500);
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
-
-  // Track connection errors
-  private connectionError: Error | null = null;
-  private connectionErrorSubject = new Subject<Error | null>();
-  
-  // Generate mock data when socket isn't available
-  private mockDataInterval: ReturnType<typeof setInterval> | null = null;
-  
-  // Track reconnection attempts
-  private reconnecting = false;
-  private backendAvailableListener: () => void;
-
-  // Add a specific subject for mock data state changes
+  private connectionErrorSubject = new Subject<SocketConnectionError | null>();
   private mockDataStatusSubject = new BehaviorSubject<boolean>(false);
+  private forceUseMockData = false;
   
+  // Previous values for smooth transitions in mock data
+  private prevCpu = 50;
+  private prevMemory = 65;
+  private prevDisk = 55;
+  private prevNetwork = 30;
+  
+  // Simulation parameters
+  private cpuTrend = 0;
+  private memoryTrend = 0;
+  private simulatedLoad = 0;
+  
+  // Animation properties for UI feedback
+  private socketConnectionAnimation: number | null = null;
+
   constructor(
     private http: HttpClient,
-    private backendStatusService: BackendStatusService
+    private backendStatusService: BackendStatusService,
+    private refreshIntervalService: RefreshIntervalService
   ) {
-    console.log('[MetricsService] Initializing service');
+    console.log('[MetricsService] Initializing service with global refresh interval');
     this.backendStatusService.registerGateway('metrics');
     this.initSocket();
     
-    // Start generating mock data if socket fails
-    this.connectionErrorSubject.subscribe(error => {
-      if (error) {
-        console.log('[MetricsService] Connection error detected, starting mock data generation');
-        this.backendStatusService.updateGatewayStatus('metrics', false, true);
-        this.mockDataStatusSubject.next(true);
-        this.startMockDataGeneration();
-      } else {
-        console.log('[MetricsService] Connection established, stopping mock data generation');
-        this.backendStatusService.updateGatewayStatus('metrics', true, false);
-        this.mockDataStatusSubject.next(false);
-        this.stopMockDataGeneration();
-      }
-    });
+    // When the socket connects, make sure to set the interval on the server
+    this.subscriptions.add(
+      this.refreshIntervalService.getIntervalObservable().subscribe(interval => {
+        // ✨ FIX 1: Safely emit to socket with null check ✨
+        const currentInterval = interval;
+        this.safeEmit('set-interval', currentInterval, () => {
+          console.log(`%c[MetricsService] Updated server interval to ${interval}ms`, CONSOLE_STYLES.success);
+        });
+        
+        // Also update the server via REST API as a backup
+        this.http.get(`${this.apiUrl}/set-interval?interval=${interval}`)
+          .subscribe({
+            next: () => console.log(`%c[MetricsService] REST API interval updated to ${interval}ms`, CONSOLE_STYLES.info),
+            error: (err) => console.warn(`%c[MetricsService] Failed to update interval via REST`, CONSOLE_STYLES.warning, err)
+          });
+      })
+    );
     
-    // Listen for backend availability to reconnect
-    this.backendAvailableListener = () => {
-      console.log('[MetricsService] Backend available event received, attempting reconnection');
-      if (this.mockDataInterval && !this.reconnecting) {
-        this.reconnectToBackend();
-      }
-    };
-    
-    window.addEventListener('backend-available', this.backendAvailableListener);
+    // Subscribe to the refresh trigger to generate mock data when needed
+    this.subscriptions.add(
+      this.refreshIntervalService.getRefreshTrigger().subscribe(() => {
+        // Generate mock data if we're using mock data mode (either forced or auto-fallback)
+        if (this.mockDataStatusSubject.getValue()) {
+          this.generateMockMetric();
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
-    console.log('[MetricsService] Destroying service, cleaning up resources');
-    this.subscriptions.unsubscribe();
-    this.stopMockDataGeneration();
-    
-    // Remove event listener
-    window.removeEventListener('backend-available', this.backendAvailableListener);
-    
-    // Clean up socket connection
     this.cleanupSocket();
-    
-    // Complete all subjects
-    this.metricsSubject.complete();
-    this.intervalSubject.complete();
-    this.connectionStatusSubject.complete();
-    this.connectionErrorSubject.complete();
-    this.mockDataStatusSubject.complete();
+    this.subscriptions.unsubscribe();
+    // Stop any running animations
+    if (this.socketConnectionAnimation) {
+      cancelAnimationFrame(this.socketConnectionAnimation);
+    }
   }
 
+  /**
+   * Initialize socket connection with colorful status indicators
+   */
   private initSocket(): void {
     try {
-      console.log('[MetricsService] Initializing socket connection to', `${this.socketUrl}/metrics`);
-      // Configure socket with CORS options and the correct namespace
-      this.socket = io(`${this.socketUrl}/metrics`, {
-        withCredentials: false, // Try without credentials for CORS
-        transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-        timeout: 5000, // Set a reasonable timeout
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000
-      });
-      
-      this.socket.on('connect', () => {
-        console.log('[MetricsService] Socket connected successfully');
-        this.connectionStatusSubject.next(true);
-        this.backendStatusService.updateGatewayStatus('metrics', true, false);
-        this.connectionErrorSubject.next(null);
-        this.mockDataStatusSubject.next(false); // Ensure mock data status is updated
-        this.socket?.emit('subscribe-metrics');
-      });
-      
-      this.socket.on('disconnect', () => {
-        console.log('[MetricsService] Socket disconnected');
+      // Skip socket initialization if we're forcing mock data mode
+      if (this.forceUseMockData) {
+        console.log(`%c[MetricsService] Forcing mock data mode - skipping socket initialization`, CONSOLE_STYLES.warning);
+        this.mockDataStatusSubject.next(true);
         this.connectionStatusSubject.next(false);
-        this.backendStatusService.updateGatewayStatus('metrics', false, false);
-      });
-      
-      this.socket.on('system-metrics', (data: SocketResponse<MetricData>) => {
-        if (data.status === 'success') {
-          console.log('[MetricsService] Received metrics data:', data.data);
-          this.metricsSubject.next(data.data);
-        } else {
-          console.error('[MetricsService] Error in metrics data:', data);
-        }
-      });
-      
-      this.socket.on('connect_error', (err) => {
-        console.error('[MetricsService] Socket connection error:', err);
-        this.connectionError = err;
-        this.connectionErrorSubject.next(err);
-        this.connectionStatusSubject.next(false);
-        this.backendStatusService.updateGatewayStatus('metrics', false, false);
-        this.mockDataStatusSubject.next(true); // Update mock data status
-      });
-    } catch (err) {
-      console.error('[MetricsService] Socket initialization error:', err);
-      this.connectionError = err instanceof Error ? err : new Error(String(err));
-      this.connectionErrorSubject.next(this.connectionError);
-      this.backendStatusService.updateGatewayStatus('metrics', false, false);
-      this.startMockDataGeneration();
-    }
-  }
+        this.backendStatusService.updateGatewayStatus('metrics', false, true);
+        return;
+      }
 
-  resetConnection(): Observable<boolean> {
-    console.log('[MetricsService] Resetting connection');
-    
-    // Clear error state
-    this.connectionError = null;
-    this.connectionErrorSubject.next(null);
-    
-    // Update status indicators
-    this.backendStatusService.updateGatewayStatus('metrics', true, false);
-    
-    // Clean up the existing socket
-    this.cleanupSocket();
-    
-    // Stop any mock data generation
-    this.stopMockDataGeneration();
-    
-    // Reinitialize the socket connection
-    try {
-      this.initSocket();
-      return of(true);
-    } catch (error) {
-      console.error('[MetricsService] Reset connection failed:', error);
-      return of(false);
-    }
-  } 
-  
-  /**
-   * Attempt to reconnect to the backend when it becomes available again
-   */
-  private reconnectToBackend(): void {
-    if (this.reconnecting) return;
-    this.reconnecting = true;
-    
-    console.log('[MetricsService] Attempting to reconnect to backend');
-    
-    // Perform a connection test first to verify the backend is truly available
-    this.http.get<{status: string}>(`${this.apiUrl}/status`)
-      .pipe(
-        catchError(() => {
-          console.log('[MetricsService] Backend still not available during reconnection');
-          this.reconnecting = false;
-          return of({ status: 'error' });
-        })
-      )
-      .subscribe(response => {
-        if (response && response.status !== 'error') {
-          console.log('[MetricsService] Backend confirmed available, reconnecting socket');
-          this.performSocketReconnection();
-        } else {
-          this.reconnecting = false;
-        }
-      });
-  }
-  
-  /**
-   * Perform the actual socket reconnection after confirming backend is available
-   */
-  private performSocketReconnection(): void {
-    // Clean up the existing socket if any
-    this.cleanupSocket();
-    
-    // Initialize a new socket connection
-    try {
-      console.log('[MetricsService] Creating new socket connection');
+      console.log(`%c[MetricsService] Initializing socket connection to ${this.socketUrl}/metrics`, CONSOLE_STYLES.info);
       this.socket = io(`${this.socketUrl}/metrics`, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
         timeout: 5000,
         reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        forceNew: true
+        reconnectionDelay: 1000
       });
       
       this.socket.on('connect', () => {
-        console.log('[MetricsService] Socket reconnected successfully!');
+        console.log(`%c[MetricsService] Socket connected successfully`, CONSOLE_STYLES.success);
         this.connectionStatusSubject.next(true);
-        this.connectionErrorSubject.next(null);
-        this.mockDataStatusSubject.next(false); // Update mock data status
-        
-        // Stop mock data and update backend status
-        this.stopMockDataGeneration();
         this.backendStatusService.updateGatewayStatus('metrics', true, false);
+        this.connectionErrorSubject.next(null);
+        this.mockDataStatusSubject.next(false);
         
-        // Subscribe to metrics
-        this.socket?.emit('subscribe-metrics');
-        this.socket?.emit('set-interval', this.intervalSubject.getValue());
+        // ✨ FIX 2: Safely emit subscribe-metrics with null check ✨
+        this.safeEmit('subscribe-metrics', undefined, () => {
+          console.log(`%c[MetricsService] Subscribed to metrics stream`, CONSOLE_STYLES.success);
+        });
+        
+        // ✨ FIX 3: Safely emit set-interval with null check ✨
+        const currentInterval = this.refreshIntervalService.getInterval();
+        this.safeEmit('set-interval', currentInterval, () => {
+          console.log(`%c[MetricsService] Setting server interval to ${currentInterval}ms`, CONSOLE_STYLES.success);
+        });
+        
       });
       
+      // Setup other socket event handlers with enhanced visual feedback
       this.socket.on('disconnect', () => {
-        console.log('[MetricsService] Socket disconnected during reconnection');
+        console.log(`%c[MetricsService] Socket disconnected`, CONSOLE_STYLES.warning);
         this.connectionStatusSubject.next(false);
         this.backendStatusService.updateGatewayStatus('metrics', false, false);
       });
       
-      this.socket.on('system-metrics', (data: SocketResponse<MetricData>) => {
+      this.socket.on('connect_error', (error: SocketConnectionError) => {
+        console.error(`%c[MetricsService] Connection error:`, CONSOLE_STYLES.error, error);
+        this.connectionStatusSubject.next(false);
+        this.connectionErrorSubject.next(error);
+        this.mockDataStatusSubject.next(true);
+        this.backendStatusService.updateGatewayStatus('metrics', false, true);
+      });
+      
+      this.socket.on('system-metrics', (data: MetricSocketResponse) => {
         if (data.status === 'success') {
-          console.log('[MetricsService] Received real metrics data after reconnection');
+          // Add subtle visual effect to console for data updates
+          console.log(`%c[MetricsService] Received metrics: CPU: ${data.data.cpu.toFixed(1)}%, MEM: ${data.data.memory.toFixed(1)}%`, 
+            'color: #43a047; font-style: italic;');
           this.metricsSubject.next(data.data);
-          
-          // Make extra sure mock data generation is stopped
-          if (this.mockDataInterval) {
-            this.stopMockDataGeneration();
-          }
         }
       });
       
-      this.socket.on('connect_error', (err) => {
-        console.error('[MetricsService] Socket reconnection error:', err);
-        this.connectionStatusSubject.next(false);
-        
-        // Don't go back to mock data right away, let the normal error flow handle it
-        this.backendStatusService.updateGatewayStatus('metrics', false, false);
-      });
     } catch (err) {
-      console.error('[MetricsService] Socket reconnection failed:', err);
+      console.error(`%c[MetricsService] Socket initialization error:`, CONSOLE_STYLES.error, err);
+      this.connectionErrorSubject.next(err as SocketConnectionError);
+      this.mockDataStatusSubject.next(true);
+      this.backendStatusService.updateGatewayStatus('metrics', false, true);
     }
-    
-    // Reset reconnection flag after a delay
-    setTimeout(() => {
-      this.reconnecting = false;
-    }, 5000);
   }
-
+  
+  /**
+   * Safely emit to socket with null check and callback
+   */
+  private safeEmit<T>(eventName: string, data?: T, onSuccess?: () => void): boolean {
+    if (this.socket?.connected) {
+      try {
+        if (data !== undefined) {
+          this.socket.emit(eventName, data);
+        } else {
+          this.socket.emit(eventName);
+        }
+        if (onSuccess) onSuccess();
+        return true;
+      } catch (err) {
+        console.error(`%c[MetricsService] Error emitting ${eventName}:`, CONSOLE_STYLES.error, err);
+        return false;
+      }
+    } else {
+      console.warn(`%c[MetricsService] Cannot emit ${eventName}: Socket not connected`, CONSOLE_STYLES.warning);
+      return false;
+    }
+  }
+    
   getMetricsStream(): Observable<MetricData> {
     return this.metricsSubject.asObservable();
   }
@@ -282,134 +210,88 @@ export class MetricsService implements OnDestroy {
     return this.connectionStatusSubject.asObservable();
   }
   
-  getConnectionError(): Observable<Error | null> {
+  getConnectionError(): Observable<SocketConnectionError | null> {
     return this.connectionErrorSubject.asObservable();
   }
-
-  /**
-   * Returns an observable that emits true when using mock data
-   * and false when using real data
-   */
+  
   getMockDataStatus(): Observable<boolean> {
     return this.mockDataStatusSubject.asObservable();
   }
-
-  setMetricsInterval(interval: number): Observable<MetricResponse> {
-    this.intervalSubject.next(interval);
-    
-    // If mock data is active, adjust its interval
-    if (this.mockDataInterval) {
-      this.updateMockInterval(interval);
-    }
-    
-    return this.http.get<MetricResponse>(
-      `${this.apiUrl}/set-interval?interval=${interval}`
-    ).pipe(
-      tap(() => {
-        this.socket?.emit('set-interval', interval);
-      }),
-      catchError(() => {
-        return this.handleError<MetricResponse>({
-          success: false,
-          status: 'error',
-          message: 'Failed to update interval',
-          data: null,
-          timestamp: new Date().toISOString()
-        });
-      })
-    );
-  }
-
-  // HTTP fallback for registering metrics
-  registerMetrics(data: MetricData): Observable<MetricResponse> {
-    return this.http.post<MetricResponse>(`${this.apiUrl}/register`, data)
-      .pipe(
-        catchError(error => {
-          return this.handleError<MetricResponse>({
-            success: false,
-            status: 'error',
-            message: error.message,
-            data: null,
-            timestamp: new Date().toISOString()
-          });
-        })
-      );
-  }
-
-  private handleError<T>(fallbackValue: T): Observable<T> {
-    return of(fallbackValue);
-  }
   
-  // Generate mock data when the socket connection fails
-  private startMockDataGeneration(): void {
-    if (this.mockDataInterval) return;
-    
-    console.log('[MetricsService] Starting mock data generation due to connection issues');
-    const interval = this.intervalSubject.getValue();
-    
-    this.mockDataInterval = setInterval(() => {
-      const now = new Date();
-      const mockMetric: MetricData = {
-        cpu: 40 + Math.random() * 20,
-        memory: 60 + Math.random() * 15,
-        time: now.toISOString(),
-        disk: 55 + Math.random() * 10,
-        network: 30 + Math.random() * 25
-      };
-      console.log('[MetricsService] Generated mock data:', mockMetric);
-      this.metricsSubject.next(mockMetric);
-    }, interval);
-
-    // Update backend status
-    this.backendStatusService.updateGatewayStatus('metrics', false, true);
-  }
-  
-  private stopMockDataGeneration(): void {
-    if (this.mockDataInterval) {
-      console.log('[MetricsService] Stopping mock data generation');
-      clearInterval(this.mockDataInterval);
-      this.mockDataInterval = null;
-      
-      // Update backend status
-      this.backendStatusService.updateGatewayStatus('metrics', true, false);
-    }
-  }
-  
-  private updateMockInterval(interval: number): void {
-    console.log('[MetricsService] Updating mock interval to', interval);
-    this.stopMockDataGeneration();
-    
-    this.mockDataInterval = setInterval(() => {
-      const now = new Date();
-      const mockMetric: MetricData = {
-        cpu: 40 + Math.random() * 20,
-        memory: 60 + Math.random() * 15,
-        time: now.toISOString(),
-        disk: 55 + Math.random() * 10,
-        network: 30 + Math.random() * 25
-      };
-      this.metricsSubject.next(mockMetric);
-    }, interval);
-  }
-
   /**
-   * Properly clean up socket connection
+   * Toggle between live and mock data modes
+   * @param useMockData Whether to use mock data (true) or live data (false)
    */
+  toggleMockData(useMockData: boolean): void {
+    console.log(`%c[MetricsService] Manually ${useMockData ? 'enabling' : 'disabling'} mock data mode`, 
+      useMockData ? CONSOLE_STYLES.mock : CONSOLE_STYLES.success);
+    
+    this.forceUseMockData = useMockData;
+    
+    if (useMockData) {
+      // Switch to mock data mode
+      this.cleanupSocket();
+      this.mockDataStatusSubject.next(true);
+      this.connectionStatusSubject.next(false);
+      this.backendStatusService.updateGatewayStatus('metrics', false, true);
+      
+      // Generate initial mock data
+      this.generateMockMetric();
+    } else {
+      // Switch back to live data mode
+      this.mockDataStatusSubject.next(false);
+      this.initSocket(); // This will attempt to reconnect
+    }
+  }
+  
+  // Generate a single mock metric with realistic patterns
+  private generateMockMetric(): void {
+    // Simulate occasional load changes (10% chance)
+    if (Math.random() < 0.1) {
+      this.simulatedLoad = Math.min(100, Math.max(0, this.simulatedLoad + (Math.random() * 30 - 15)));
+    }
+    
+    // Update trends (slowly shifting directions)
+    if (Math.random() < 0.2) {
+      this.cpuTrend = Math.min(5, Math.max(-5, this.cpuTrend + (Math.random() * 2 - 1)));
+      this.memoryTrend = Math.min(2, Math.max(-1, this.memoryTrend + (Math.random() * 0.6 - 0.3)));
+    }
+    
+    // CPU changes more rapidly but stays within realistic bounds
+    const cpuDelta = (Math.random() * 3 - 1.5) + (this.cpuTrend * 0.5) + (this.simulatedLoad * 0.1);
+    this.prevCpu = Math.min(95, Math.max(5, this.prevCpu + cpuDelta));
+    
+    // Memory tends to grow slowly and decline quickly (GC events)
+    let memoryDelta = (Math.random() * 0.8 - 0.3) + (this.memoryTrend * 0.2);
+    // Occasional memory drop (simulating garbage collection)
+    if (Math.random() < 0.05 && this.prevMemory > 70) {
+      memoryDelta = -Math.random() * 8;
+    }
+    this.prevMemory = Math.min(98, Math.max(40, this.prevMemory + memoryDelta));
+    
+    // Disk and network change very little between readings
+    const diskDelta = Math.random() * 0.6 - 0.3;
+    this.prevDisk = Math.min(95, Math.max(20, this.prevDisk + diskDelta));
+    
+    const networkDelta = Math.random() * 5 - 2.5 + (this.simulatedLoad * 0.05);
+    this.prevNetwork = Math.min(95, Math.max(1, this.prevNetwork + networkDelta));
+    
+    const mockMetric: MetricData = {
+      cpu: Math.round(this.prevCpu * 10) / 10,
+      memory: Math.round(this.prevMemory * 10) / 10,
+      time: new Date().toISOString(),
+      disk: Math.round(this.prevDisk * 10) / 10,
+      network: Math.round(this.prevNetwork * 10) / 10
+    };
+    
+    console.log(`%c[MetricsService] Generated mock metric`, CONSOLE_STYLES.mock);
+    this.metricsSubject.next(mockMetric);
+  }
+  
   private cleanupSocket(): void {
     if (this.socket) {
-      console.log('[MetricsService] Disconnecting socket');
-      
-      // Remove all event listeners
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('system-metrics');
-      this.socket.off('connect_error');
-      this.socket.off('error');
-      
-      // Disconnect if connected
-      if (this.socket.connected) {
-        this.socket.disconnect();
-      }
+      console.log(`%c[MetricsService] Cleaning up socket connection`, CONSOLE_STYLES.info);
+      this.socket.disconnect();
       this.socket = null;
     }
   }

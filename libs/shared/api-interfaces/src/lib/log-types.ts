@@ -56,30 +56,45 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
 export interface LogEntry {
   id: string;
   timestamp: string;
-  level: LogLevelEnum; // Changed from LogLevelString to LogLevelEnum
+  level: LogLevelEnum;
   message: string;
-  service?: string;
   source?: string;
   data?: Record<string, unknown>;
+  
   // Extended display properties
-  displayMessage?: string;         // Human-readable formatted message
-  rawData?: string;                // JSON stringified data for expanded view
-  expanded?: boolean;              // Whether this log is expanded in the UI
-  categories?: string[];           // Categories for grouping logs
-  eventId?: string;                // Extracted event ID for correlation
+  displayMessage?: string;
+  rawData?: string;
+  expanded?: boolean;
+  categories?: string[];
+  eventId?: string;
   
   // Duplicate tracking
-  duplicateCount?: number;         // Number of duplicate logs
-  duplicates?: LogEntry[];         // Collection of duplicate logs
+  duplicateCount?: number;
+  duplicates?: LogEntry[];
   
   // Category grouping
-  isCategory?: boolean;            // Whether this is a category group
-  categoryName?: string;           // Name of the category
-  categoryLogs?: LogEntry[];       // Logs in this category
-  categoryCount?: number;          // Number of logs in this category
+  isCategory?: boolean;
+  categoryName?: string;
+  categoryLogs?: LogEntry[];
+  categoryCount?: number;
   
-  // Additional metadata for display
-  details?: Record<string, unknown>; // Additional details (backward compatibility)
+  // Additional metadata
+  details?: Record<string, unknown>;
+  
+  // Loop prevention flag
+  isLoggingLoop?: boolean;
+}
+
+/**
+ * Data Transfer Object for creating logs
+ * Used when sending logs from client to server
+ */
+export interface LogDto {
+  timestamp: string;
+  level: LogLevelEnum;
+  message: string;
+  source?: string;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -93,6 +108,7 @@ export interface LogFilter {
   search?: string;
   limit?: number;
   skip?: number;
+  afterTimestamp?: string; // Add property to get logs after a specific timestamp
 }
 
 /**

@@ -14,6 +14,21 @@
         </button>
         <span class="brand-text">ForgeBoard Dashboard</span>
         <span class="toolbar-spacer"></span>
+        
+        <!-- Global Refresh Interval Control -->
+        <div class="global-refresh-control">
+          <span class="refresh-label">Global Refresh: {{ refreshInterval }}ms</span>
+          <input
+            type="range"
+            class="refresh-slider"
+            min="100"
+            max="5000"
+            step="100"
+            [value]="refreshInterval"
+            (input)="onIntervalChange($event)"
+            aria-label="Refresh interval"
+          />
+        </div>
       </mat-toolbar>
 
       <app-navigation></app-navigation>

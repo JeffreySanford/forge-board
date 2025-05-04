@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { LogEntry } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from '../../../../services/logger.service';

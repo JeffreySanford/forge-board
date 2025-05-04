@@ -10,6 +10,7 @@ import { ProjectConfigService } from './services/project-config.service';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { environment } from '../environments/environment';
 import { NavigationComponent } from './components/navigation/navigation.component';
+import { RefreshIntervalService } from './services/refresh-interval.service';
 
 /**
  * Main application component that manages global state and layout
@@ -76,12 +77,23 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('ambientSound') ambientSound?: ElementRef<HTMLAudioElement>;
   @ViewChild('starsAndStripesSound') starsAndStripesSound?: ElementRef<HTMLAudioElement>;
 
+  refreshInterval: number = 3000; // Updated default to 3 seconds
+
+  showHealthTile = true;
+  showMemoryTile = true;
+  showConnectionTile = true;
+  showLogsTile = true;
+  showUptimeTile = true;
+  showActivityTile = true;
+  showKablanTile = true;
+
   constructor(
     private projectConfigService: ProjectConfigService,
     private tileStateService: TileStateService,
     private soundHelper: SoundHelperService,
     private userDataService: UserDataService,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private refreshIntervalService: RefreshIntervalService
   ) {
     // Initialize with default order, will be updated from backend in ngAfterViewInit
     this.tileOrder = ['metrics', 'connection', 'logs', 'uptime', 'activity'];
@@ -116,6 +128,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Initialize database status from environment
     this.dbStatus = environment.useInMemoryMongo ? 'green' : 'yellow';
     this.dbStatusText = environment.mongoUri;
+
+    this.refreshInterval = this.refreshIntervalService.getInterval();
+    
+    this.subscription.add(
+      this.refreshIntervalService.getIntervalObservable().subscribe(interval => {
+        this.refreshInterval = interval;
+      })
+    );
   }
 
   /**
@@ -474,18 +494,39 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (tileType === 'metrics') {
       this.showMetricsTile = !this.showMetricsTile;
     }
-    // Add similar toggles for other tile types as needed
-    
+    if (tileType === 'health') {
+      this.showHealthTile = !this.showHealthTile;
+    }
+    if (tileType === 'memory') {
+      this.showMemoryTile = !this.showMemoryTile;
+    }
+    if (tileType === 'connection') {
+      this.showConnectionTile = !this.showConnectionTile;
+    }
+    if (tileType === 'logs') {
+      this.showLogsTile = !this.showLogsTile;
+    }
+    if (tileType === 'uptime') {
+      this.showUptimeTile = !this.showUptimeTile;
+    }
+    if (tileType === 'activity') {
+      this.showActivityTile = !this.showActivityTile;
+    }
+    if (tileType === 'kablan') {
+      this.showKablanTile = !this.showKablanTile;
+    }
+
     // Persist visibility settings
     const visibility = {
+      health: this.showHealthTile,
+      memory: this.showMemoryTile,
       metrics: this.showMetricsTile,
-      connection: true, // Update with actual visibility states
-      logs: true,
-      uptime: true,
-      activity: true,
-      kablan: true 
+      connection: this.showConnectionTile,
+      logs: this.showLogsTile,
+      uptime: this.showUptimeTile,
+      activity: this.showActivityTile,
+      kablan: this.showKablanTile
     };
-    
     this.tileStateService.setTileVisibility('user1', visibility)
       .subscribe({
         next: (response) => {
@@ -614,6 +655,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.navigationComponent) {
       this.navigationComponent.toggleDrawer();
     }
+  }
+
+  onIntervalChange(event: Event): void {
+    const value = parseInt((event.target as HTMLInputElement).value, 10);
+    this.refreshIntervalService.setInterval(value);
   }
 }
 

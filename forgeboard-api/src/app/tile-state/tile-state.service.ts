@@ -12,6 +12,8 @@ export class TileStateService {
       userId: 'user1',
       order: ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[],
       visibility: {
+        health: true,  // Added health
+        memory: true,  // Added memory
         metrics: true,
         connection: true,
         logs: true,
@@ -31,6 +33,8 @@ export class TileStateService {
         userId,
         order: ['metrics', 'connection', 'logs', 'uptime', 'activity'] as TileType[],
         visibility: {
+          health: true,  // Added health
+          memory: true,  // Added memory
           metrics: true,
           connection: true,
           logs: true,

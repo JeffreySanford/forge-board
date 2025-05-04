@@ -1,48 +1,53 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
-import { DragDropModule } from '@angular/cdk/drag-drop'; // Add this import
-
-// Import regular (non-standalone) component
-import { ConnectionStatusComponent } from './tiles/connection-status/connection-status.component';
 import { MetricComponent } from './metric.component';
 import { DiagnosticsComponent } from './diagnostics/diagnostics.component';
-import { MetricsService } from '../../services/metrics.service';
-
-// Import components from their tile folders
-import { RecentLogsComponent } from './tiles/recent-logs/recent-logs.component';
-import { UptimeSummaryComponent } from './tiles/uptime-summary/uptime-summary.component';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { ActivityFeedComponent } from './tiles/activity-feed/activity-feed.component';
-
-// Import LoggerModule for LoggerTileComponent
+import { ConnectionStatusComponent } from './tiles/connection-status/connection-status.component';
+import { CpuHistoryComponent } from './tiles/cpu-history/cpu-history.component';
+import { DiskUsageComponent } from './tiles/disk-usage/disk-usage.component';
+import { MemoryDonutComponent } from './tiles/memory-donut/memory-donut.component';
+import { NetworkTrafficComponent } from './tiles/network-traffic/network-traffic.component';
+import { RecentLogsComponent } from './tiles/recent-logs/recent-logs.component';
+import { SystemHealthComponent } from './tiles/system-health/system-health.component';
+import { UptimeSummaryComponent } from './tiles/uptime-summary/uptime-summary.component';
 import { LoggerModule } from '../../components/logger/logger.module';
 
 @NgModule({
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    MatIconModule,
-    LoggerModule, 
-    DragDropModule, // Add this module
-  ],
   declarations: [
-    ConnectionStatusComponent,
     MetricComponent,
     DiagnosticsComponent,
-    // Only include non-standalone components here
+    ActivityFeedComponent,
+    ConnectionStatusComponent,
+    CpuHistoryComponent,
+    DiskUsageComponent,
+    MemoryDonutComponent,
+    NetworkTrafficComponent,
     RecentLogsComponent,
-    UptimeSummaryComponent,
-    ActivityFeedComponent
+    SystemHealthComponent,
+    UptimeSummaryComponent
+  ],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    MatIconModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatButtonToggleModule,
+    DragDropModule,
+    LoggerModule
   ],
   exports: [
     MetricComponent,
     DiagnosticsComponent
-  ],
-  providers: [
-    MetricsService
-  ],
+  ]
 })
 export class MetricsModule { }
