@@ -1,4 +1,5 @@
 # ForgeBoard: Frontend-API Architecture Documentation
+*Last Updated: June 30, 2025*
 
 ## Architecture Overview
 

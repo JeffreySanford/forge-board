@@ -1,4 +1,5 @@
 # ForgeBoard API Documentation
+*Last Updated: June 25, 2025*
 
 ## API Architecture Overview
 

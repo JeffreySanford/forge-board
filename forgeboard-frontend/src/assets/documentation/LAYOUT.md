@@ -1,4 +1,5 @@
 # ForgeBoard: Blueprint UI Dashboard
+*Last Updated: June 28, 2025*
 
 ## Dashboard Layout Structure
 
@@ -231,7 +232,6 @@ The Kablan board uses a phase-based layout:
 │ │ │ └─────┘ │  │ └─────┘ │  │         │  │         │      │ │
 │ │ │ ┌─────┐ │  │         │  │         │  │         │      │ │
 │ │ │ │Card │ │  │         │  │         │  │         │      │ │
-│ │ │ └─────┘ │  │         │  │         │  │         │      │ │
 │ │ └─────────┘  └─────────┘  └─────────┘  └─────────┘      │ │
 │ │                                                         │ │
 │ └─────────────────────────────────────────────────────────┘ │

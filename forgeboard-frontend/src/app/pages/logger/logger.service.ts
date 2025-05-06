@@ -118,6 +118,7 @@ export class LoggerService implements OnDestroy {
   private subscriptions = new Subscription();
 
   autoRefresh = true;
+  someBooleanProperty: boolean = false;
 
   constructor(
     private logDispatch: LogDispatchService,
@@ -312,7 +313,7 @@ export class LoggerService implements OnDestroy {
     const isLoggerSource = log.source?.toLowerCase().includes('log') || 
                           log.source?.toLowerCase().includes('socket');
     
-    return messageHasLoggingKeywords && isLoggerSource;
+    return (messageHasLoggingKeywords ?? false) && (isLoggerSource ?? false);
   }
 
   /**
@@ -1079,5 +1080,12 @@ export class LoggerService implements OnDestroy {
     // Use nullish coalescing to provide a default value
     const safeValue = value ?? false;
     this.someBooleanProperty = safeValue; // Now it's always boolean
+
+    console.log('Boolean value set to:', this.someBooleanProperty);
+    console.warn('Value is undefined, defaulting to false');
+
+    console.debug('Method called with value:', value);
+    console.info('Safe value:', safeValue);
+    console.error('Error occurred while setting boolean value:', new Error('Value is undefined'));
   }
 }

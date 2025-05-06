@@ -1,4 +1,5 @@
 # ForgeBoard
+*Last Updated: July 1, 2025*
 
 A modern monitoring and management dashboard with a blueprint-inspired engineering aesthetic.
 

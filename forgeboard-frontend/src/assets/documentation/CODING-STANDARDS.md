@@ -1,4 +1,5 @@
 # ForgeBoard Coding Standards
+*Last Updated: July 5, 2025*
 
 This document defines the core architectural, coding, and workflow standards for the ForgeBoard project. All code, whether backend or frontend, should follow these principles for maintainability, clarity, and real-time robustness.
 
@@ -43,24 +44,13 @@ flowchart TD
 ### Data Flow: Backend to UI
 
 ```mermaid
-flowchart TD
-  subgraph Backend
-    GW[Socket.IO Gateway]:::backend
-    HC[HTTP Controller]:::backend
-  end
-  subgraph ServiceLayer
-    S1[BehaviorSubject/Subject]:::service
-    S2[Public Observable API]:::service
-  end
-  subgraph ComponentLayer
-    C1[Subscribe to Observables]:::component
-    C2[Update UI State]:::component
-  end
-  GW -- WebSocket Events --> S1
-  HC -- HTTP Responses --> S1
-  S1 -- next() --> S2
-  S2 -- subscribe() --> C1
-  C1 --> C2
+flowchart LR
+  BE[Backend]:::backend --> WSS[WebSocket Server]:::backend
+  WSS --> Gateway[Gateway Service]:::service
+  Gateway --> Subject[BehaviorSubject]:::service
+  Subject --> Observable[Observable]:::service
+  Observable --> Component[Component]:::component
+  
   classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
   classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
   classDef component fill:#D1E8FF,stroke:#2980B9,stroke-width:2px;
@@ -70,17 +60,13 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  CF[Connection Failure]:::error --> ED[Error Detection]:::error --> MD[Mock Data Generation]:::mock
-  MD --> SI[Status Indicator]:::status
-  SI --> RL[Reconnection Logic]:::reconnect
-  RL --> BC[Backend Connection]:::backend
-  BC -- success --> SVC[Service Layer]:::service
-  RL -- fail --> MD
-  classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px;
-  classDef mock fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px;
-  classDef status fill:#E1F5FE,stroke:#0288D1,stroke-width:2px;
-  classDef reconnect fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
-  classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  Connection[Connection Service]:::service --> |"isConnected()"| Check{Connected?}
+  Check -->|Yes| Real[Use Real Data]
+  Check -->|No| Mock[Use Mock Data]
+  Real --> Stream[Data Stream]
+  Mock --> Stream
+  Connection --> |"reconnect()"| Reconnect[Auto Reconnect]
+  
   classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
 ```
 

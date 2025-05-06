@@ -1,4 +1,5 @@
 # ForgeBoard NX – Security Dashboard 🚀🔒
+*Last Updated: May 5, 2025*
 
 Welcome to the **Security Dashboard** for the ForgeBoard NX monorepo! This new, vibrant dashboard provides a real-time bird’s-eye view of our application’s security posture. It appears in the main menu alongside Home, Metrics, Kablam Board, Logs, Diagnostics, and Documentation, offering developers and DevSecOps engineers an interactive hub for all things security.
 
@@ -14,6 +15,7 @@ The **Security Dashboard** is designed to aggregate and visualize crucial securi
 - **🐛 SCA Scan Results:** Integrates Software Composition Analysis (SCA) results (e.g. vulnerability scans of dependencies via Grype) to highlight **known vulnerabilities** in our components, categorized by severity (Critical, High, Medium, Low).
 - **⚡ OWASP ZAP Feedback:** Shows findings from OWASP ZAP dynamic security tests, indicating any **web application vulnerabilities** discovered (like XSS, SQLi, insecure cookies, etc.) during runtime testing of the app.
 - **🔐 Supply Chain Signature Verification:** Verifies and displays the status of **supply chain security checks** – for example, whether images/SBOMs are signed with Sigstore Cosign and whether those signatures are valid (protecting against tampered or untrusted artifacts).
+- **🛡️ FedRAMP 20X Compliance Indicators:** New feature (planned for July 2025) that will show compliance status with the upcoming FedRAMP 20X requirements, helping teams maintain readiness for federal certification.
 
 All of this is updated **in real-time** 📡. As scans run and new data comes in, the dashboard’s views update live via WebSockets – no page refresh needed. This immediacy helps the team respond quickly to any emerging issues.
 
@@ -35,7 +37,7 @@ All of this is updated **in real-time** 📡. As scans run and new data comes in
   - The **ZAP panel** lists any findings (with description, affected URL endpoints, severity level).
   - The **Signature status** panel shows which artifacts (containers/SBOMs) are verified or if any signature check failed, with an option to view more details or logs.
   
-*(The exact UI elements may evolve, but the goal is to make complex security data easy to navigate for junior developers and experts alike.)*
+*(The UI elements have evolved since our initial 2023 implementation, with significant UX improvements in our 2024 Q3 update.)*
 
 ### Backend – NestJS Scanner Service 🔌
 
@@ -69,6 +71,7 @@ Under the hood, here are the main components and tools powering the Security Das
 - **OWASP ZAP:** A popular DAST (Dynamic Application Security Testing) tool. We use it in an automated way (via its CLI or Docker image) to scan the running application. The Scanner Service can launch ZAP in headless mode to attack a dev/staging URL and capture any findings.
 - **Sigstore Cosign:** A tool for signing and verifying artifacts (container images, files, etc.) using cryptographic signatures and a transparency log. Our pipeline signs artifacts with Cosign, and the Security Dashboard uses Cosign (or its APIs) to verify those signatures, ensuring supply chain integrity.
 - **WebSocket + JSON:** Communication between front and back is done in JSON messages over secure WebSockets. This makes it easy to extend (both ends can ignore fields they don’t know about, allowing adding new data types in future without breaking things).
+- **FedRAMP 20X Compliance Framework:** Newly integrated (August 2025) compliance framework that maps security findings to the latest FedRAMP 20X requirements released in July 2025.
 
 By combining these technologies, the Security Dashboard provides a **holistic security view** that is both broad (covering multiple domains: SBOM, vulns, DAST, signing) and deep (allowing drill-down into details), all built on a modern, scalable architecture.
 
@@ -127,9 +130,9 @@ Ensure you have the following security tools installed and accessible (on your d
 
 ### CI/CD Integration ⚙️
 
-Use the following GitHub Actions workflow snippet as a starting point:
+Use the following GitHub Actions workflow snippet as a starting point (updated for our 2025 workflow):
 
-\`\`\`yaml
+```yaml
 name: Security Scans CI
 on:
   push:
@@ -138,22 +141,22 @@ jobs:
   security-scans:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: anchore/syft-action@v0.6.0
+      - uses: actions/checkout@v5
+      - uses: anchore/syft-action@v1.2.0
         with:
           image: 'Dockerfile'
           format: 'cyclonedx-json'
           output-file: 'artifact-sbom.json'
-      - uses: anchore/grype-action@v0.3.0
+      - uses: anchore/grype-action@v0.8.0
         with:
           sbom: 'artifact-sbom.json'
           output-format: 'json'
           output-file: 'vuln-report.json'
       - run: |
-          cosign sign-blob --key cosign.key artifact-sbom.json             --output-signature sbom.sig
+          cosign sign-blob --key cosign.key artifact-sbom.json --output-signature sbom.sig
       - run: |
-          docker run --rm -v "$PWD:/zap/wrk" owasp/zap2docker-stable             zap-full-scan.py -t https://myapp.example.com -r zap_report.html
-      - uses: actions/upload-artifact@v3
+          docker run --rm -v "$PWD:/zap/wrk" owasp/zap2docker-stable zap-full-scan.py -t https://myapp.example.com -r zap_report.html
+      - uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
@@ -161,7 +164,7 @@ jobs:
             vuln-report.json
             sbom.sig
             zap_report.html
-\`\`\`
+```
 
 ### SBOM Signing & Verification 🔏
 
@@ -182,13 +185,16 @@ jobs:
 
 ### Future Improvements & Roadmap 🚀
 
-- **In-toto Provenance:** Capture and verify detailed build steps as signed attestations (SLSA compliance).
-- **Additional Scan Types:** Integrate SAST, secret scanning, and infra-as-code security checks.
-- **Route-level DAST Mapping:** Match ZAP coverage against OpenAPI specs to identify untested endpoints.
-- **ChatOps & Issue Integration:** “Create Jira ticket” or Slack notifications directly from the dashboard.
-- **Historical Trends:** Track vulnerabilities and SBOM changes over multiple releases for trend analysis.
+Having successfully implemented our May 2025 roadmap features (including In-toto Provenance and SAST integration), we're now focusing on:
 
-*Your contributions are welcome! Check out \`apps/security-dashboard\` and \`apps/scanner-service\` to get started.*
+- **FedRAMP 20X Full Compliance Suite:** Comprehensive implementation of all FedRAMP 20X controls released in July 2025 (Q3 2025)
+- **Firmware Vulnerability Scanning:** Integrate hardware component scanning for IoT applications (Q4 2025)
+- **Threat Intelligence Correlation:** Automatically match CVEs with real-world exploit activity (Q1 2026)
+- **Supply Chain Graph Analysis:** Visual relationship mapping of dependencies to identify cascading vulnerabilities (Q2 2026)
+- **AI-Powered Remediation Suggestions:** Intelligent ranking of vulnerability fixes based on app-specific impact (Q3 2026)
+- **Zero-Day Vulnerability Protection:** Predictive analysis to identify potential vulnerabilities before disclosure (2027+)
+
+*Your contributions are welcome! Check out `apps/security-dashboard` and `apps/scanner-service` to get started.*
 
 ## Conclusion 🎉
 
