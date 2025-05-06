@@ -56,9 +56,15 @@ export class LoggerComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    console.log('Logger Component: Initializing');
+    
+    // Force connect logger socket when component initializes
+    this.loggerService.ensureConnection();
+    
     // Subscribe to logs
     this.subscriptions.add(
       this.loggerService.getLogs().subscribe(logs => {
+        console.log(`Logger Component: Received ${logs.length} logs`);
         this.logs = logs;
       })
     );
@@ -73,6 +79,7 @@ export class LoggerComponent implements OnInit, OnDestroy {
     // Subscribe to connection status
     this.subscriptions.add(
       this.loggerService.getConnectionStatus().subscribe(isConnected => {
+        console.log(`Logger Component: Connection status changed: ${isConnected}`);
         this.isConnected = isConnected;
       })
     );
@@ -87,9 +94,6 @@ export class LoggerComponent implements OnInit, OnDestroy {
     
     // Initialize selected service
     this.selectedService = currentFilter.service || '';
-
-    // Force connect logger socket when component initializes
-    this.loggerService.ensureConnection();
   }
 
   ngOnDestroy(): void {

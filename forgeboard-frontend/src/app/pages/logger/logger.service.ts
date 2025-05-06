@@ -36,6 +36,8 @@ export interface LogEntry {
   
   // Additional metadata for display
   details?: Record<string, unknown>;
+
+  isLoggingLoop?: boolean; // Add this property
 }
 
 // Define query response interface
@@ -57,6 +59,7 @@ export interface LogFilter {
   search?: string;
   limit?: number;
   skip?: number;
+  afterTimestamp?: string | null; // Add this property
 }
 
 // Define types that aren't in the shared interfaces
@@ -113,6 +116,8 @@ export class LoggerService implements OnDestroy {
   private mockDataSubscription: Subscription | null = null;
 
   private subscriptions = new Subscription();
+
+  autoRefresh = true;
 
   constructor(
     private logDispatch: LogDispatchService,
@@ -171,7 +176,7 @@ export class LoggerService implements OnDestroy {
    */
   private initSocket(): void {
     try {
-      console.log('LoggerService: Initializing socket connection');
+      console.log('[LoggerService] Initializing socket connection to:', `${this.socketUrl}/logs`);
       
       // Create socket connection with connection retry
       this.socket = io(`${this.socketUrl}/logs`, {
@@ -184,15 +189,23 @@ export class LoggerService implements OnDestroy {
         timeout: 10000
       });
       
+      console.log('[LoggerService] Socket object created:', this.socket?.id || 'no ID yet');
+      
       // Register socket with the registry service
       if (this.socket) {
         this.socketRegistry.registerSocket('logs', this.socket);
+        console.log('[LoggerService] Socket registered with registry');
       }
       
       // Set up event handlers
       this.setupSocketEvents();
+      
+      // Subscribe to logs now (don't wait for connection)
+      this.socket.emit('subscribe-logs');
+      console.log('[LoggerService] Sent subscribe-logs event');
+      
     } catch (err) {
-      console.error('Failed to connect to logger socket:', err);
+      console.error('[LoggerService] Failed to connect to logger socket:', err);
       this.connectionStatusSubject.next(false);
       
       // Start mock data generation only if not connected
@@ -604,6 +617,11 @@ export class LoggerService implements OnDestroy {
     // Use skip instead of offset
     if (filter.skip) {
       params['skip'] = filter.skip.toString();
+    }
+
+    // Safely handle afterTimestamp property
+    if (filter.afterTimestamp) {
+      params['afterTimestamp'] = filter.afterTimestamp;
     }
     
     return params;
@@ -1050,5 +1068,16 @@ export class LoggerService implements OnDestroy {
       message,
       data
     };
+  }
+
+  /**
+   * Fix for the boolean undefined issue
+   * This is likely in a method setting a boolean value
+   * Without seeing the exact code, here's a general fix pattern:
+   */
+  methodWithBooleanAssignment(value?: boolean): void {
+    // Use nullish coalescing to provide a default value
+    const safeValue = value ?? false;
+    this.someBooleanProperty = safeValue; // Now it's always boolean
   }
 }

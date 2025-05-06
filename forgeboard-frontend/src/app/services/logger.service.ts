@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { LogEntry, LogFilter, LogLevelEnum, logLevelEnumToString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
 import { LogDispatchService } from './log-dispatch.service';
 import { v4 as uuid } from 'uuid';
 import { environment } from '../../environments/environment';
+import { SocketRegistryService } from './socket-registry.service';
 
 /**
  * Log levels supported by the logger
@@ -58,6 +59,11 @@ export interface LogResponse {
 export class LoggerService {
   private logs: LogEntry[] = [];
   private logsSubject = new BehaviorSubject<LogEntry[]>([]);
+  
+  // Add subject for new log entries received via socket
+  private newLogEntrySubject = new Subject<LogEntry>();
+  public newLogEntry$ = this.newLogEntrySubject.asObservable();
+  
   private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
 
   // Maximum number of logs to keep in memory
@@ -81,8 +87,11 @@ export class LoggerService {
       environment.logging.enableConsole : true
   };
 
-  // Remove HttpClient dependency and only use LogDispatchService
-  constructor(private logDispatch: LogDispatchService) {
+  // Add SocketRegistryService to constructor
+  constructor(
+    private logDispatch: LogDispatchService,
+    private socketRegistry: SocketRegistryService
+  ) {
     // Initialize the logger without using console.log
     
     // Set log level from environment if available
@@ -109,6 +118,9 @@ export class LoggerService {
     
     // After initialization, now we can safely log
     this.info('LoggerService initialized', 'LoggerService');
+    
+    // Subscribe to socket for real-time logs
+    this.setupSocketConnection();
   }
 
   // Convert string log level to enum value
@@ -640,5 +652,90 @@ export class LoggerService {
       case LogLevel.FATAL: return 'fatal';
       default: return 'info';
     }
+  }
+  
+  /**
+   * Set up socket connection to receive real-time logs
+   */
+  private setupSocketConnection(): void {
+    // Attempt to get the socket - if it doesn't exist yet, try again after a delay
+    const attemptConnection = () => {
+      const logsSocket = this.socketRegistry.getSocket('/logs');
+      
+      if (logsSocket) {
+        this.debug('Connected to logs socket', 'LoggerService');
+        
+        // Listen for new log entries
+        logsSocket.on('log-entry', (logEntry: LogEntry) => {
+          this.debug('Received log entry from server', 'LoggerService');
+          // Add to local logs
+          this.addLog(logEntry);
+          // Emit via newLogEntry$ observable
+          this.newLogEntrySubject.next(logEntry);
+        });
+        
+        // Listen for log batches
+        logsSocket.on('log-batch', (logEntries: LogEntry[]) => {
+          this.debug(`Received batch of ${logEntries.length} logs from server`, 'LoggerService');
+          // Add each log
+          logEntries.forEach(log => {
+            this.addLog(log);
+            this.newLogEntrySubject.next(log);
+          });
+        });
+      } else {
+        // Socket not available yet, try again after a delay
+        setTimeout(attemptConnection, 2000);
+        this.debug('Logs socket not available yet, retrying in 2s', 'LoggerService');
+      }
+    };
+    
+    // Start the connection attempt
+    attemptConnection();
+  }
+
+  /**
+   * Get the latest logs from the source
+   * Only fetch logs newer than the most recent one we have
+   */
+  getLatestLogs(): Observable<LogEntry[]> {
+    // If we have logs, get the timestamp of the most recent one
+    let params: Record<string, string> = {};
+    if (this.logs.length > 0) {
+      const mostRecentTimestamp = this.logs[0].timestamp;
+      params = {
+        'afterTimestamp': mostRecentTimestamp
+      };
+    }
+
+    // Otherwise just fetch the most recent logs
+    return this.logDispatch.fetchLogs(params).pipe(
+      tap(response => {
+        // If we got new logs, add them to our local cache
+        if (response.logs.length > 0) {
+          // Add each new log to the beginning
+          const newLogs = response.logs.filter(newLog => 
+            !this.logs.some(existingLog => existingLog.id === newLog.id)
+          );
+          
+          if (newLogs.length > 0) {
+            this.debug(`Got ${newLogs.length} new logs from server`, 'LoggerService');
+            
+            // Add to the beginning of our logs array
+            this.logs = [...newLogs, ...this.logs];
+            
+            // Limit size
+            if (this.logs.length > this.maxLogSize) {
+              this.logs = this.logs.slice(0, this.maxLogSize);
+            }
+            
+            this.notifySubscribers();
+          } else {
+            this.debug('No new logs from server', 'LoggerService');
+          }
+        }
+      }),
+      map(() => this.logs)
+    );
   }
 }

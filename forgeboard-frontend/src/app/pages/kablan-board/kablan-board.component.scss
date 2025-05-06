@@ -232,6 +232,12 @@
   &::-webkit-scrollbar-thumb:hover {
     background: #a5adba;
   }
+  
+  &.categorized-view {
+    .kablan-column:first-child {
+      flex-grow: 1.5;
+    }
+  }
 }
 
 .kablan-column {
@@ -607,12 +613,148 @@
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 2px solid #DFE1E6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   
   h3 {
     font-size: 18px;
     font-weight: 600;
     color: #172B4D;
     margin: 0;
+  }
+  
+  .view-toggle {
+    display: flex;
+    align-items: center;
+    
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 8px;
+      
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+      
+      .toggle-slider {
+        position: relative;
+        width: 36px;
+        height: 18px;
+        background: #DFE1E6;
+        border-radius: 9px;
+        transition: background 0.3s ease;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: white;
+          transition: transform 0.3s ease;
+        }
+      }
+      
+      input:checked + .toggle-slider {
+        background: #0052CC;
+      }
+      
+      input:checked + .toggle-slider::before {
+        transform: translateX(18px);
+      }
+      
+      .toggle-text {
+        font-size: 12px;
+        color: #6B778C;
+        transition: color 0.3s ease;
+      }
+      
+      input:checked ~ .toggle-text {
+        color: #0052CC;
+      }
+    }
+  }
+}
+
+// Category group styles
+.category-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+  overflow-y: auto;
+  max-height: calc(100% - 40px);
+}
+
+.category-group {
+  background: white;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.1);
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: #F4F5F7;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    
+    &:hover {
+      background: #EBECF0;
+    }
+    
+    h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #172B4D;
+      margin: 0;
+      flex: 1;
+    }
+    
+    .category-count {
+      font-size: 12px;
+      font-weight: 500;
+      background: rgba(9, 30, 66, 0.09);
+      color: #172B4D;
+      border-radius: 3px;
+      padding: 2px 6px;
+      margin-right: 8px;
+    }
+    
+    .category-toggle {
+      color: #6B778C;
+      font-size: 18px;
+      transition: transform 0.2s ease;
+      
+      &:hover {
+        color: #172B4D;
+      }
+    }
+  }
+  
+  .category-cards {
+    padding: 8px;
+    background: #FAFBFC;
+    min-height: 30px;
+  }
+}
+
+// Backlog column specific styles when categorized
+.kablan-column.backlog-column {
+  min-width: 320px;
+  width: 320px;
+  max-width: 320px;
+  
+  .column-content {
+    padding: 0;
   }
 }
 

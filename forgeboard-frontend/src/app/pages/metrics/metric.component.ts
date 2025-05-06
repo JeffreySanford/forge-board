@@ -35,6 +35,9 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   connectionAttempts = 0;
   maxConnectionAttempts = 5;
   
+  // Cache for formatted response times to prevent change detection errors
+  private cachedResponseTimes: Map<string, string> = new Map();
+  
   // Additional metrics tracking
   private activeUsersCount = Math.floor(Math.random() * 20) + 5; // Starting value for active users
   private requestRateValue = Math.floor(Math.random() * 50) + 10; // Starting value for req/sec
@@ -153,28 +156,52 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   
 
   formatResponseTime(metrics: ExtendedMetricData): string {
+    // Create a cache key based on metrics
+    const cacheKey = metrics.time || String(Date.now());
+    
+    // If we have a cached value for this metrics object, return it
+    if (this.cachedResponseTimes.has(cacheKey)) {
+      const cachedValue = this.cachedResponseTimes.get(cacheKey);
+      // Only return if we have a valid value
+      if (cachedValue !== undefined) {
+        return cachedValue;
+      }
+    }
+    
+    // Otherwise generate a new value
+    let result: string;
+    
     // Use real data if available, otherwise use simulated
-    // this should parse to days, house, minutes, seconds, milliseconds
-
-    // live data stream
     if (metrics.responseTime) {
       const responseTime = metrics.responseTime;
       const days = Math.floor(responseTime / (1000 * 60 * 60 * 24));
       const hours = Math.floor((responseTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((responseTime % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((responseTime % (1000 * 60)) / 1000);
-      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      result = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    } else {
+      // For simulated data, generate a stable value for this render cycle
+      const simulatedResponseTime = Math.floor(Math.random() * 1000) + 100;
+      const days = Math.floor(simulatedResponseTime / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((simulatedResponseTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((simulatedResponseTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((simulatedResponseTime % (1000 * 60)) / 1000);
+      result = `${days}d ${hours}h ${minutes}m ${seconds}s`;
     }
-
-    // simulated data stream
-    const simulatedResponseTime = Math.floor(Math.random() * 1000) + 100; // Random between 100ms and 1100ms
-
-    const days = Math.floor(simulatedResponseTime / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((simulatedResponseTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); 
-    const minutes = Math.floor((simulatedResponseTime % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((simulatedResponseTime % (1000 * 60)) / 1000);
     
-    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    // Cache the result and return it
+    this.cachedResponseTimes.set(cacheKey, result);
+    
+    // Limit cache size to prevent memory issues
+    if (this.cachedResponseTimes.size > 100) {
+      const keysIterator = this.cachedResponseTimes.keys();
+      const firstKey = keysIterator.next().value;
+      if (firstKey !== undefined) {
+        this.cachedResponseTimes.delete(firstKey);
+      }
+    }
+    
+    return result;
   }
   
   /**

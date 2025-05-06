@@ -6,6 +6,8 @@ import { environment } from '../../environments/environment';
 import { BackendStatusService } from './backend-status.service';
 import { SocketResponse } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from './logger.service';
+// Import mock data
+import mockBoardsData from '../mocks/kablan/mock-boards.json';
 
 // Define project phases
 export type ProjectPhase = 'inception' | 'planning' | 'design' | 'development' | 'testing' | 'completion';
@@ -42,6 +44,7 @@ export interface KablanCard {
   dueDate?: string;
   assignee?: string;
   tags: string[];
+  category?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -310,178 +313,27 @@ export class KablanService implements OnDestroy {
     
     this.logger.info('[KablanService] Starting mock data generation', 'KablanService');
     
-    // Create mock boards with columns organized by project phases
-    const mockBoards: KablanBoard[] = [
-      {
-        id: '1',
-        name: 'Planning Board',
-        currentPhase: 'planning', // Current active phase
-        phases: {
-          inception: {
-            active: true,
-            startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-            completionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-          },
-          planning: {
-            active: true,
-            startDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
-          },
-          design: {
-            active: false,
-          },
-          development: {
-            active: false,
-          },
-          testing: {
-            active: false,
-          },
-          completion: {
-            active: false,
-          }
-        },
-        columns: [
-          // Inception phase columns
-          {
-            id: 'col1',
-            name: 'Inception Ideas',
-            order: 0,
-            phase: 'inception',
-            cards: [
-              this.createMockCard('card1', 'Project vision', 'Define the overall vision and goals', 'high', ['vision']),
-              this.createMockCard('card2', 'Stakeholder mapping', 'Identify key stakeholders and their interests', 'medium', ['stakeholders']),
-            ]
-          },
-          {
-            id: 'col2',
-            name: 'Inception Approved',
-            order: 1,
-            phase: 'inception',
-            cards: [
-              this.createMockCard('card3', 'Initial budget approved', 'Budget for planning phase secured', 'high', ['budget']),
-            ]
-          },
-          
-          // Planning phase columns
-          {
-            id: 'col3',
-            name: 'Backlog',
-            order: 2,
-            phase: 'planning',
-            cards: [
-              this.createMockCard('card4', 'Research user needs', 'Conduct interviews with stakeholders to understand requirements', 'high', ['research']),
-              this.createMockCard('card5', 'Define scope', 'Establish project boundaries and deliverables', 'medium', ['planning']),
-              this.createMockCard('card6', 'Risk assessment', 'Identify potential risks and mitigation strategies', 'medium', ['planning', 'risk'])
-            ]
-          },
-          {
-            id: 'col4',
-            name: 'To Do',
-            order: 3,
-            phase: 'planning',
-            cards: [
-              this.createMockCard('card7', 'Create wireframes', 'Design initial UI mockups for key screens', 'high', ['design']),
-              this.createMockCard('card8', 'Setup CI/CD pipeline', 'Configure automated build and deployment', 'medium', ['devops'])
-            ]
-          },
-          {
-            id: 'col5',
-            name: 'In Progress',
-            order: 4,
-            phase: 'planning',
-            cards: [
-              this.createMockCard('card9', 'Implement authentication', 'Add user login and registration', 'high', ['security'], 'Jane Smith')
-            ]
-          },
-          
-          // Design phase columns
-          {
-            id: 'col6',
-            name: 'Design Tasks',
-            order: 5,
-            phase: 'design',
-            cards: [
-              this.createMockCard('card10', 'Create mockups', 'High-fidelity mockups for all screens', 'medium', ['design']),
-              this.createMockCard('card11', 'Design system', 'Develop component library and design tokens', 'high', ['design-system']),
-            ]
-          },
-          {
-            id: 'col7',
-            name: 'Design Review',
-            order: 6,
-            phase: 'design',
-            cards: [
-              this.createMockCard('card12', 'UI review', 'Review UI design with stakeholders', 'medium', ['review', 'UI']),
-            ]
-          },
-          
-          // Development phase columns 
-          {
-            id: 'col8',
-            name: 'Development Backlog',
-            order: 7,
-            phase: 'development',
-            cards: [
-              this.createMockCard('card13', 'API development', 'Build core API endpoints', 'high', ['backend']),
-            ]
-          },
-          {
-            id: 'col9',
-            name: 'In Development',
-            order: 8,
-            phase: 'development',
-            cards: []
-          },
-          {
-            id: 'col10',
-            name: 'Code Review',
-            order: 9,
-            phase: 'development',
-            cards: []
-          },
-          
-          // Testing phase columns
-          {
-            id: 'col11',
-            name: 'QA Testing',
-            order: 10,
-            phase: 'testing',
-            cards: []
-          },
-          {
-            id: 'col12',
-            name: 'UAT',
-            order: 11,
-            phase: 'testing',
-            cards: []
-          },
-          
-          // Completion phase columns
-          {
-            id: 'col13',
-            name: 'Ready for Launch',
-            order: 12,
-            phase: 'completion',
-            cards: []
-          },
-          {
-            id: 'col14',
-            name: 'Launched',
-            order: 13,
-            phase: 'completion',
-            cards: []
-          },
-          {
-            id: 'col15',
-            name: 'Post-Launch Review',
-            order: 14,
-            phase: 'completion',
-            cards: []
-          },
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+    // Use the imported mock data instead of inline definition
+    // Create deep copy to prevent mutation of original data
+    const mockBoards: KablanBoard[] = JSON.parse(JSON.stringify(mockBoardsData));
+    
+    // Update timestamps to be relative to current time
+    mockBoards.forEach(board => {
+      // Set board timestamps
+      board.createdAt = new Date().toISOString();
+      board.updatedAt = new Date().toISOString();
+      
+      // Update phase dates to be relative to now
+      if (board.phases.inception.startDate) {
+        board.phases.inception.startDate = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
       }
-    ];
+      if (board.phases.inception.completionDate) {
+        board.phases.inception.completionDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      }
+      if (board.phases.planning.startDate) {
+        board.phases.planning.startDate = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
+      }
+    });
     
     this.boardsSubject.next(mockBoards);
     

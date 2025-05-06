@@ -1,9 +1,16 @@
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core';
-// Remove the unused HostListener import
 import { Subscription } from 'rxjs';
 import { KablanBoard, KablanColumn, KablanService, ProjectPhase, KablanCard } from '../../services/kablan.service';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { trigger, transition, style, animate } from '@angular/animations';
+
+// Interface for categorized cards
+interface CategoryGroup {
+  name: string;
+  displayName: string;
+  cards: KablanCard[];
+  expanded: boolean;
+}
 
 @Component({
   selector: 'app-kablan-board',
@@ -24,10 +31,11 @@ import { trigger, transition, style, animate } from '@angular/animations';
   ]
 })
 export class KablanBoardComponent implements OnInit, OnDestroy {
+  // Existing properties
   board: KablanBoard | null = null;
   isConnected = false;
-  storageType = 'Unknown'; // Add this property to track storage type
-  forcingMockData = false; // Track whether we're forcing mock data
+  storageType = 'Unknown';
+  forcingMockData = false;
   availableStorageTypes = ['memory', 'localStorage', 'mongodb', 'blockchain', 'mock'];
   
   // Card navigation properties
@@ -53,6 +61,22 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   };
   phaseColumns: Map<ProjectPhase, KablanColumn[]> = new Map();
   
+  // New properties for categorized view
+  showCategorizedView = true;
+  categoryGroups: CategoryGroup[] = [];
+  categoryMappings: { [key: string]: string } = {
+    'security': 'Security & Compliance',
+    'user-experience': 'User Experience',
+    'project-management': 'Project Management',
+    'optimization': 'Performance & Optimization',
+    'infrastructure': 'Infrastructure',
+    'documentation': 'Documentation',
+    'feature': 'Feature Development'
+  };
+
+  // Map of column ID to category groups for that column
+  columnCategoryGroups: Map<string, CategoryGroup[]> = new Map();
+  
   @ViewChild('columnsContainer') columnsContainer!: ElementRef;
   
   private subscriptions = new Subscription();
@@ -63,7 +87,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   ) {}
   
   ngOnInit(): void {
-    // Subscribe to connection status
+    // Existing subscription code
     this.subscriptions.add(
       this.kablanService.getConnectionStatus().subscribe(status => {
         this.isConnected = status;
@@ -71,7 +95,6 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
       })
     );
     
-    // Subscribe to board updates
     this.subscriptions.add(
       this.kablanService.getBoards().subscribe(boards => {
         if (boards.length > 0) {
@@ -82,6 +105,13 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
           
           // Group columns by phase
           this.groupColumnsByPhase();
+          
+          // Group cards by category for backlog and all other columns
+          this.groupCardsByCategory();
+          this.columnCategoryGroups.clear();
+          this.board.columns.forEach(column => {
+            this.groupCardsByCategoryForColumn(column);
+          });
           
           // Update visible columns based on phase
           this.updateVisibleColumnsByPhase();
@@ -108,11 +138,119 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     console.log('[KablanBoard] Initial storage type:', this.storageType);
   }
   
+  // Group backlog cards by category
+  groupCardsByCategory(): void {
+    if (!this.board) return;
+    
+    // Find the backlog column
+    const backlogColumn = this.board.columns.find(col => col.name === 'Backlog');
+    if (!backlogColumn) return;
+    
+    // Clear existing category groups
+    this.categoryGroups = [];
+    
+    // Create a map to hold cards by category
+    const cardsByCategory: { [category: string]: KablanCard[] } = {};
+    
+    // Group cards by their category
+    backlogColumn.cards.forEach(card => {
+      const category = card.category || 'uncategorized';
+      if (!cardsByCategory[category]) {
+        cardsByCategory[category] = [];
+      }
+      cardsByCategory[category].push(card);
+    });
+    
+    // Convert map to array of category groups
+    Object.keys(cardsByCategory).forEach(category => {
+      this.categoryGroups.push({
+        name: category,
+        displayName: this.categoryMappings[category] || this.capitalizeFirstLetter(category),
+        cards: cardsByCategory[category],
+        expanded: true
+      });
+    });
+    
+    // Sort categories alphabetically by display name
+    this.categoryGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }
+  
+  // Group cards by category for a specific column
+  groupCardsByCategoryForColumn(column: KablanColumn): CategoryGroup[] {
+    if (!column) return [];
+    
+    // Create a map to hold cards by category
+    const cardsByCategory: { [category: string]: KablanCard[] } = {};
+    
+    // Group cards by their category
+    column.cards.forEach(card => {
+      const category = card.category || 'uncategorized';
+      if (!cardsByCategory[category]) {
+        cardsByCategory[category] = [];
+      }
+      cardsByCategory[category].push(card);
+    });
+    
+    // Convert map to array of category groups
+    const categoryGroups: CategoryGroup[] = [];
+    Object.keys(cardsByCategory).forEach(category => {
+      categoryGroups.push({
+        name: category,
+        displayName: this.categoryMappings[category] || this.capitalizeFirstLetter(category),
+        cards: cardsByCategory[category],
+        expanded: true
+      });
+    });
+    
+    // Sort categories alphabetically by display name
+    categoryGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    
+    // Store in the map for future reference
+    this.columnCategoryGroups.set(column.id, categoryGroups);
+    
+    return categoryGroups;
+  }
+  
+  // Helper function to capitalize first letter of each word
+  capitalizeFirstLetter(string: string): string {
+    return string.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  }
+  
+  // Toggle categorized view
+  toggleCategorizedView(): void {
+    this.showCategorizedView = !this.showCategorizedView;
+    console.log('[KablanBoard] Categorized view:', this.showCategorizedView);
+  }
+  
+  // Toggle category expansion
+  toggleCategory(category: CategoryGroup): void {
+    category.expanded = !category.expanded;
+  }
+  
+  // Get category groups for a column
+  getColumnCategoryGroups(column: KablanColumn): CategoryGroup[] {
+    if (!column) return [];
+    
+    // Return cached category groups if available
+    if (this.columnCategoryGroups.has(column.id)) {
+      return this.columnCategoryGroups.get(column.id)!;
+    }
+    
+    // Otherwise, create them
+    return this.groupCardsByCategoryForColumn(column);
+  }
+  
+  // Toggle a category's expansion state
+  toggleColumnCategory(column: KablanColumn, categoryGroup: CategoryGroup): void {
+    if (!column || !categoryGroup) return;
+    categoryGroup.expanded = !categoryGroup.expanded;
+  }
+  
+  // Existing methods remain the same
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
   
-  // Toggle between mock data and real backend data
   toggleMockData(): void {
     this.forcingMockData = !this.forcingMockData;
     this.kablanService.toggleMockData(this.forcingMockData);
@@ -263,7 +401,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     
     try {
       if (event.previousContainer === event.container) {
-        // Reordering within the same column
+        // Reordering within the same column/category
         moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       } else {
         // Find source and target column IDs
@@ -290,6 +428,26 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.kablanService.moveCard(cardId, sourceColId, targetColId, event.currentIndex);
         });
+        
+        // Update category groups for affected columns
+        if (sourceColId) {
+          const sourceCol = this.board.columns.find(col => col.id === sourceColId);
+          if (sourceCol) {
+            this.groupCardsByCategoryForColumn(sourceCol);
+          }
+        }
+        
+        if (targetColId && targetColId !== sourceColId) {
+          const targetCol = this.board.columns.find(col => col.id === targetColId);
+          if (targetCol) {
+            this.groupCardsByCategoryForColumn(targetCol);
+          }
+        }
+        
+        // Re-group cards if cards were moved to/from backlog
+        if (sourceColId === 'col3' || targetColId === 'col3') {
+          this.groupCardsByCategory();
+        }
       }
     } catch (err) {
       console.error('Error during card drop:', err);
