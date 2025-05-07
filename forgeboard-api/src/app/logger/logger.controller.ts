@@ -21,8 +21,8 @@ export class LoggerController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('search') search?: string,
-    @Query('limit') limit: string = '100',
-    @Query('skip') skip: string = '0',
+    @Query('limit') limit = '100',
+    @Query('skip') skip = '0',
     @Query('afterTimestamp') afterTimestamp?: string,
   ): Observable<LogQueryResponse> {
     const filter: LogFilter = {};
