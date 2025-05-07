@@ -75,7 +75,7 @@ export class MetricsService implements OnModuleInit {
     this.updateSubscription = interval(this.updateInterval).subscribe(() => {
       const newMetrics = this.generateMetrics();
       this.metricsSubject.next(newMetrics);
-      this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`);
+      // this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`);
     });
   }
   
@@ -123,7 +123,7 @@ export class MetricsService implements OnModuleInit {
     };
     
     // Replace console.log with proper logger
-    this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`, 'MetricsService');
+    // this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`, 'MetricsService');
     
     return metrics;
   }

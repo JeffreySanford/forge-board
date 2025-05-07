@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Logger, HttpException, HttpStatus, Query, Param, Delete } from '@nestjs/common';
 import { LoggerService } from './logger.service';
-import { LogDto, LogEntry, LogFilter, LogLevelEnum, LogQueryResponse } from '@forge-board/shared/api-interfaces';
+import { LogDto, LogFilter, LogLevelEnum, LogQueryResponse } from '@forge-board/shared/api-interfaces';
+import type { LogEntry } from '@forge-board/shared/api-interfaces';
 import { Observable } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
@@ -21,8 +22,8 @@ export class LoggerController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('search') search?: string,
-    @Query('limit') limit = '100',
-    @Query('skip') skip = '0',
+    @Query('limit') limit?: string,
+    @Query('skip') skip?: string,
     @Query('afterTimestamp') afterTimestamp?: string,
   ): Observable<LogQueryResponse> {
     const filter: LogFilter = {};
