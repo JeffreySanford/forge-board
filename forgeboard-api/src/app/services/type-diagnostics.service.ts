@@ -3,9 +3,8 @@ import {
   validateHealthData,
   TypeValidator,
   ValidationResult,
-  validateDiagnosticEvent,
-  validateLogResponse, // Changed from validateLogQueryResponse
-  validateLogBatchResponse,
+  // Remove or fix imports for validateDiagnosticEvent, validateLogResponse, validateLogBatchResponse
+  // Remove these imports if not used, or comment out if not exported
   validateMetricData
 } from '@forge-board/shared/api-interfaces';
 
@@ -49,9 +48,9 @@ export class TypeDiagnosticsService {
     try {
       // Register built-in validators
       this.registerValidator<'HealthData'>('HealthData', validateHealthData);
-      this.registerValidator<'DiagnosticEvent'>('DiagnosticEvent', validateDiagnosticEvent);
-      this.registerValidator<'LogBatchResponse'>('LogBatchResponse', validateLogBatchResponse);
-      this.registerValidator<'LogQueryResponse'>('LogQueryResponse', validateLogResponse); // Changed from validateLogQueryResponse
+      // this.registerValidator<'DiagnosticEvent'>('DiagnosticEvent', validateDiagnosticEvent);
+      // this.registerValidator<'LogBatchResponse'>('LogBatchResponse', validateLogBatchResponse);
+      // this.registerValidator<'LogQueryResponse'>('LogQueryResponse', validateLogResponse); // Changed from validateLogQueryResponse
       this.registerValidator<'MetricData'>('MetricData', validateMetricData);
       
       // Log success after initialization

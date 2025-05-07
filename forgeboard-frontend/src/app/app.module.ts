@@ -15,6 +15,8 @@ import { NavigationModule } from './components/navigation/navigation.module';
 import { NotFoundModule } from './pages/not-found/not-found.module';
 import { FooterModule } from './components/footer/footer.module';
 import { LoggerPageModule } from './pages/logger/logger.module';
+import { DocumentationModule } from './pages/documentation/documentation.module';
+import { SecurityDashboardModule } from './pages/security-dashboard/security-dashboard.module';
 
 // Services and interceptors
 import { ErrorService } from './services/error.service';
@@ -23,9 +25,8 @@ import { TypeValidationInterceptor } from './interceptors/type-validation.interc
 import { ProjectConfigService } from './services/project-config.service';
 import { TypeDiagnosticsService } from './services/type-diagnostics.service';
 
-// Standalone components
-import { ConnectionStatusIndicatorComponent } from './components/connection-status-indicator/connection-status-indicator.component';
-import { DocumentationModule } from './pages/documentation/documentation.module';
+// Feature modules
+import { ConnectionStatusIndicatorModule } from './components/connection-status-indicator/connection-status-indicator.module';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { DocumentationModule } from './pages/documentation/documentation.module'
     AppRoutingModule,
     SharedModule,
     
+    
     // Feature modules
     KablanBoardModule,
     MetricsModule,
@@ -47,9 +49,8 @@ import { DocumentationModule } from './pages/documentation/documentation.module'
     FooterModule,
     LoggerPageModule,
     DocumentationModule,
-    
-    // Standalone components
-    ConnectionStatusIndicatorComponent
+    SecurityDashboardModule,
+    ConnectionStatusIndicatorModule
   ],
   providers: [
     ErrorService,

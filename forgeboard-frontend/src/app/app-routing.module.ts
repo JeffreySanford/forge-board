@@ -6,6 +6,7 @@ import { MetricComponent } from './pages/metrics/metric.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { LoggerViewComponent } from './pages/logger/logger-view.component';
 import { DiagnosticsComponent } from './pages/metrics/diagnostics/diagnostics.component';
+import { SecurityDashboardComponent } from './pages/security-dashboard/security-dashboard.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -14,6 +15,7 @@ const routes: Routes = [
   { path: 'diagnostics', component: DiagnosticsComponent },
   { path: 'kablan', component: KablanBoardComponent },
   { path: 'logs', component: LoggerViewComponent },
+  { path: 'security', component: SecurityDashboardComponent },
   { path: 'documentation', loadChildren: () => import('./pages/documentation/documentation.module').then(m => m.DocumentationModule) },
   { path: '404', component: NotFoundComponent },
   { path: '**', redirectTo: '/404' } // Redirect all unknown routes to 404 page

@@ -1,13 +1,30 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req, Res, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Req, Res, Headers } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/require-permissions.decorator';
 import { LoggerService } from '../common/logger.service';
 import { AuditService } from '../security/audit.service';
-import { OscalService } from './oscal.service';
+import { OscalService, OscalDocument, OscalTemplate, OscalBaseline, ValidationResult } from './oscal.service';
 import { Observable } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import { Response } from 'express';
+
+interface QueryParams {
+  type?: string;
+  limit?: number;
+  offset?: number;
+}
+
+interface RequestWithUser {
+  user: {
+    id: string;
+    username?: string;
+    email?: string;
+    roles?: string[];
+    permissions?: string[];
+    [key: string]: unknown;  // Using 'unknown' instead of 'any' for better type safety
+  };
+}
 
 @Controller('api/oscal')
 export class OscalController {
@@ -20,7 +37,7 @@ export class OscalController {
   @Get('documents')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getDocuments(@Req() req, @Query() query): Observable<any> {
+  getDocuments(@Req() req: RequestWithUser, @Query() query: QueryParams): Observable<OscalDocument[]> {
     const { user } = req;
     const { type, limit, offset } = query;
     
@@ -35,14 +52,14 @@ export class OscalController {
     
     return this.oscalService.getDocuments(type, limit, offset).pipe(
       tap(documents => {
-        this.logger.debug('OSCAL documents retrieved', {
+        this.logger.debug('OSCAL documents retrieved', 'OscalController', {
           userId: user.id,
           count: documents.length,
           filters: { type, limit, offset }
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL documents', {
+        this.logger.error('Failed to retrieve OSCAL documents', 'OscalController', {
           userId: user.id,
           error: err.message
         });
@@ -54,7 +71,7 @@ export class OscalController {
   @Get('documents/:id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getDocumentById(@Param('id') id: string, @Req() req): Observable<any> {
+  getDocumentById(@Param('id') id: string, @Req() req: RequestWithUser): Observable<OscalDocument | null> {
     const { user } = req;
     
     // Audit the API access
@@ -68,14 +85,14 @@ export class OscalController {
     
     return this.oscalService.getDocumentById(id).pipe(
       tap(document => {
-        this.logger.debug('OSCAL document retrieved', {
+        this.logger.debug('OSCAL document retrieved', 'OscalController', {
           userId: user.id,
           documentId: id,
           documentType: document.documentType
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL document', {
+        this.logger.error('Failed to retrieve OSCAL document', 'OscalController', {
           userId: user.id,
           documentId: id,
           error: err.message
@@ -90,7 +107,7 @@ export class OscalController {
   @RequirePermissions('oscal:read')
   getDocumentXml(
     @Param('id') id: string,
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Res() res: Response,
     @Headers('accept') accept: string
   ): void {
@@ -109,7 +126,7 @@ export class OscalController {
     
     this.oscalService.getDocumentAsXml(id).subscribe({
       next: xmlContent => {
-        this.logger.debug('OSCAL document XML generated', {
+        this.logger.debug('OSCAL document XML generated', 'OscalController', {
           userId: user.id,
           documentId: id
         });
@@ -124,7 +141,7 @@ export class OscalController {
         res.send(xmlContent);
       },
       error: err => {
-        this.logger.error('Failed to generate XML for OSCAL document', {
+        this.logger.error('Failed to generate XML for OSCAL document', 'OscalController', {
           userId: user.id,
           documentId: id,
           error: err.message
@@ -142,7 +159,7 @@ export class OscalController {
   @RequirePermissions('oscal:read')
   getDocumentJson(
     @Param('id') id: string,
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Res() res: Response,
     @Headers('accept') accept: string
   ): void {
@@ -161,7 +178,7 @@ export class OscalController {
     
     this.oscalService.getDocumentById(id).subscribe({
       next: document => {
-        this.logger.debug('OSCAL document JSON retrieved', {
+        this.logger.debug('OSCAL document JSON retrieved', 'OscalController', {
           userId: user.id,
           documentId: id
         });
@@ -175,7 +192,7 @@ export class OscalController {
         }
       },
       error: err => {
-        this.logger.error('Failed to retrieve JSON for OSCAL document', {
+        this.logger.error('Failed to retrieve JSON for OSCAL document', 'OscalController', {
           userId: user.id,
           documentId: id,
           error: err.message
@@ -191,7 +208,7 @@ export class OscalController {
   @Post('documents/:id/validate')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:validate')
-  validateDocument(@Param('id') id: string, @Req() req): Observable<any> {
+  validateDocument(@Param('id') id: string, @Req() req: RequestWithUser): Observable<ValidationResult> {
     const { user } = req;
     
     // Audit the validation request
@@ -205,7 +222,7 @@ export class OscalController {
     
     return this.oscalService.validateDocument(id).pipe(
       tap(result => {
-        this.logger.info('OSCAL document validation completed', {
+        this.logger.info('OSCAL document validation completed', 'OscalController', {
           userId: user.id,
           documentId: id,
           valid: result.valid,
@@ -226,7 +243,7 @@ export class OscalController {
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to validate OSCAL document', {
+        this.logger.error('Failed to validate OSCAL document', 'OscalController', {
           userId: user.id,
           documentId: id,
           error: err.message
@@ -239,7 +256,7 @@ export class OscalController {
   @Get('templates')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getTemplates(@Req() req): Observable<any> {
+  getTemplates(@Req() req: RequestWithUser): Observable<OscalTemplate[]> {
     const { user } = req;
     
     // Audit the API access
@@ -252,13 +269,13 @@ export class OscalController {
     
     return this.oscalService.getTemplates().pipe(
       tap(templates => {
-        this.logger.debug('OSCAL templates retrieved', {
+        this.logger.debug('OSCAL templates retrieved', 'OscalController', {
           userId: user.id,
           count: templates.length
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL templates', {
+        this.logger.error('Failed to retrieve OSCAL templates', 'OscalController', {
           userId: user.id,
           error: err.message
         });
@@ -270,7 +287,7 @@ export class OscalController {
   @Get('templates/:type')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getTemplateByType(@Param('type') type: string, @Req() req): Observable<any> {
+  getTemplateByType(@Param('type') type: string, @Req() req: RequestWithUser): Observable<OscalTemplate | null> {
     const { user } = req;
     
     // Audit the API access
@@ -284,13 +301,15 @@ export class OscalController {
     
     return this.oscalService.getTemplateByType(type).pipe(
       tap(template => {
-        this.logger.debug('OSCAL template retrieved', {
+        this.logger.debug('OSCAL template retrieved', 'OscalController', {
           userId: user.id,
-          templateType: type
+          templateType: type,
+          templateName: template?.name || 'Template not found',
+          templateFound: !!template
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL template', {
+        this.logger.error('Failed to retrieve OSCAL template', 'OscalController', {
           userId: user.id,
           templateType: type,
           error: err.message
@@ -303,7 +322,7 @@ export class OscalController {
   @Get('baselines')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getBaselines(@Req() req): Observable<any> {
+  getBaselines(@Req() req: RequestWithUser): Observable<OscalBaseline[]> {
     const { user } = req;
     
     // Audit the API access
@@ -316,13 +335,13 @@ export class OscalController {
     
     return this.oscalService.getBaselines().pipe(
       tap(baselines => {
-        this.logger.debug('OSCAL baselines retrieved', {
+        this.logger.debug('OSCAL baselines retrieved', 'OscalController', {
           userId: user.id,
           count: baselines.length
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL baselines', {
+        this.logger.error('Failed to retrieve OSCAL baselines', 'OscalController', {
           userId: user.id,
           error: err.message
         });

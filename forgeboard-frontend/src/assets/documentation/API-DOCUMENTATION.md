@@ -1,32 +1,83 @@
-# ForgeBoard API Documentation
-*Last Updated: June 25, 2025*
+# 🔌 ForgeBoard NX API Documentation
+*Last Updated: May 7, 2025*
 
-## API Architecture Overview
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>API Status:</strong> Stable ✅
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Version:</strong> 3.2.0 🚀
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>WebSockets:</strong> Active 📶
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Local-First:</strong> Enabled 🔄
+  </div>
+</div>
+
+## Local-First API Architecture Overview
 
 ```mermaid
 flowchart LR
-  subgraph REST [REST API]
+  subgraph LOCAL [Local-First API]
     direction TB
-    A[Metrics API]:::rest
-    B[Diagnostics API]:::rest
-    C[Kablan API]:::rest
-    D[Logger API]:::rest
+    LocalStore[(Local Store)]:::local
+    Chain[(SlimChain)]:::chain
+    CRDT[CRDT Merge Engine]:::crdt
   end
-  subgraph WS [WebSocket Namespaces]
+  
+  subgraph P2P [WebRTC P2P Mesh]
     direction TB
-    E[/metrics]:::ws
-    F[/diagnostics]:::ws
-    G[/kablan]:::ws
-    H[/logs]:::ws
+    P2P1[Peer 1]:::p2p
+    P2P2[Peer 2]:::p2p
+    P2P3[Peer 3]:::p2p
   end
-  A --> E
-  B --> F
-  C --> G
-  D --> H
+  
+  subgraph REMOTE [Optional Remote]
+    direction TB
+    REST[REST API]:::remote
+    WS[WebSockets]:::remote
+    SyncDB[(Sync Database)]:::remote
+  end
+  
+  LocalStore -->|"Primary"| CRDT
+  CRDT -->|"Persist"| Chain
+  CRDT <-->|"Direct P2P"| P2P
+  LocalStore -.->|"Optional Sync"| REST
+  LocalStore -.->|"Optional Live"| WS
+  REST -.-> SyncDB
+  WS -.-> SyncDB
 
-  classDef rest fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
-  classDef ws fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
+  classDef local fill:#002868,stroke:#BF0A30,stroke-width:3px,color:#FFFFFF;
+  classDef chain fill:#BF0A30,stroke:#7D100E,stroke-width:3px,color:#FFFFFF;
+  classDef crdt fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
+  classDef p2p fill:#90BE6D,stroke:#43A047,stroke-width:2px;
+  classDef remote fill:#CCCCCC,stroke:#666666,stroke-width:1px,color:#333333;
 ```
+
+## API Philosophy
+
+ForgeBoard NX implements a Local-First architecture where:
+
+1. **Device is the Source of Authority**: Your data lives on your device, not in a remote cloud
+2. **P2P Communication First**: WebRTC direct connections are attempted before fallback to server
+3. **CRDT for Conflict Resolution**: All data structures use conflict-free replicated data types
+4. **Blockchain Immutability**: Critical data is stored in a tamper-proof blockchain
+
+## API Layers
+
+### Layer 1: Local Store (Primary)
+
+All interactions in ForgeBoard NX first go through the local store, which acts as the source of authority for all data.
+
+### Layer 2: WebRTC P2P Mesh (Synchronization)
+
+Direct peer-to-peer communication for team collaboration without server dependency.
+
+### Layer 3: Remote Services (Optional Fallback)
+
+Traditional REST and WebSocket endpoints that serve as optional fallbacks when P2P is unavailable.
 
 ## API Overview
 
@@ -486,3 +537,236 @@ interface LogEntry {
 // TileType used by the UI to identify dashboard tiles
 type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
 ```
+
+## Local-First & Blockchain APIs
+
+### SlimChain API
+
+The SlimChain API provides blockchain persistence for immutable data storage.
+
+#### BlockchainAdapter
+
+```typescript
+// Core interface for the blockchain adapter
+interface BlockchainAdapter {
+  // Store data in the blockchain
+  persistData<T>(data: T, metadata?: BlockMetadata): Observable<TxReceipt>;
+  
+  // Verify data against the blockchain
+  verifyData<T>(data: T, txId: string): Observable<VerificationResult>;
+  
+  // Generate Merkle proof for audit purposes
+  generateProof(txId: string): Observable<MerkleProof>;
+  
+  // Get transaction history with optional pruning
+  getHistory(options?: HistoryOptions): Observable<BlockchainTransaction[]>;
+  
+  // Get blockchain stats (size, block count, etc.)
+  getStats(): Observable<BlockchainStats>;
+}
+
+// Transaction receipt returned after successful storage
+interface TxReceipt {
+  txId: string;
+  blockId: string;
+  timestamp: string;
+  success: boolean;
+  hash: string;
+}
+
+// Verification result for data integrity checks
+interface VerificationResult {
+  verified: boolean;
+  originalHash: string;
+  currentHash: string;
+  timestamp: string;
+  modification?: BlockchainModification;
+}
+
+// Merkle proof for external audits
+interface MerkleProof {
+  txId: string;
+  blockId: string;
+  proof: string[];
+  rootHash: string;
+  verificationEndpoint?: string;
+  qrCode?: string;
+}
+```
+
+### CRDT Merge Engine
+
+The CRDT Merge Engine handles conflict-free replicated data types for synchronization.
+
+```typescript
+// Core interface for CRDT operations
+interface CRDTAdapter<T> {
+  // Merge local changes with remote changes
+  merge(local: T, remote: T): T;
+  
+  // Apply a patch to the current state
+  applyPatch(current: T, patch: CRDTPatch): T;
+  
+  // Generate a patch from two states
+  generatePatch(from: T, to: T): CRDTPatch;
+  
+  // Check if states can be merged without conflicts
+  canMerge(local: T, remote: T): boolean;
+}
+
+// Specialized adapters for different data types
+interface YjsTextAdapter extends CRDTAdapter<YjsText> {}
+interface YjsMapAdapter extends CRDTAdapter<YjsMap> {}
+interface YjsArrayAdapter extends CRDTAdapter<YjsArray> {}
+```
+
+### WebRTC P2P Mesh API
+
+The WebRTC P2P Mesh API enables direct peer-to-peer communication between devices.
+
+```typescript
+// Core interface for P2P connections
+interface P2PMeshService {
+  // Initialize the mesh network
+  initialize(): Observable<P2PStatus>;
+  
+  // Connect to a specific peer
+  connectToPeer(peerId: string): Observable<P2PConnection>;
+  
+  // Broadcast data to all connected peers
+  broadcast<T>(data: T): Observable<P2PDeliveryReport>;
+  
+  // Send data to a specific peer
+  sendToPeer<T>(peerId: string, data: T): Observable<P2PDeliveryReport>;
+  
+  // Listen for data from any peer
+  onData<T>(): Observable<P2PDataEvent<T>>;
+  
+  // Get connected peers
+  getPeers(): Observable<P2PPeer[]>;
+}
+
+// Status of the P2P mesh network
+interface P2PStatus {
+  active: boolean;
+  peerId: string;
+  connectedPeerCount: number;
+  networkLatency?: number;
+}
+
+// Connection to a specific peer
+interface P2PConnection {
+  peerId: string;
+  connection: RTCPeerConnection;
+  dataChannel: RTCDataChannel;
+  status: 'connecting' | 'connected' | 'disconnected' | 'failed';
+  metadata?: Record<string, unknown>;
+}
+
+// Information about data delivery
+interface P2PDeliveryReport {
+  success: boolean;
+  deliveredTo: string[];
+  failed: string[];
+  timestamp: string;
+}
+```
+
+## Extended Type Definitions
+
+The following new types have been added to support Local-First architecture and blockchain persistence:
+
+```typescript
+// Blockchain-specific types
+interface BlockchainTransaction {
+  txId: string;
+  blockId: string;
+  timestamp: string;
+  data: any;
+  hash: string;
+  signature: string;
+  previousHash: string;
+}
+
+interface BlockchainStats {
+  totalBlocks: number;
+  totalTransactions: number;
+  storageSize: number;
+  lastBlockTimestamp: string;
+  pruningStatus: {
+    enabled: boolean;
+    lastPruneDate?: string;
+    prunedBlocks?: number;
+  }
+}
+
+interface BlockchainModification {
+  detectedAt: string;
+  originalData: any;
+  currentData: any;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// Local-First specific types
+interface LocalFirstService<T> {
+  // Get the current state from local storage
+  getLocalState(): Observable<T>;
+  
+  // Update the local state and optionally persist to blockchain
+  updateLocalState(newState: Partial<T>, persistToChain?: boolean): Observable<T>;
+  
+  // Sync with remote or P2P peers
+  syncState(options?: SyncOptions): Observable<SyncResult<T>>;
+  
+  // Get blockchain-backed history of state changes
+  getStateHistory(options?: HistoryOptions): Observable<StateHistoryEntry<T>[]>;
+}
+
+interface SyncOptions {
+  preferP2P: boolean;
+  syncTarget?: 'peer' | 'server' | 'all';
+  conflictResolution?: 'local-wins' | 'remote-wins' | 'merge';
+  peerIds?: string[];
+}
+
+interface SyncResult<T> {
+  success: boolean;
+  syncedWith: ('local' | 'peer' | 'server')[];
+  conflicts: number;
+  resolved: number;
+  finalState: T;
+}
+
+interface StateHistoryEntry<T> {
+  timestamp: string;
+  state: T;
+  txId?: string;
+  actor?: string;
+  verified: boolean;
+}
+```
+
+## Patriotic Color Palette
+
+ForgeBoard NX uses a distinctive American-inspired color palette that embodies data sovereignty:
+
+```css
+:root {
+  /* Primary Colors */
+  --primary-blue: #002868;    /* Deep blue representing data sovereignty */
+  --primary-red: #BF0A30;     /* Vibrant red for blockchain immutability */
+  --primary-white: #FFFFFF;   /* Clean white for interface clarity */
+  
+  /* Accent Colors */
+  --accent-gold: #F9C74F;     /* Gold for highlighting important actions */
+  --accent-green: #90BE6D;    /* Victory green for success states */
+  
+  /* Status Colors */
+  --status-success: var(--accent-green);
+  --status-warning: var(--accent-gold);
+  --status-error: var(--primary-red);
+  --status-info: var(--primary-blue);
+}
+```
+
+*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨

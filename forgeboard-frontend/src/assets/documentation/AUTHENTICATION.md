@@ -1,5 +1,20 @@
-# ForgeBoard Authentication & Authorization
-*Last Updated: July 3, 2025*
+# 🔐 ForgeBoard NX: Authentication & Authorization
+*Last Updated: May 7, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Security:</strong> Zero Trust 🔒
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>MFA:</strong> FIDO2 Required 🔑
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>JWT:</strong> ES256 Signed 🪙
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Status:</strong> FedRAMP 20X ✅
+  </div>
+</div>
 
 ## Overview
 

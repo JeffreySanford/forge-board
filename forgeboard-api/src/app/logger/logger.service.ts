@@ -1,344 +1,350 @@
 import { Injectable, Logger as NestLogger } from '@nestjs/common';
-import { 
-  LogEntry, 
-  LogFilter, 
-  LogLevelEnum, 
-  LogLevelString, 
-  stringToLogLevelEnum,
-  logLevelEnumToString, 
-  LogQueryResponse,
-  LogBatchResponse
-} from '@forge-board/shared/api-interfaces';
+import { LogLevelEnum, LogFilter, LogEntry } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
-import { Subject } from 'rxjs';
-import { shouldEnableConsoleLogging } from '../../bootstrap';
+import { Observable, BehaviorSubject, Subject, map, filter as rxFilter } from 'rxjs';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Log } from '../models/log.model';
 
-// Extended interfaces for internal use
-interface ExtendedLogEntry extends LogEntry {
-  context?: string;
-  stackTrace?: string;
-  tags?: string[];
-}
-
-// Custom filter interface to handle additional properties
-interface ExtendedFilter extends Partial<LogFilter> {
-  contexts?: string[];
-  sources?: string[];
-  tags?: string[];
-  startTime?: string;
-  endTime?: string;
-  offset?: number;
-  skip?: number;
-  loglevels?: LogLevelEnum[]; // This property is needed for our internal implementation
-  afterTimestamp?: string; // Explicitly add it here for TypeScript clarity
+// Define the shape of log statistics
+export interface LogStatsResult {
+  totalCount: number;
+  byLevel: Record<string, number>;
+  bySource: Record<string, number>;
 }
 
 @Injectable()
 export class LoggerService {
   private readonly nestLogger = new NestLogger(LoggerService.name);
-  private logs: ExtendedLogEntry[] = [];
+  
+  // BehaviorSubject to store and emit logs
+  private logsSubject = new BehaviorSubject<LogEntry[]>([]);
+  
   private readonly maxLogs = 1000; // Maximum number of logs to keep in memory
   private readonly enableConsoleOutput: boolean;
   
   // Subject to notify subscribers when a new log is created
-  public readonly newLogEntry$ = new Subject<ExtendedLogEntry>();
+  public readonly newLogEntry$ = new Subject<LogEntry>();
 
-  constructor() {
-    // Read from environment config
-    this.enableConsoleOutput = shouldEnableConsoleLogging();
-    
-    // Initialize with some sample logs
-    this.createSampleLogs();
+  constructor(@InjectModel(Log.name) private logModel: Model<Log>) {
+    // Set to false in production to avoid duplicate logging
+    this.enableConsoleOutput = process.env.NODE_ENV !== 'production';
   }
 
-  /**
-   * Create a log entry with the specified level
-   */
-  log(level: LogLevelEnum, message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    // LOOP PREVENTION: Check if this is a log about logs
-    const isLoggingLog = 
-      (context.toLowerCase().includes('log') || 
-       message.toLowerCase().includes('log entry') ||
-       message.toLowerCase().includes('received log')) &&
-      !meta['allowLogging']; // Special flag to allow critical logging logs
-    
-    // Create log entry
-    const entry: ExtendedLogEntry = {
+  // Create a log entry with the specified level
+  log(level: LogLevelEnum, message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
+    const entry: LogEntry = {
       id: uuid(),
       level,
       message,
-      source: context, // Use context as source for backward compatibility
+      source: context,
       timestamp: new Date().toISOString(),
-      data: Object.keys(meta).length > 0 ? meta : undefined
+      details: meta,
+      context
     };
-    
-    // Add additional properties to extended entry
-    entry.context = context;
-    entry.tags = meta.tags as string[] | undefined;
-    
-    // Add stack trace for errors
-    if (level === LogLevelEnum.ERROR || level === LogLevelEnum.FATAL) {
-      entry.stackTrace = new Error().stack;
-    }
-    
-    // If this is a logging log, mark it specially for the UI
-    if (isLoggingLog) {
-      entry.isLoggingLoop = true;
-    }
-    
-    // Add to in-memory logs
-    this.logs.unshift(entry);
-    
-    // Trim logs if they exceed maximum size
-    if (this.logs.length > this.maxLogs) {
-      this.logs = this.logs.slice(0, this.maxLogs);
-    }
-    
-    // Log to NestJS logger as well, but only if console output is enabled
+
+    // Add to in-memory logs and notify subscribers
+    const currentLogs = this.logsSubject.getValue();
+    const updatedLogs = [entry, ...currentLogs].slice(0, this.maxLogs);
+    this.logsSubject.next(updatedLogs);
+
+    // Output to console if enabled
     if (this.enableConsoleOutput) {
-      const levelString = logLevelEnumToString(level);
-      switch (levelString) {
-        case 'debug': {
+      switch (level) {
+        case LogLevelEnum.DEBUG:
           this.nestLogger.debug(message, context);
           break;
-        }
-        case 'info': {
+        case LogLevelEnum.INFO:
           this.nestLogger.log(message, context);
           break;
-        }
-        case 'warning': 
-        case 'warn': {
+        case LogLevelEnum.WARN:
           this.nestLogger.warn(message, context);
           break;
-        }
-        case 'error': 
-        case 'fatal': {
-          const errorStack = meta.error && 
-            typeof meta.error === 'object' && 
-            meta.error !== null && 
-            'stack' in meta.error ? 
-            String(meta.error.stack) : '';
-          this.nestLogger.error(message, errorStack, context);
+        case LogLevelEnum.ERROR:
+          this.nestLogger.error(message, context);
           break;
-        }
-        case 'trace': {
-          this.nestLogger.verbose(message, context);
+        case LogLevelEnum.FATAL:
+          this.nestLogger.error(`FATAL: ${message}`, context);
           break;
-        }
       }
     }
-    
-    // Notify subscribers, but only if this isn't a logging log (prevent loops)
-    if (!isLoggingLog) {
-      this.newLogEntry$.next(entry);
-    }
-    
-    return entry;
+
+    // Save to database
+    const logDocument = new this.logModel({
+      level,
+      message,
+      source: context,
+      timestamp: new Date(),
+      details: meta,
+      context
+    });
+    logDocument.save();
+
+    // Emit the new log entry
+    this.newLogEntry$.next(entry);
+
+    // Return an observable with the entry
+    return this.newLogEntry$.pipe(
+      rxFilter(log => log.id === entry.id)
+    );
   }
   
   // Convenience methods
-  debug(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  debug(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
     return this.log(LogLevelEnum.DEBUG, message, context, meta);
   }
   
-  info(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  info(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
     return this.log(LogLevelEnum.INFO, message, context, meta);
   }
   
-  warning(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  warning(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
     return this.log(LogLevelEnum.WARN, message, context, meta);
   }
   
-  error(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  error(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
     return this.log(LogLevelEnum.ERROR, message, context, meta);
   }
 
-  fatal(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
+  fatal(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
     return this.log(LogLevelEnum.FATAL, message, context, meta);
   }
 
-  trace(message: string, context = 'app', meta: Record<string, unknown> = {}): ExtendedLogEntry {
-    return this.log(LogLevelEnum.TRACE, message, context, meta);
+  trace(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
+    return this.log(LogLevelEnum.DEBUG, message, context, meta);
   }
   
-  /**
-   * Get logs with optional filtering and optimized for incremental updates
-   * 
-   * @param filter Filter criteria for log entries
-   * @returns Filtered log entries
-   */
-  getLogs(filter: ExtendedFilter = { level: LogLevelEnum.INFO }): ExtendedLogEntry[] {
-    // Start with all logs
-    let filteredLogs = [...this.logs];
-    
-    // If afterTimestamp is specified, only return logs newer than that timestamp
-    // This is a key optimization for incremental updates
-    if (filter.afterTimestamp) {
-      filteredLogs = filteredLogs.filter(log => 
-        new Date(log.timestamp) > new Date(filter.afterTimestamp as string)
+  // Get logs with optional filtering - match the method signature used in controller
+  getLogs(filter: LogFilter = { level: LogLevelEnum.INFO }): Observable<LogEntry[]> {
+    return this.logsSubject.pipe(
+      map(logs => {
+        let filteredLogs = [...logs];
+        
+        // Apply filter logic here
+        if (filter.level) {
+          if (Array.isArray(filter.level)) {
+            filteredLogs = filteredLogs.filter(log => 
+              filter.level && Array.isArray(filter.level) && filter.level.includes(log.level)
+            );
+          } else {
+            filteredLogs = filteredLogs.filter(log => log.level === filter.level);
+          }
+        }
+        
+        if (filter.service) {
+          filteredLogs = filteredLogs.filter(log => log.source === filter.service);
+        }
+        
+        if (filter.startDate) {
+          filteredLogs = filteredLogs.filter(log => 
+            new Date(log.timestamp) >= new Date(filter.startDate)
+          );
+        }
+        
+        if (filter.endDate) {
+          filteredLogs = filteredLogs.filter(log => 
+            new Date(log.timestamp) <= new Date(filter.endDate)
+          );
+        }
+        
+        if (filter.search) {
+          const searchLower = filter.search.toLowerCase();
+          filteredLogs = filteredLogs.filter(log =>
+            log.message.toLowerCase().includes(searchLower) || 
+            (log.source && log.source.toLowerCase().includes(searchLower))
+          );
+        }
+        
+        if (filter.skip && filter.skip > 0) {
+          filteredLogs = filteredLogs.slice(filter.skip);
+        }
+        
+        if (filter.afterTimestamp) {
+          filteredLogs = filteredLogs.filter(log => 
+            new Date(log.timestamp) > new Date(filter.afterTimestamp)
+          );
+        }
+        
+        // Apply limit last after all other filters
+        if (filter.limit && filter.limit > 0) {
+          filteredLogs = filteredLogs.slice(0, filter.limit);
+        }
+        
+        return filteredLogs;
+      })
+    );
+  }
+  
+  // Add logs - method needed by controller
+  addLogs(logs: LogEntry[]): Observable<boolean> {
+    logs.forEach(log => {
+      this.log(
+        log.level,
+        log.message,
+        log.source || 'app',
+        log.details || {}
       );
-    }
+    });
     
-    // Apply level filter based on the type of level provided
+    // Create a dedicated subject for the operation result
+    const resultSubject = new BehaviorSubject<boolean>(true);
+    return resultSubject.asObservable();
+  }
+  
+  // Create many log entries - method needed by controller
+  createMany(logDtos: LogEntry[]): Observable<LogEntry[]> {
+    const createdLogs: LogEntry[] = [];
+    
+    logDtos.forEach(logDto => {
+      // Store the log result but don't use `log` directly as it was causing an eslint warning
+      this.log(
+        logDto.level,
+        logDto.message,
+        logDto.source || 'app',
+        logDto.details || {}
+      );
+      
+      createdLogs.push({ ...logDto, id: uuid() });
+    });
+    
+    // Create a dedicated subject for the operation result
+    const resultSubject = new BehaviorSubject<LogEntry[]>(createdLogs);
+    return resultSubject.asObservable();
+  }
+  
+  // Get log statistics - method needed by controller
+  getLogStatistics(filter: Partial<LogFilter> = {}): Observable<LogStatsResult> {
+    // Use the logs observable and map it to statistics
+    return this.getLogs(filter as LogFilter).pipe(
+      map(logs => {
+        const stats: LogStatsResult = {
+          totalCount: logs.length,
+          byLevel: {} as Record<string, number>,
+          bySource: {} as Record<string, number>
+        };
+        
+        // Count by level
+        logs.forEach(log => {
+          stats.byLevel[log.level] = (stats.byLevel[log.level] || 0) + 1;
+          
+          if (log.source) {
+            stats.bySource[log.source] = (stats.bySource[log.source] || 0) + 1;
+          }
+        });
+        
+        return stats;
+      })
+    );
+  }
+  
+  // Get log by ID - method needed by controller
+  getLogById(id: string): Observable<LogEntry | null> {
+    return this.logsSubject.pipe(
+      map(logs => logs.find(log => log.id === id) || null)
+    );
+  }
+  
+  // Delete log by ID - method needed by controller
+  deleteLog(id: string): Observable<boolean> {
+    const currentLogs = this.logsSubject.getValue();
+    const initialLength = currentLogs.length;
+    const updatedLogs = currentLogs.filter(log => log.id !== id);
+    
+    // Update the subject with filtered logs
+    this.logsSubject.next(updatedLogs);
+    
+    // Also delete from database
+    this.logModel.deleteOne({ id }).exec();
+    
+    // Create a dedicated subject for the operation result
+    const resultSubject = new BehaviorSubject<boolean>(updatedLogs.length < initialLength);
+    return resultSubject.asObservable();
+  }
+  
+  // Clear logs matching filter - method needed by controller
+  clearLogs(filter: Partial<LogFilter> = {}): Observable<number> {
+    const currentLogs = this.logsSubject.getValue();
+    const initialLength = currentLogs.length;
+    let filteredLogs = [...currentLogs];
+    
     if (filter.level) {
-      if (Array.isArray(filter.level)) {
-        // If it's an array, include logs with any of the specified levels
-        filteredLogs = filteredLogs.filter(log => 
-          filter.level && Array.isArray(filter.level) && filter.level.includes(log.level)
-        );
-      } else {
-        // If it's a single value, match exactly
-        filteredLogs = filteredLogs.filter(log => log.level === filter.level);
-      }
+      filteredLogs = filteredLogs.filter(log => log.level !== filter.level);
     }
     
-    // Legacy support for loglevels property - handle both cases
-    if (filter.loglevels && Array.isArray(filter.loglevels) && filter.loglevels.length) {
-      filteredLogs = filteredLogs.filter(log =>
-        filter.loglevels && filter.loglevels.includes(log.level)
-      );
-    }
-    
-    // Apply source filter - use service from LogFilter first, fall back to sources
     if (filter.service) {
-      filteredLogs = filteredLogs.filter(log => log.source === filter.service);
-    } else if (filter.sources && filter.sources.length) {
-      filteredLogs = filteredLogs.filter(log =>
-        filter.sources && log.source && filter.sources.includes(log.source)
-      );
-    }
-    
-    // Apply context filter if available in extended filter
-    if (filter.contexts && filter.contexts.length) {
-      filteredLogs = filteredLogs.filter(log =>
-        log.context && filter.contexts && filter.contexts.includes(log.context)
-      );
-    }
-    
-    // Apply tags filter if available in extended filter
-    if (filter.tags && filter.tags.length) {
-      filteredLogs = filteredLogs.filter(log =>
-        log.tags && filter.tags && filter.tags.some(tag => log.tags && log.tags.includes(tag))
-      );
-    }
-    
-    // Apply date range filter - first try standard LogFilter properties
-    if (filter.startDate) {
-      filteredLogs = filteredLogs.filter(log => 
-        filter.startDate && new Date(log.timestamp) >= new Date(filter.startDate)
-      );
+      filteredLogs = filteredLogs.filter(log => log.source !== filter.service);
     }
     
     if (filter.endDate) {
-      filteredLogs = filteredLogs.filter(log => 
-        filter.endDate && new Date(log.timestamp) <= new Date(filter.endDate)
-      );
+      // Fixed non-null assertion by checking if endDate exists in the filter
+      // before using it in the filter operation
+      const endDateStr = filter.endDate;
+      if (endDateStr) {
+        filteredLogs = filteredLogs.filter(log => 
+          new Date(log.timestamp) > new Date(endDateStr)
+        );
+      }
     }
     
-    // Support alternative date field names as fallback
-    if (filter.startTime && !filter.startDate) {
-      filteredLogs = filteredLogs.filter(log => 
-        filter.startTime && new Date(log.timestamp) >= new Date(filter.startTime)
-      );
+    const deletedCount = initialLength - filteredLogs.length;
+    
+    // Update the subject with filtered logs
+    this.logsSubject.next(filteredLogs);
+    
+    // Delete from database as well
+    // Define query with proper type
+    const query: Record<string, unknown> = {};
+    if (filter.level) query.level = filter.level;
+    if (filter.service) query.source = filter.service;
+    if (filter.endDate) query.timestamp = { $lte: new Date(filter.endDate) };
+    
+    this.logModel.deleteMany(query).exec();
+    
+    // Create a dedicated subject for the operation result
+    const resultSubject = new BehaviorSubject<number>(deletedCount);
+    return resultSubject.asObservable();
+  }
+  
+  /**
+   * Check if a log entry matches a filter
+   */
+  private logMatchesFilter(entry: LogEntry, filter: LogFilter): boolean {
+    // Check level
+    if (filter.level) {
+      if (Array.isArray(filter.level)) {
+        if (!filter.level.includes(entry.level)) {
+          return false;
+        }
+      } else if (entry.level !== filter.level) {
+        return false;
+      }
     }
     
-    if (filter.endTime && !filter.endDate) {
-      filteredLogs = filteredLogs.filter(log => 
-        filter.endTime && new Date(log.timestamp) <= new Date(filter.endTime)
-      );
+    // Check service property instead of sources
+    if (filter.service && entry.source !== filter.service) {
+      return false;
     }
     
-    // Apply search filter
+    // Safely check for entry.timestamp without non-null assertion
+    if (filter.startDate && entry.timestamp && new Date(entry.timestamp) < new Date(filter.startDate)) {
+      return false;
+    }
+    
+    if (filter.endDate && entry.timestamp && new Date(entry.timestamp) > new Date(filter.endDate)) {
+      return false;
+    }
+    
+    // Check search term in message or source
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
-      filteredLogs = filteredLogs.filter(log =>
-        log.message.toLowerCase().includes(searchLower) || 
-        (log.source && log.source.toLowerCase().includes(searchLower)) ||
-        (log.context && log.context.toLowerCase().includes(searchLower)) ||
-        (log.data && JSON.stringify(log.data).toLowerCase().includes(searchLower))
-      );
+      if (
+        !entry.message.toLowerCase().includes(searchLower) && 
+        (!entry.source || !entry.source.toLowerCase().includes(searchLower))
+      ) {
+        return false;
+      }
     }
     
-    // Apply pagination - try official property or fallbacks
-    const skip = filter.skip || filter.offset || 0;
-    const limit = filter.limit || filteredLogs.length;
-    
-    return filteredLogs.slice(skip, skip + limit);
-  }
-  
-  /**
-   * Create a query response with logs and metadata
-   * 
-   * @param logs Filtered log entries
-   * @param totalCount Total number of logs
-   * @param filtered Whether filtering was applied
-   * @returns Structured log query response
-   */
-  createQueryResponse(logs: ExtendedLogEntry[], totalCount: number, filtered = false): LogQueryResponse {
-    return {
-      logs: logs as LogEntry[],
-      totalCount,
-      filtered,
-      status: true,
-      timestamp: new Date().toISOString()
-    };
-  }
-  
-  /**
-   * Create a batch response for log operations
-   * 
-   * @param success Whether the operation was successful
-   * @param count Number of logs processed
-   * @returns Structured batch response
-   */
-  createBatchResponse(success: boolean, count?: number): LogBatchResponse {
-    return {
-      success,
-      count,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  /**
-   * Convert a LogLevelString to LogLevelEnum enum
-   */
-  private convertToLogLevel(level: LogLevelString): LogLevelEnum {
-    return stringToLogLevelEnum(level);
-  }
-
-  /**
-   * Create sample log entries for demonstration
-   */
-  private createSampleLogs(): void {
-    this.info('Application started', 'AppModule', { version: '1.0.0', service: 'forgeboard-api' });
-    this.warning('Running in development mode', 'ConfigService');
-    this.debug('Initializing services', 'Bootstrap');
-    
-    // Use clear mock prefix for sample errors to avoid confusion
-    this.error('[SAMPLE] Example error - not a real issue', 'ExampleService', { 
-      error: new Error('This is a sample error for demonstration purposes only'), 
-      url: 'https://api.example.com',
-      sampleLog: true
-    });
-    
-    this.trace('Detailed initialization sequence', 'SystemLoader', { 
-      steps: ['ConfigLoader', 'DatabaseConnection', 'MigrationCheck', 'RouteRegistration'] 
-    });
-    
-    // Use clear mock prefix for sample errors to avoid confusion
-    this.fatal('[SAMPLE] Example critical error - not a real issue', 'ExampleMonitor', {
-      subsystem: 'Storage',
-      errorCode: 'OUT_OF_SPACE',
-      sampleLog: true
-    });
-    
-    // Create a sample log with tags
-    const taggedLog = this.info('Sample tagged log entry', 'LoggerService', { tags: ['sample', 'documentation'] });
-    
-    // Ensure tags are properly set in the log entry
-    const logIndex = this.logs.findIndex(log => log.id === taggedLog.id);
-    if (logIndex !== -1) {
-      this.logs[logIndex].tags = ['sample', 'documentation'];
-    }
+    return true;
   }
 }

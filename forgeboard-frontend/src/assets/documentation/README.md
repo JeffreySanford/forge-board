@@ -1,88 +1,65 @@
-# ForgeBoard
-*Last Updated: July 1, 2025*
+# ForgeBoard NX
+*Last Updated: May 7, 2025*
 
-A modern monitoring and management dashboard with a blueprint-inspired engineering aesthetic.
+A sovereign monitoring and management dashboard with Local-First data ownership and blockchain persistence.
 
 ## Features
 
-- **Real-time Metrics Dashboard**: Monitor system performance metrics with live visualizations
-- **Interactive Kablan Board**: Kanban-style project management with phase-based workflow
-- **Comprehensive Diagnostics**: System health monitoring and connection status tracking
-- **Advanced Logging System**: Real-time log collection with filtering and export capabilities
-- **Mock Data Support**: Seamless fallback to simulated data when backend is unavailable
+- **Local-First Metrics Dashboard**: Monitor system performance metrics with live visualizations that work offline
+- **Blockchain-Backed Kablan Board**: Kanban-style project management with tamper-proof workflow history
+- **Sovereign Diagnostics**: System health monitoring with on-device data authority
+- **Immutable Logging System**: Real-time log collection with blockchain-secured audit trail
+- **On-Device Security Dashboard**: Local vulnerability scanning and FedRAMP 20X compliance tracking
+- **Peer-to-Peer Synchronization**: Optional mesh network capability for team collaboration
 
 ## System Architecture
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                                                                │
-│  Frontend (Angular)                                            │
-│                                                                │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │            │  │            │  │            │  │           │ │
-│  │  Metrics   │  │ Diagnostics│  │  Kablan    │  │  Logger   │ │
-│  │  Module    │  │ Module     │  │  Module    │  │  Module   │ │
-│  │            │  │            │  │            │  │           │ │
-│  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘  └─────┬─────┘ │
-│         │               │               │               │      │
-│         └───────┬───────┴───────┬───────┴───────┬───────┘      │
-│                 │               │               │              │
-│         ┌───────▼───────────────▼───────────────▼────────┐     │
-│         │                                                │     │
-│         │        Shared Services & Components            │     │
-│         │                                                │     │
-│         └────────────────────┬─────────────────────┬─────┘     │
-│                              │                     │           │
-└──────────────────────────────┼─────────────────────┼───────────┘
-                               │                     │
-                   Socket.IO   │                     │    HTTP
-                  Connections  │                     │   Requests
-                               │                     │
-┌──────────────────────────────┼─────────────────────┼───────────┐
-│                              │                     │           │
-│  Backend (NestJS)            │                     │           │
-│                              │                     │           │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │                                                        │    │
-│  │  Websocket Gateways         REST Controllers           │    │
-│  │                                                        │    │
-│  │  ┌────────────┬────────────┬────────────┬───────────┐  │    │
-│  │  │            │            │            │           │  │    │
-│  │  │  Metrics   │ Diagnostics│  Kablan    │  Logger   │  │    │
-│  │  │  Gateway   │ Gateway    │  Gateway   │  Gateway  │  │    │
-│  │  │            │            │            │           │  │    │
-│  │  └────────────┴────────────┴────────────┴───────────┘  │    │
-│  │                                                        │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │                                                        │    │
-│  │  Services                                              │    │
-│  │                                                        │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph "Device"
+        Frontend["Frontend (Angular)"]
+        LocalDB[(Local Database)]
+        LiteChain["SlimChain Node"]
+    end
+    
+    subgraph "Optional Sync"
+        SyncServer["Sync Server (Optional)"]
+        RemoteDB[(Remote Database)]
+    end
+    
+    Frontend -->|"Local-First"| LocalDB
+    Frontend -->|"Sign & Store"| LiteChain
+    LocalDB -->|"Optional P2P Sync"| SyncServer
+    LiteChain -->|"Blockchain Federation"| SyncServer
+    SyncServer -.->|"Cache Only"| RemoteDB
+    
+    class Frontend,LocalDB,LiteChain local;
+    class SyncServer,RemoteDB remote;
+    
+    classDef local fill:#002868,color:#FFFFFF,stroke:#BF0A30,stroke-width:2px;
+    classDef remote fill:#F0F0F0,color:#333333,stroke:#999999,stroke-width:1px;
 ```
 
 ## Architecture Overview
 
-ForgeBoard uses a modular architecture with:
+ForgeBoard NX uses a revolutionary Local-First architecture with:
 
-- **Frontend**: Angular 15+ with Material Design components
-- **Backend**: NestJS with Socket.IO for real-time data
-- **Communication**: WebSockets for live updates, REST APIs for configuration
-- **State Management**: RxJS for reactive data flow
-- **UI Design**: Blueprint-inspired SCSS with responsive layouts
+- **Frontend**: Angular 19+ with ObservableStore for local data authority
+- **Local Storage**: Embedded database with CRDT-based merge capability
+- **Blockchain Ledger**: SlimChain for immutable, tamper-proof record keeping
+- **Communication**: WebRTC mesh for peer-to-peer sync, WebSockets as fallback
+- **State Management**: RxJS hot observables with persistToChain operators
+- **UI Design**: Patriotic blue/red theme with responsive blueprint layouts
 
 ## Core Modules
 
 | Module | Description | Features |
 |--------|-------------|----------|
-| Metrics Dashboard | Real-time system monitoring | Live charts, customizable refresh rates, mock data support |
-| Kablan Board | Project management system | Phase-based columns, drag-and-drop cards, workflow visualization |
-| Diagnostics | System health monitoring | Connection status tracking, socket metrics, health timeline |
-| Logger | Comprehensive logging | Filtering, statistics, CSV export |
-| Connection Status | Backend connectivity | Real-time status monitoring, automatic mock data fallback |
+| Metrics Dashboard | Sovereign system monitoring | Offline-capable metrics, local data sovereignty, P2P synchronization |
+| Kablan Board | Immutable project management | Blockchain-backed tasks, tamper-proof history, CRDT-based collaboration |
+| Diagnostics | Local-First health monitoring | On-device health analytics, air-gap compatible, signed evidence collection |
+| Logger | Blockchain-secured logging | Immutable audit trail, cryptographically-verified entries, compliance-ready exports |
+| Security Dashboard | On-device security center | Local vulnerability scanning, FedRAMP 20X compliance, blockchain attestation |
 
 ## Getting Started
 
@@ -97,21 +74,30 @@ ForgeBoard uses a modular architecture with:
    ```
 4. Navigate to `http://localhost:4200/`
 
+## Technical Features
+
+- **Local-First Data Sovereignty**: True data ownership with on-device source of authority
+- **SlimChain Ledger**: Compressed blockchain with efficient storage (≤512 MB) and pruning capabilities
+- **CRDT-Based Synchronization**: Conflict-free replicated data types for seamless collaboration
+- **WebRTC Mesh Network**: Peer-to-peer data sharing without central server dependency
+- **Offline-First Operation**: Full functionality even without internet connectivity
+- **Zero-Knowledge Cryptography**: Privacy-preserving data verification for FedRAMP 20X compliance
+- **Deterministic Builds**: Reproducible, verifiable application assemblies with signed artifacts
+
 ## Documentation
 
 - [API Documentation](./API-DOCUMENTATION.md)
 - [Frontend-API Architecture](./FRONTEND-API-ARCHITECTURE.md)
 - [Layout System](./LAYOUT.md)
 - [Coding Standards](./CODING-STANDARDS.md)
+- [Local-First vs Cache-First](./LOCAL-FIRST-VERSUS-CACHE.md)
+- [Blockchain Persistence Architecture](./BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md)
 
-## Technical Features
+## Patriotic Design
 
-- **Socket Connection Management**: Automatic reconnection with backoff strategy
-- **Mock Data Generation**: Seamless switch between real and simulated data
-- **Reactive UI Updates**: RxJS-powered real-time UI updates
-- **Drag-and-Drop Interface**: Customizable dashboard tiles and Kablan cards
-- **Responsive Blueprint Design**: Adaptive layout with grid visualization tools
+ForgeBoard NX features a distinctive American-inspired color palette that embodies sovereignty and freedom:
 
-## License
+- **Primary Colors**: #002868 (Blue), #BF0A30 (Red), #FFFFFF (White)
+- **Accent Colors**: #F9C74F (Gold), #90BE6D (Victory Green)
 
-MIT
+*"Own your data. Guard your freedom. Build Legendary."* 🦅✨

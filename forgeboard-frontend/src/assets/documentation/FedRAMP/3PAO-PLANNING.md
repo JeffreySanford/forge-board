@@ -1,6 +1,21 @@
 # ForgeBoard NX – 3PAO Assessment Planning & Automation 🔍🔐
 
-*Last Updated: June 15, 2025*
+*Last Updated: May 7, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Assessment:</strong> 3PAO Ready ✅
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Automation:</strong> Full Pipeline 🔄
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Evidence:</strong> Real-Time Collection 📊
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Timeline:</strong> On Schedule 📅
+  </div>
+</div>
 
 ![FedRAMP‑20X Ready](https://img.shields.io/badge/FedRAMP-20X-0033A0?style=for-the-badge&logo=nist)
 ![3PAO Automation](https://img.shields.io/badge/3PAO-Automation-0033A0?style=for-the-badge&logo=security)

@@ -1,15 +1,23 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { LogEntry, LogFilter, LogLevelEnum, logLevelEnumToString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
-import { LogDispatchService } from './log-dispatch.service';
-import { v4 as uuid } from 'uuid';
 import { environment } from '../../environments/environment';
+import { v4 as uuid } from 'uuid';
+import { LogDispatchService } from './log-dispatch.service';
 import { SocketRegistryService } from './socket-registry.service';
+import { 
+  LogEntry, 
+  LogFilter, 
+  LogLevelEnum, 
+  LogLevelString,
+  logLevelEnumToString,
+  stringToLogLevelEnum
+} from '@forge-board/shared/api-interfaces';
 
-/**
- * Log levels supported by the logger
- */
+// Logger types to maintain backward compatibility
+export type LogLevelType = LogLevelString;
+
+// Internal enum for log levels
 export enum LogLevel {
   TRACE = 0,
   DEBUG = 1,
@@ -19,9 +27,6 @@ export enum LogLevel {
   FATAL = 5,
   OFF = 6
 }
-
-// Define type for log level strings used in API
-export type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal' | 'trace';
 
 /**
  * Common log metadata structure
@@ -72,7 +77,7 @@ export class LoggerService {
   // Buffer for logs waiting to be sent to server
   private logBuffer: LogEntry[] = [];
   private bufferSize = 10;
-  private autoSendInterval = 5000; // ms
+  private autoSendInterval = 5000 // ms
   private autoSendTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Add the missing pendingLogs property to track logs that are still pending transmission
@@ -737,5 +742,58 @@ export class LoggerService {
       }),
       map(() => this.logs)
     );
+  }
+
+  /**
+   * Filter logs using the base LogFilter interface
+   * This method provides backward compatibility with systems using the basic LogFilter interface
+   * 
+   * @param filter Basic log filter criteria
+   * @returns Filtered logs matching the criteria
+   */
+  filterLogsByBasicFilter(filter: LogFilter): LogEntry[] {
+    // Start with all logs
+    let filteredLogs = [...this.logs];
+    
+    // Apply level filter 
+    if (filter.level) {
+      if (Array.isArray(filter.level)) {
+        filteredLogs = filteredLogs.filter(log => 
+          filter.level && Array.isArray(filter.level) && filter.level.includes(log.level)
+        );
+      } else {
+        filteredLogs = filteredLogs.filter(log => log.level === filter.level);
+      }
+    }
+    
+    // Apply service filter if provided
+    if (filter.service) {
+      filteredLogs = filteredLogs.filter(log => log.source === filter.service);
+    }
+    
+    // Apply date range filters if provided
+    if (filter.startDate) {
+      filteredLogs = filteredLogs.filter(log => 
+        filter.startDate && new Date(log.timestamp) >= new Date(filter.startDate)
+      );
+    }
+    
+    if (filter.endDate) {
+      filteredLogs = filteredLogs.filter(log => 
+        filter.endDate && new Date(log.timestamp) <= new Date(filter.endDate)
+      );
+    }
+    
+    // Apply search filter if provided
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      filteredLogs = filteredLogs.filter(log =>
+        log.message.toLowerCase().includes(searchLower) || 
+        (log.source && log.source.toLowerCase().includes(searchLower)) ||
+        (log.data && JSON.stringify(log.data).toLowerCase().includes(searchLower))
+      );
+    }
+    
+    return filteredLogs;
   }
 }

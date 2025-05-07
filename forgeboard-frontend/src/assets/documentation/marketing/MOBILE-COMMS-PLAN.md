@@ -1,4 +1,4 @@
-# ForgeBoard NX – Mobile Communications & Reporting Plan 📱🔔
+# ForgeBoard NX – Mobile Communications & Reporting Plan
 
 *Last Updated: June 20, 2025*
 

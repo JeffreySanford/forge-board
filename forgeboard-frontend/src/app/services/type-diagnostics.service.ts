@@ -8,10 +8,13 @@ import {
   safeStringify,
   TypeValidator,
   ValidationResult,
-  ValidatedTypes, // Import ValidatedTypes interface
+  ValidatedTypes,
   validateHealthData,
   validateUser,
-  User // Add this import
+  User,
+  LogQueryResponse,
+  LogBatchResponse,
+  LogResponse
 } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from './logger.service';
 
@@ -27,37 +30,6 @@ export interface TypeDiagnosticEvent {
   issues: string[];
   data?: unknown;
   stringRepresentation?: string;
-}
-
-/**
- * Interface for LogQueryResponse structure used in validation
- */
-export interface LogQueryResponse {
-  status: boolean;
-  logs: unknown[];
-  totalCount: number;
-  filtered?: boolean;
-  timestamp?: string;
-}
-
-/**
- * Interface for LogBatchResponse structure
- */
-export interface LogBatchResponse {
-  success: boolean;
-  count?: number;
-  timestamp?: string;
-}
-
-/**
- * Interface for LogResponse structure
- */
-export interface LogResponse {
-  logs: unknown[];
-  totalCount: number;
-  filtered?: boolean;
-  status: boolean;
-  timestamp?: string;
 }
 
 /**

@@ -1,7 +1,4 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { Subscription } from 'rxjs';
 import { BackendStatusService, BackendStatusSummary } from '../../services/backend-status.service';
 
@@ -15,8 +12,7 @@ import { BackendStatusService, BackendStatusSummary } from '../../services/backe
   selector: 'app-connection-status-indicator',
   templateUrl: './connection-status-indicator.component.html',
   styleUrls: ['./connection-status-indicator.component.scss'],
-  standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule]
+  standalone: false
 })
 export class ConnectionStatusIndicatorComponent implements OnInit, OnDestroy {
   /** Whether to always show connection details or only on expand */

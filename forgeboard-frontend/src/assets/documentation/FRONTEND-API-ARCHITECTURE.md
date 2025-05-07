@@ -1,5 +1,20 @@
 # ForgeBoard: Frontend-API Architecture Documentation
-*Last Updated: June 30, 2025*
+*Last Updated: May 7, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Architecture:</strong> Local-First ✅
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Data Flow:</strong> Reactive 🔄
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Pattern:</strong> Observable Store 📊
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Status:</strong> Production-Ready 🚀
+  </div>
+</div>
 
 ## Architecture Overview
 

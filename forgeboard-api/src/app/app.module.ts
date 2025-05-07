@@ -19,7 +19,6 @@ import { TileStateController } from './tiles/tile-state.controller';
 import { LoggerModule } from './logger/logger.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { TileStateModule } from './tile-state/tile-state.module';
-import { LogsController } from './logs/logs.controller';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { AuthController } from './auth/auth.controller';
@@ -34,7 +33,7 @@ import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
 import { SeedService } from './seed.service';
-import { LogsModule } from './logs/logs.module';
+import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 
 @Module({
   imports: [
@@ -73,7 +72,7 @@ import { LogsModule } from './logs/logs.module';
     TileStateModule,
     AuthModule,
     UserModule,
-    LogsModule,
+    // LogsModule, // Remove this import as we no longer need the LogsModule
     // JwtModule removed for v10+
   ],
   controllers: [
@@ -82,7 +81,7 @@ import { LogsModule } from './logs/logs.module';
     StatusController,
     MetricsController,
     TileStateController,
-    LogsController,
+    // LogsController, // Remove LogsController from here
     AuthController,
   ],
   providers: [
@@ -102,6 +101,7 @@ import { LogsModule } from './logs/logs.module';
     WsJwtGuard,
     JwtService,
     SeedService,
+    SecurityStreamGateway,
   ],
   exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService],
 })

@@ -1,87 +1,35 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, timer, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, timer, Subject, catchError, map, of } from 'rxjs';
 import { LogLevel, LogSocketResponse } from './log-types';
 import { LogDispatchService } from '../../services/log-dispatch.service';
 import { Socket, io } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
-import { LogLevelEnum, logLevelEnumToString } from '@forge-board/shared/api-interfaces';
+import { 
+  LogLevelEnum, 
+  logLevelEnumToString, 
+  LogEntry, 
+  LogFilter,
+  LogQueryResponse,
+  LogStreamUpdate,
+  LogStatsResult
+} from '@forge-board/shared/api-interfaces';
 import { SocketRegistryService } from '../../services/socket-registry.service';
 import { RefreshIntervalService } from '../../services/refresh-interval.service';
-
-// Define the LogEntry interface locally since it's missing from shared
-export interface LogEntry {
-  id: string;
-  timestamp: string;
-  level: LogLevelEnum;  // Changed from LogLevelType to LogLevelEnum
-  message: string;
-  source?: string;
-  service?: string;
-  data?: Record<string, unknown>;
-  // Extended display properties
-  displayMessage?: string;
-  rawData?: string;
-  expanded?: boolean;
-  categories?: string[];
-  eventId?: string;
-  
-  // Duplicate tracking
-  duplicateCount?: number;
-  duplicates?: LogEntry[];
-  
-  // Category grouping
-  isCategory?: boolean;
-  categoryName?: string;
-  categoryLogs?: LogEntry[];
-  categoryCount?: number;
-  
-  // Additional metadata for display
-  details?: Record<string, unknown>;
-
-  isLoggingLoop?: boolean; // Add this property
-}
-
-// Define query response interface
-export interface LogQueryResponse {
-  status: boolean;
-  logs: LogEntry[];
-  totalCount: number;
-  filtered?: boolean;
-  timestamp?: string;
-}
-
-// Define filter interface
-export interface LogFilter {
-  level?: LogLevelEnum | LogLevelEnum[];
-  loglevels?: LogLevelEnum[]; // Updated to use enum
-  service?: string;
-  startDate?: string;
-  endDate?: string;
-  search?: string;
-  limit?: number;
-  skip?: number;
-  afterTimestamp?: string | null; // Add this property
-}
-
-// Define types that aren't in the shared interfaces
-export interface LogStreamUpdate {
-  log?: LogEntry;
-  logs?: LogEntry[];
-  totalCount: number;
-  append?: boolean;
-  stats?: Record<string, number>;
-}
+import { HttpClient } from '@angular/common/http';
 
 // Define response interface for log fetch operations by extending LogQueryResponse
 export interface LogFetchResponse extends LogQueryResponse {
-  success?: boolean;
+  total: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoggerService implements OnDestroy {
+  // Add API base URL property
+  private readonly apiBaseUrl = `${environment.apiBaseUrl}`;
+  
   // Use environment variables for URLs
-  private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
   private readonly socketUrl = environment.socketBaseUrl;
   
   // Socket connection
@@ -101,29 +49,26 @@ export class LoggerService implements OnDestroy {
   // Filter subject
   private filterSubject = new BehaviorSubject<LogFilter>({
     level: LogLevelEnum.DEBUG,
-    loglevels: [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR, LogLevelEnum.FATAL],
     service: '', 
-    startDate: undefined,
-    endDate: undefined,
-    search: ''
+    limit: 100
   });
   
   // Connection status
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
-  // Mock data generation
-  private mockDataInterval: ReturnType<typeof setInterval> | null = null; // Fixed: using proper type instead of any
-  private mockDataSubscription: Subscription | null = null;
-
+  // Auto refresh flag
+  private autoRefresh = true;
+  
+  // Subscriptions
   private subscriptions = new Subscription();
-
-  autoRefresh = true;
-  someBooleanProperty: boolean = false;
+  private mockDataSubscription: Subscription | null = null;
+  someBooleanProperty: boolean = false; // This tests for boolean property on an undeclared object
 
   constructor(
     private logDispatch: LogDispatchService,
     private socketRegistry: SocketRegistryService,
-    private refreshIntervalService: RefreshIntervalService
+    private refreshIntervalService: RefreshIntervalService,
+    private http: HttpClient // Add HttpClient injection
   ) {
     // Initialize socket connection
     this.initSocket();
@@ -330,6 +275,21 @@ export class LoggerService implements OnDestroy {
       // Silent catch - don't generate more logs about logging errors
     }
   }
+
+  /**
+   * Filter logs by a basic filter and update the logs subject
+   * @param basicFilter The basic filter to apply
+   * @returns The filtered logs
+   */
+  filterLogsByBasicFilter(basicFilter: LogFilter): LogEntry[] {
+    const currentLogs = this.logsSubject.getValue();
+    const filteredLogs = this.applyFilter(currentLogs, basicFilter);
+    
+    // Update the logs subject with the filtered results
+    this.logsSubject.next(filteredLogs);
+    
+    return filteredLogs;
+  }
   
   /**
    * Clean up socket connection
@@ -357,7 +317,7 @@ export class LoggerService implements OnDestroy {
    * Generate mock log data
    */
   private startMockDataGeneration(): void {
-    if (this.mockDataInterval) return;
+    if (this.mockDataSubscription) return;
     
     console.log('LoggerService: Starting mock data generation');
     
@@ -718,87 +678,33 @@ export class LoggerService implements OnDestroy {
    * Converts complex JSON data into a more readable format
    */
   private processLogEntryForDisplay(logEntry: LogEntry): LogEntry {
-    if (!logEntry) return logEntry;
-    
-    // Create a copy of the log entry to avoid modifying the original
-    const processedEntry = { ...logEntry };
-    
-    // Process complex data objects into a more human-readable format
+    type DisplayLogEntry = LogEntry & {
+      eventId?: string;
+      displayMessage?: string;
+      rawData?: string;
+      categories?: string[];
+      expanded?: boolean;
+    };
+
+    if (!logEntry) {
+      return logEntry;
+    }
+
+    const processedEntry: DisplayLogEntry = { ...logEntry };
+
     if (processedEntry.data && typeof processedEntry.data === 'object') {
-      // Extract key information based on known patterns
       const data = processedEntry.data as Record<string, unknown>;
-      
-      // Create a humanized message from the data
-      let humanizedMessage = processedEntry.message;
-      
-      // Handle type validation logs (like in your example)
-      if (data['typeName'] && data['valid'] !== undefined) {
-        const validityStatus = data['valid'] ? 'Valid' : 'Invalid';
-        const context = data['callerInfo'] ? ` (from ${data['callerInfo']})` : '';
-        humanizedMessage = `${validityStatus} ${data['typeName']}${context}`;
-      }
-      
-      // Handle service/action pattern
-      if (data['service'] && data['action']) {
-        humanizedMessage = `${data['service']}.${data['action']}`;
-        
-        // Add additional context if available
-        if (data['typeName']) {
-          humanizedMessage += ` for ${data['typeName']}`;
-        }
-        
-        // Add status information when available
-        if (data['valid'] !== undefined) {
-          humanizedMessage += ` - ${data['valid'] ? 'Success' : 'Failed'}`;
-        } else if (data['status']) {
-          humanizedMessage += ` - ${data['status']}`;
-        }
-      }
-      
-      // Add important properties to the message
-      if (data['userId']) {
-        humanizedMessage += ` [User: ${data['userId']}]`;
-      }
-      
-      if (data['eventId']) {
+
+      if ('eventId' in data) {
         processedEntry.eventId = data['eventId'] as string;
       }
-      
-      // Generate categories based on the log entry
-      const categories: string[] = [];
-      
-      // Add source as a category
-      if (processedEntry.source) {
-        categories.push(processedEntry.source);
-      }
-      
-      // Add specific categories based on data properties
-      if (data['typeName']) {
-        categories.push(`type:${data['typeName']}`);
-      }
-      
-      if (data['action']) {
-        categories.push(`action:${data['action']}`);
-      }
-      
-      if (data['service']) {
-        categories.push(`service:${data['service']}`);
-      }
-      
-      // Add error category if appropriate
-      if ((processedEntry.level === LogLevelEnum.ERROR || processedEntry.level === LogLevelEnum.FATAL) ||
-          data['error'] || data['valid'] === false) {
-        categories.push('errors');
-      }
-      
-      // Store the processed data
-      processedEntry.message = humanizedMessage;
-      processedEntry.displayMessage = humanizedMessage;
+
+      processedEntry.displayMessage = processedEntry.message;
       processedEntry.rawData = JSON.stringify(data, null, 2);
-      processedEntry.categories = categories;
-      processedEntry.expanded = false; // Initially collapsed
+      processedEntry.categories = [];
+      processedEntry.expanded = false;
     }
-    
+
     return processedEntry;
   }
   
@@ -1072,20 +978,34 @@ export class LoggerService implements OnDestroy {
   }
 
   /**
-   * Fix for the boolean undefined issue
-   * This is likely in a method setting a boolean value
-   * Without seeing the exact code, here's a general fix pattern:
+   * Filter logs using the base LogFilter interface
+   * This provides compatibility with systems expecting to work with the basic LogFilter
    */
-  methodWithBooleanAssignment(value?: boolean): void {
-    // Use nullish coalescing to provide a default value
-    const safeValue = value ?? false;
-    this.someBooleanProperty = safeValue; // Now it's always boolean
+  filterWithBasicFilter(filter: LogFilter): LogEntry[] {
+    const currentLogs = this.logsSubject.getValue();
+    return this.applyFilter(currentLogs, filter);
+  }
 
-    console.log('Boolean value set to:', this.someBooleanProperty);
-    console.warn('Value is undefined, defaulting to false');
-
-    console.debug('Method called with value:', value);
-    console.info('Safe value:', safeValue);
-    console.error('Error occurred while setting boolean value:', new Error('Value is undefined'));
+  /**
+   * Get statistics about logs
+   */
+  getStatistics(filter?: Partial<LogFilter>): Observable<LogStatsResult> {
+    // Build query parameters
+    const params = filter ? this.buildFilterParams(filter) : {};
+    
+    // Add endpoint URL
+    const url = `${this.apiBaseUrl}/logger/stats`;
+    
+    return this.http.get<{ status: boolean, stats: LogStatsResult }>(url, { params }).pipe(
+      map(response => response.stats),
+      catchError(error => {
+        console.error('Error fetching log statistics', error);
+        return of({
+          totalCount: 0,
+          byLevel: {},
+          bySource: {}
+        });
+      })
+    );
   }
 }

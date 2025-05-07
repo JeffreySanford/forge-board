@@ -1,22 +1,26 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
-import { LogEntry, LogLevelEnum } from '@forge-board/shared/api-interfaces';
-import { LoggerService } from './logger.service';
-import { MatCardModule } from '@angular/material/card';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
-import { SocketRegistryService } from '../../services/socket-registry.service';
+import { MatCardModule } from '@angular/material/card';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
 
-// Import the necessary components
-import { LogViewerComponent } from './components/log-viewer/log-viewer.component';
-import { LogSearchComponent } from './components/log-search/log-search.component';
-import { LogLevelSelectorComponent } from './components/log-level-selector/log-level-selector.component';
+import { LoggerService } from './logger.service';
 import { LogFilterComponent } from './components/log-filter/log-filter.component';
+import { LogSearchComponent } from './components/log-search/log-search.component';
+import { LogViewerComponent } from './components/log-viewer/log-viewer.component';
 import { LogStatisticsComponent } from './components/log-statistics/log-statistics.component';
 import { LogExportComponent } from './components/log-export/log-export.component';
 
-// Import local LogLevel enum
-import { LogLevel } from './log-types';
+import { LogEntry, LogFilter, LogLevelEnum } from '@forge-board/shared/api-interfaces';
+import { LogLevel } from '../../services/logger.service';
+
+interface LogStat {
+  level: LogLevel;
+  count: number;
+}
 
 @Component({
   selector: 'app-logger',
@@ -25,141 +29,125 @@ import { LogLevel } from './log-types';
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
+    FormsModule,
     MatIconModule,
-    LogViewerComponent,
-    LogSearchComponent,
-    LogLevelSelectorComponent,
+    MatCardModule,
+    MatSlideToggleModule,
     LogFilterComponent,
+    LogSearchComponent,
+    LogViewerComponent,
     LogStatisticsComponent,
     LogExportComponent
   ]
 })
 export class LoggerComponent implements OnInit, OnDestroy {
   logs: LogEntry[] = [];
-  logStats: Record<LogLevel, number> = {
-    [LogLevel.DEBUG]: 0,
-    [LogLevel.INFO]: 0,
-    [LogLevel.WARN]: 0,
-    [LogLevel.ERROR]: 0,
-    [LogLevel.FATAL]: 0,
-    [LogLevel.TRACE]: 0  // Add missing TRACE level
-  };
-  selectedLevels: LogLevelEnum[] = []; // Ensure this is always an array
+  logStats: LogStat[] = [];
+  selectedLevels: LogLevelEnum[] = [
+    LogLevelEnum.DEBUG, 
+    LogLevelEnum.INFO, 
+    LogLevelEnum.WARN,
+    LogLevelEnum.ERROR,
+    LogLevelEnum.FATAL
+  ];
   selectedService = '';
-  isConnected = false;
-  private subscriptions = new Subscription();
+  searchQuery = '';
+  autoRefresh = true;
+  
+  private destroy$ = new Subject<void>();
 
-  constructor(
-    public loggerService: LoggerService,
-    private socketRegistry: SocketRegistryService // Add socket registry service
-  ) {}
+  constructor(private loggerService: LoggerService) {}
 
   ngOnInit(): void {
-    console.log('Logger Component: Initializing');
-    
-    // Force connect logger socket when component initializes
-    this.loggerService.ensureConnection();
-    
     // Subscribe to logs
-    this.subscriptions.add(
-      this.loggerService.getLogs().subscribe(logs => {
-        console.log(`Logger Component: Received ${logs.length} logs`);
+    this.loggerService.getLogs()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(logs => {
         this.logs = logs;
-      })
-    );
+      });
     
     // Subscribe to log stats
-    this.subscriptions.add(
-      this.loggerService.getLogStats().subscribe(stats => {
-        this.logStats = stats;
-      })
-    );
+    this.loggerService.getLogStats()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(stats => {
+        this.logStats = Object.entries(stats).map(([level, count]) => ({
+          level: parseInt(level, 10) as LogLevel,
+          count
+        }));
+      });
     
-    // Subscribe to connection status
-    this.subscriptions.add(
-      this.loggerService.getConnectionStatus().subscribe(isConnected => {
-        console.log(`Logger Component: Connection status changed: ${isConnected}`);
-        this.isConnected = isConnected;
-      })
-    );
-    
-    // Initialize selected levels from current filter
-    const currentFilter = this.loggerService.getCurrentFilter();
-    if (currentFilter.level) {
-      this.selectedLevels = Array.isArray(currentFilter.level) 
-        ? currentFilter.level 
-        : [currentFilter.level];
-    }
-    
-    // Initialize selected service
-    this.selectedService = currentFilter.service || '';
+    // Refresh logs initially
+    this.refreshLogs();
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
   
-  /**
-   * Handle level filter changes
-   */
-  onLevelsChanged(levels: LogLevelEnum[]): void {
-    // Updated to use level instead of levels
-    this.selectedLevels = levels; // Update local state
-    this.loggerService.updateFilter({ level: levels });
-  }
-  
-  /**
-   * Handle source filter changes
-   */
-  onSourcesChanged(service: string): void {
-    // Updated to use service instead of sources
-    this.selectedService = service; // Update local state
-    this.loggerService.updateFilter({ service });
-  }
-  
-  /**
-   * Handle search filter changes
-   */
-  onSearchChanged(search: string): void {
-    // Use the string value directly instead of trying to access it from an Event object
-    this.loggerService.updateFilter({ search: search || undefined });
-  }
-  
-  /**
-   * Handle date filter changes
-   */
-  onDateRangeChanged(dateRange: { startDate: string | null; endDate: string | null }): void {
-    // Convert null to undefined for type compatibility
-    const startDate = dateRange.startDate || undefined;
-    const endDate = dateRange.endDate || undefined;
+  refreshLogs(): void {
+    // Create a filter object
+    const filter: LogFilter = {
+      level: this.selectedLevels,
+      service: this.selectedService || undefined,
+      search: this.searchQuery || undefined
+    };
     
-    this.loggerService.updateFilter({
-      startDate,
-      endDate
-    });
+    // Update the filter
+    this.loggerService.updateFilter(filter);
   }
-
-  /**
-   * Handle JSON export
-   */
+  
+  onLevelsChanged(levels: LogLevelEnum[]): void {
+    this.selectedLevels = levels;
+    this.refreshLogs();
+  }
+  
+  onSourcesChanged(service: string): void {
+    this.selectedService = service;
+    this.refreshLogs();
+  }
+  
+  onSearchChanged(search: string): void {
+    this.searchQuery = search;
+    this.refreshLogs();
+  }
+  
+  onAutoRefreshChanged(enabled: boolean): void {
+    this.autoRefresh = enabled;
+  }
+  
   onExportJson(): void {
     this.loggerService.exportLogsToJson();
   }
-
-  /**
-   * Handle CSV export
-   */
+  
   onExportCsv(): void {
     this.loggerService.exportLogsToCsv();
   }
-
+  
   /**
-   * Disconnect all services except logger
+   * Apply a basic filter to logs
+   * This method uses the base LogFilter interface for backward compatibility
    */
-  disconnectOtherServices(): void {
-    this.socketRegistry.disconnectAllExcept('logs');
-    // Ensure the logger is still connected
-    this.loggerService.ensureConnection();
+  applyBasicFilter(): void {
+    // Create a basic LogFilter without advanced properties
+    const basicFilter: LogFilter = {
+      level: this.selectedLevels,
+      service: this.selectedService || undefined,
+      search: this.searchQuery || undefined
+    };
+    
+    // Apply the filter through the logger service (assuming it supports LogFilter)
+    this.loggerService.filterLogsByBasicFilter(basicFilter);
+    
+    this.debug(`Applied basic filter: ${JSON.stringify(basicFilter)}`);
+  }
+  
+  /**
+   * Debug helper method
+   */
+  private debug(message: string): void {
+    if (console && console.debug) {
+      console.debug(`[LoggerComponent] ${message}`);
+    }
   }
 }

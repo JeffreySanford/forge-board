@@ -1,33 +1,51 @@
-# <span style="color:#B22234; font-weight:bold; text-shadow: 0 0 1px rgba(0,0,0,0.2);">ForgeBoard NX</span> – <span style="color:#0C2677; font-weight:bold;">FedRAMP 20X Adherence Guide</span> 🎆🔐
-*Last Updated: May 25, 2025*
+# ForgeBoard NX – FedRAMP 20X Adherence Guide
+
+*Last Updated: May 7, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Compliance:</strong> FedRAMP 20X ✅
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Security:</strong> Zero Trust 🛡️
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>OSCAL:</strong> Full Integration 📋
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Status:</strong> P-ATO Ready 🏆
+  </div>
+</div>
 
 ![FedRAMP‑20X Ready](https://img.shields.io/badge/FedRAMP-20X-0033A0?style=for-the-badge&logo=nist)
 ![NIST Compliance](https://img.shields.io/badge/NIST%20SP%20800--53-Rev%205-0033A0?style=for-the-badge&logo=nist)
 ![Zero Trust](https://img.shields.io/badge/Zero%20Trust-Architecture-0033A0?style=for-the-badge&logo=security)
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-Welcome to the <b>ForgeBoard NX FedRAMP 20X Adherence Guide</b>! Based on the anticipated FedRAMP 20X guidelines (expected July 2025), we've wrapped our commitment to the latest NIST Risk Management Framework (RMF) in a red‑white‑and‑blue bow 🎀, making the verbose world of FedRAMP clear, engaging, and actionable. Below you'll find:
+Welcome to the <b>ForgeBoard NX FedRAMP 20X Adherence Guide</b>! Based on the anticipated FedRAMP 20X guidelines (expected July 2025), we've created a comprehensive overview of our commitment to the latest NIST Risk Management Framework (RMF).
 </div>
 
-1. <span style="color:#B22234; font-weight:bold;">**Past – The Birth of FedRAMP**</span>  
-2. <span style="color:#FFFFFF; background-color:#0C2677; padding: 2px 5px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">**🕒 Present – Current FedRAMP & NIST RMF Landscape**</span>  
-3. <span style="color:#0C2677; font-weight:bold;">**🚀 Future – FedRAMP 20X & ForgeBoard's Path to Compliance**</span>  
-4. <span style="color:#B22234; font-weight:bold;">**💥 Key Changes in FedRAMP 20X Program**</span>  
-5. <span style="color:#0C2677; font-weight:bold;">**🔐 How ForgeBoard NX Meets 20X Requirements**</span>  
-6. <span style="color:#FFFFFF; background-color:#B22234; padding: 2px 5px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">**🛣️ Implementation Roadmap & Timelines**</span>
-7. <span style="color:#0C2677; font-weight:bold;">**📊 Visual Infographics & Diagrams**</span>  
-8. <span style="color:#B22234; font-weight:bold;">**📚 References & Resources**</span>
-9. <span style="color:#0C2677; font-weight:bold;">**🎯 FedRAMP 20X Key Security Indicators**</span>
+## Table of Contents
+
+1. **Past – The Birth of FedRAMP**
+2. **Present – Current FedRAMP & NIST RMF Landscape** 
+3. **Future – FedRAMP 20X & ForgeBoard's Path to Compliance**
+4. **Key Changes in FedRAMP 20X Program**
+5. **How ForgeBoard NX Meets 20X Requirements**
+6. **Implementation Roadmap & Timelines**
+7. **Visual Infographics & Diagrams**
+8. **References & Resources**
+9. **FedRAMP 20X Key Security Indicators**
 
 ---
 
-## <span style="color:#B22234; font-weight:bold;">1. Past – The Birth of FedRAMP</span>
+## 1. Past – The Birth of FedRAMP
 
-After <span style="color:#0C2677; font-weight:bold;">FISMA (2002)</span> mandated federal information security, the <span style="color:#B22234; font-weight:bold;">FedRAMP program</span> launched in <span style="color:#B22234; font-weight:bold;">2011</span> to centralize and standardize cloud security assessments. Its goals:
+After FISMA (2002) mandated federal information security, the FedRAMP program launched in 2011 to centralize and standardize cloud security assessments. Its goals:
 
-- <span style="color:#B22234; font-weight:bold;">✅</span> **Standardize** security baselines across agencies  
-- <span style="color:#FFFFFF; background-color:#0C2677; padding: 2px 5px; font-weight: bold;">✅</span> **Reuse** assessments to reduce duplication  
-- <span style="color:#0C2677; font-weight:bold;">✅</span> **Accelerate** agency adoption of secure cloud offerings  
+- ✅ **Standardize** security baselines across agencies  
+- ✅ **Reuse** assessments to reduce duplication  
+- ✅ **Accelerate** agency adoption of secure cloud offerings  
 
 ```mermaid
 flowchart LR
@@ -44,7 +62,7 @@ flowchart LR
   classDef future fill:#0C2677,stroke:#071442,color:#fff,stroke-width:3px;
 ```  
 
-### <span style="color:#0C2677; font-weight:bold;">Historical Context & Evolution</span>
+### Historical Context & Evolution
 
 FedRAMP's history represents a progressive evolution of federal cybersecurity governance:
 
@@ -86,17 +104,17 @@ FedRAMP's history represents a progressive evolution of federal cybersecurity go
 </table>
 
 *Key Milestones*  
-- <span style="color:#B22234; font-weight:bold;">**June 2012**</span>: First JAB Provisional Authorization to Operate (P‑ATO) issued
-- <span style="color:#0C2677; font-weight:bold;">**December 2017**</span>: FedRAMP Tailored introduced for SaaS solutions
-- <span style="color:#B22234; font-weight:bold;">**August 2021**</span>: FedRAMP Authorization Act introduced to Congress
-- <span style="color:#0C2677; font-weight:bold;">**December 2022**</span>: FedRAMP Authorization Act signed into law
-- <span style="color:#B22234; font-weight:bold;">**March 2023**</span>: Rev5 transition timeline announced
+- **June 2012**: First JAB Provisional Authorization to Operate (P‑ATO) issued
+- **December 2017**: FedRAMP Tailored introduced for SaaS solutions
+- **August 2021**: FedRAMP Authorization Act introduced to Congress
+- **December 2022**: FedRAMP Authorization Act signed into law
+- **March 2023**: Rev5 transition timeline announced
 
 ---
 
-## <span style="color:#0C2677; font-weight:bold;">2. 🕒 Present – Current FedRAMP & NIST RMF Landscape</span>
+## 2. Present – Current FedRAMP & NIST RMF Landscape
 
-FedRAMP today follows <span style="color:#B22234; font-weight:bold;">NIST SP 800‑53 Rev 5</span> controls, aligned to the <span style="color:#0C2677; font-weight:bold;">seven RMF steps</span>:
+FedRAMP today follows NIST SP 800‑53 Rev 5 controls, aligned to the seven RMF steps:
 
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin: 20px 0;">
   <div style="background-color: #B22234; color: white; padding: 10px; margin: 5px; border-radius: 5px; width: 150px; text-align: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">1. <b>Categorize</b></div>
@@ -127,7 +145,7 @@ flowchart LR
   style C7 fill:#B22234,stroke:#7D100E,color:#fff,stroke-width:3px
 ```  
 
-### <span style="color:#B22234; font-weight:bold;">Current FedRAMP by the Numbers</span>
+### Current FedRAMP by the Numbers
 
 <table style="border-collapse: collapse; width: 100%; border: 3px solid #0C2677; box-shadow: 0 3px 6px rgba(0,0,0,0.16);">
   <thead>
@@ -177,7 +195,7 @@ flowchart LR
 
 ---
 
-## 3. 🚀 Future – FedRAMP 20X & ForgeBoard's Path
+## 3. Future – FedRAMP 20X & ForgeBoard's Path
 
 FedRAMP 20X represents the next evolution, embedding **zero‑touch automation**, **SBOM-driven supply chain controls**, and **AI-assisted continuous monitoring**. Key themes:
 
@@ -232,7 +250,7 @@ ForgeBoard NX has built a tailored roadmap to not only meet but exceed FedRAMP 2
 
 ---
 
-## 4. 💥 Key Changes in FedRAMP 20X Program
+## 4. Key Changes in FedRAMP 20X Program
 
 > **NEW SECTION**: The FedRAMP 20X program, launched in July 2025, represents a paradigm shift in federal cloud security, transitioning from manual, periodic assessment to continuous, automated validation.
 
@@ -253,7 +271,7 @@ FedRAMP 20X introduces fundamental changes to the authorization framework:
 
 ---
 
-## 5. 🔐 How ForgeBoard NX Meets FedRAMP 20X
+## 5. How ForgeBoard NX Meets FedRAMP 20X
 
 ForgeBoard NX is built to **exceed** FedRAMP 20X requirements via comprehensive implementation of security controls across all seven RMF steps and the newly introduced Key Security Indicators:
 
@@ -371,7 +389,7 @@ export class SbomController {
 
 ---
 
-## 6. 🛣️ Implementation Roadmap & Timelines
+## 6. Implementation Roadmap & Timelines
 
 ForgeBoard's FedRAMP 20X implementation follows a structured, phased approach to ensure comprehensive control coverage with minimal disruption.
 
@@ -428,7 +446,7 @@ pie title ForgeBoard NX FedRAMP 20X Control Implementation Status
 
 ---
 
-## 7. 📊 Visual Infographics & Diagrams
+## 7. Visual Infographics & Diagrams
 
 ### 7.1 FedRAMP Evolution Timeline
 
@@ -558,7 +576,7 @@ flowchart TD
 
 ---
 
-## 8. 📚 References & Resources
+## 8. References & Resources
 
 ### Key FedRAMP Documents
 
@@ -611,7 +629,7 @@ Let's build a safer, faster, more auditable cloud together – one <span style="
 ForgeBoard NX – Ready for the newly released FedRAMP 20X (July 2025)
 </div>
 
-## 9. 🎯 FedRAMP 20X Key Security Indicators
+## 9. FedRAMP 20X Key Security Indicators
 
 The FedRAMP 20x Phase One introduces Key Security Indicators (KSIs) that create an abstraction layer to summarize the security capabilities required for FedRAMP Low authorization. ForgeBoard NX has been specifically designed to address all KSIs through comprehensive implementation and continuous automated validation.
 
@@ -729,5 +747,3 @@ ForgeBoard maintains robust incident response capabilities:
 - **Incident Reporting**: Automated incident notification within required timeframes
 - **Incident Analysis**: Post-incident reviews with root cause analysis
 - **Response Metrics**: Average MTTD of 5 minutes and MTTR of 30 minutes for critical incidents
-
----

@@ -32,22 +32,55 @@ export type * from './lib/health.type';
 // Diagnostic interfaces
 export type { DiagnosticEvent, DiagnosticEventResponse } from './lib/diagnostic-types';
 
-// Log interfaces
-export { LogLevelEnum } from './lib/log-types';
-export type { LogLevelString, LogEntry, LogFilter, LogQueryResponse, LogResponse, LogBatchResponse, LogStreamUpdate } from './lib/log-types';
-export { stringToLogLevelEnum, logLevelEnumToString } from './lib/log-types';
+// Export log-related types and interfaces
+export type {
+  LogLevelString,
+  LogEntry,
+  LogDto,
+  LogFilter,
+  LogQueryResponse,
+  LogBatchResponse,
+  LogResponse,
+  LogStreamUpdate,
+  LogStatsResult
+} from './lib/log-types';
 
-// Export log types
+// Export security event types and interfaces
+export type {
+  SecurityEventSeverity,
+  SecurityEventStatus,
+  SecurityEvent,
+  SbomEvent,
+  ScaEvent,
+  ZapEvent,
+  SupplyChainEvent,
+  FedRampEvent
+} from './lib/security-event';
+
+// Re-export all type definitions so they can be imported from the library's root
+export * from './lib/api-response';
+export * from './lib/metric-types';
+export * from './lib/socket-types';
+export * from './lib/user-types';
+export * from './lib/tile-types';
 export * from './lib/log-types';
+export * from './lib/security-event';
 
-// Metric interfaces
-export type { MetricData, MetricResponse, MetricFilter, MetricUpdate } from './lib/metrics-types';
+// Import and re-export log-helpers
+export * from './lib/log-helpers';
 
-// Timeline interfaces
-export type * from './lib/health-timeline';
+// Export type validation utilities
+export {
+  validateMetricData,
+  validateHealthData,
+  validateUser,
+  typeValidators,
+  registerTypeValidator,
+  safeStringify
+} from './lib/type-validation';
 
-// Validation types and functions
-export * from './lib/type-validation';
+// Export additional type validation types
+export type { ValidationResult, TypeValidator } from './lib/type-validation';
 
-// Constants
-export * from './lib/constants';
+// Export ValidatedTypes
+export type { ValidatedTypes } from './lib/type-validation';

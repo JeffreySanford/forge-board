@@ -114,13 +114,17 @@ export class MetricsService implements OnModuleInit {
     const networkDelta = Math.random() * 5 - 2.5 + (this.simulatedLoad * 0.05);
     this.prevNetwork = Math.min(95, Math.max(1, this.prevNetwork + networkDelta));
     
-    // Return the metric data with rounded values for cleaner display
-    return {
+    const metrics = {
       time: new Date().toISOString(),
       cpu: Math.round(this.prevCpu * 10) / 10,
       memory: Math.round(this.prevMemory * 10) / 10,
       disk: Math.round(this.prevDisk * 10) / 10,
       network: Math.round(this.prevNetwork * 10) / 10
     };
+    
+    // Replace console.log with proper logger
+    this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`, 'MetricsService');
+    
+    return metrics;
   }
 }

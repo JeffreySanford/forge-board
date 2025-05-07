@@ -26,6 +26,7 @@ export class NavigationComponent {
     { name: 'Kablan Board', route: '/kablan', icon: 'dashboard', description: 'Task management board' },
     { name: 'Logs', route: '/logs', icon: 'receipt_long', description: 'System logs viewer' },
     { name: 'Diagnostics', route: '/diagnostics', icon: 'healing', description: 'System diagnostics' },
+    { name: 'Security', route: '/security', icon: 'security', description: 'Security dashboard and controls' },
     { name: 'Documentation', route: '/documentation', icon: 'description', description: 'System documentation' }
   ];
 

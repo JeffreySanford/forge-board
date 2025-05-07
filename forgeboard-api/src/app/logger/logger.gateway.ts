@@ -1,10 +1,35 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, WsResponse } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { LoggerService } from './logger.service';
-import { type LogEntry, type LogFilter, type LogQueryResponse, type SocketResponse, type LogStreamUpdate } from '@forge-board/shared/api-interfaces';
-import { createSocketResponse } from '../utils/socket-utils';
-import { OnModuleInit } from '@nestjs/common';
+import type { LogFilter } from '@forge-board/shared/api-interfaces';
+import { LogEntry, LogQueryResponse, LogStreamUpdate, createSocketResponse } from '@forge-board/shared/api-interfaces';
+import { firstValueFrom } from 'rxjs';
+
+// Define a proper Socket Error class
+class SocketError extends Error {
+  readonly status: string = 'error';
+  readonly timestamp: string;
+  readonly details?: Record<string, unknown>;
+
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'SocketError';
+    this.timestamp = new Date().toISOString();
+    this.details = details;
+  }
+
+  // Convert to a plain object suitable for socket transmission
+  toPlainObject() {
+    return {
+      status: this.status,
+      message: this.message,
+      name: this.name,
+      timestamp: this.timestamp,
+      details: this.details
+    };
+  }
+}
 
 @WebSocketGateway({
   namespace: '/logs',
@@ -13,13 +38,13 @@ import { OnModuleInit } from '@nestjs/common';
     methods: ['GET', 'POST']
   }
 })
-export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
-  @WebSocketServer() server!: Server;
-  private readonly logger = new Logger(LoggerGateway.name);
+export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
+  private logger = new Logger('LoggerGateway');
   private activeFilters = new Map<string, LogFilter>();
-  
-  constructor(private loggerService: LoggerService) {}
-  
+
+  constructor(private readonly loggerService: LoggerService) {}
+
   onModuleInit() {
     // Subscribe to new log entries from LoggerService
     this.loggerService.newLogEntry$.subscribe(logEntry => {
@@ -44,32 +69,44 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
   
   @SubscribeMessage('filter-logs')
-  handleFilterLogs(client: Socket, filter: LogFilter): WsResponse<SocketResponse<LogQueryResponse>> {
+  handleFilterLogs(client: Socket, filter: LogFilter) {
     this.logger.log(`Client ${client.id} set log filter: ${JSON.stringify(filter)}`);
     
     // Store client's filter
     this.activeFilters.set(client.id, filter);
     
-    // Get filtered logs
-    const logs = this.loggerService.getLogs(filter);
-    const totalCount = this.loggerService.getLogs().length;
+    // Get filtered logs with observable pattern
+    const logs$ = this.loggerService.getLogs(filter);
     
-    // Return properly typed response
-    return {
-      event: 'logs',
-      data: {
-        status: 'success',
-        data: {
-          status: true,
-          logs,
-          totalCount,
-          // Removed the 'total' property as it doesn't exist in LogQueryResponse
-          timestamp: new Date().toISOString(),
-          filtered: true
-        },
-        timestamp: new Date().toISOString()
-      }
-    };
+    // We need to get totalCount from all logs, but convert to value first
+    firstValueFrom(this.loggerService.getLogs({}))
+      .then(allLogs => {
+        const totalCount = allLogs.length;
+        
+        // Now get the filtered logs
+        firstValueFrom(logs$)
+          .then(filteredLogs => {
+            // Return properly typed response
+            const response: LogQueryResponse = {
+              status: true,
+              logs: filteredLogs,
+              totalCount,
+              filtered: true,
+              timestamp: new Date().toISOString()
+            };
+            
+            client.emit('logs', {
+              status: 'success',
+              data: response
+            });
+          })
+          .catch(error => {
+            this.handleError(client, 'Error retrieving filtered logs', error);
+          });
+      })
+      .catch(error => {
+        this.handleError(client, 'Error counting total logs', error);
+      });
   }
   
   @SubscribeMessage('subscribe-logs')
@@ -80,81 +117,123 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   @SubscribeMessage('update-filter')
-  handleUpdateFilter(client: Socket, filter: LogFilter): void {
-    this.logger.log(`Client ${client.id} updated log filter: ${JSON.stringify(filter)}`);
-    
-    // Update client's filter
-    this.activeFilters.set(client.id, filter);
-    
-    // Get logs based on updated filter
-    const logs = this.loggerService.getLogs(filter);
-    const totalCount = this.loggerService.getLogs().length;
-    
-    // Send updated logs to client
-    const update: LogStreamUpdate = {
-      logs,
-      totalCount,
-      append: false
-    };
-    
-    client.emit('log-stream', createSocketResponse('log-stream', update));
+  async handleUpdateFilter(client: Socket, filter: LogFilter) {
+    try {
+      this.logger.debug(`Client ${client.id} updated filter: ${JSON.stringify(filter)}`);
+      
+      // Store the filter for this client
+      this.activeFilters.set(client.id, filter);
+      
+      // Get logs based on updated filter
+      const logs = await firstValueFrom(this.loggerService.getLogs(filter));
+      const allLogs = await firstValueFrom(this.loggerService.getLogs({}));
+      const totalCount = allLogs.length;
+
+      // Send updated logs to client
+      const update: LogStreamUpdate = {
+        logs,
+        totalCount,
+        append: false
+      };
+      
+      client.emit('log-stream', createSocketResponse('log-stream', update));
+      
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Error updating filter', error);
+      return { success: false, error: error.message };
+    }
   }
   
   @SubscribeMessage('get-latest-logs')
-  handleGetLatestLogs(client: Socket, options: { afterTimestamp?: string }): void {
-    // Get all logs after the specified timestamp
-    const filter: LogFilter = { 
-      ...this.activeFilters.get(client.id) || {},
-      afterTimestamp: options?.afterTimestamp
-    };
-    
-    // Store the updated filter
-    this.activeFilters.set(client.id, filter);
-    
-    // Get filtered logs
-    const logs = this.loggerService.getLogs(filter);
-    
-    // Send logs to the client
-    client.emit('log-stream', createSocketResponse({
-      logs,
-      append: true, // Important: tell client to append these logs
-      totalCount: logs.length,
-      filtered: true,
-      timestamp: new Date().toISOString()
-    }));
+  async handleGetLatestLogs(client: Socket, options: { afterTimestamp?: string }) {
+    try {
+      const filter: LogFilter = this.activeFilters.get(client.id) || {};
+      if (options.afterTimestamp) {
+        filter.afterTimestamp = options.afterTimestamp;
+      }
+
+      // Get filtered logs
+      const logs = await firstValueFrom(this.loggerService.getLogs(filter));
+      const allLogs = await firstValueFrom(this.loggerService.getLogs({}));
+      const totalCount = allLogs.length;
+
+      // Return properly typed response
+      return createSocketResponse<LogQueryResponse>('logs', {
+        status: true,
+        logs,
+        totalCount,
+        filtered: Object.keys(filter).length > 0,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.logger.error('Error fetching logs', error);
+      return { status: 'error', message: error.message };
+    }
   }
   
   /**
    * Emit a new log entry to all subscribed clients
    */
-  broadcastLogEntry(logEntry: LogEntry): void {
-    // LOOP PREVENTION: Don't broadcast logs about logging itself
-    if (this.isLogProcessingLog(logEntry)) {
-      this.logger.debug(`Prevented loop broadcast for log: ${logEntry.message}`);
-      return;
-    }
-    
-    // Get total logs count
-    const totalCount = this.loggerService.getLogs().length;
-    
-    // For each client with an active filter
-    this.activeFilters.forEach((filter, clientId) => {
-      // Check if the log entry matches their filter
-      if (this.logMatchesFilter(logEntry, filter)) {
-        const client = this.server.sockets.sockets.get(clientId);
-        if (client) {
-          const update: LogStreamUpdate = {
-            log: logEntry,
-            totalCount,
-            append: true
-          };
-          client.emit('log-stream', createSocketResponse('log-stream', update));
-        }
+  async broadcastLogEntry(logEntry: LogEntry) {
+    try {
+      // Skip if the log entry is about log processing itself to avoid loops
+      if (this.isLogProcessingLog(logEntry)) {
+        return;
       }
-    });
+
+      // Get total logs count
+      const allLogs = await firstValueFrom(this.loggerService.getLogs({}));
+      const totalCount = allLogs.length;
+
+      // For each client with an active filter
+      this.activeFilters.forEach(async (filter, clientId) => {
+        // Check if this log entry matches the client's filter
+        if (this.logMatchesFilter(logEntry, filter)) {
+          const client = this.server.sockets.sockets.get(clientId);
+          if (client) {
+            // Send just this single log with append flag
+            client.emit('log-stream', createSocketResponse('log-stream', {
+              log: logEntry,
+              totalCount,
+              append: true
+            }));
+          }
+        }
+      });
+      
+      // Also broadcast to all clients without filters - with renamed event name
+      this.server.emit('backend-log-entry', createSocketResponse('backend-log-entry', logEntry));
+    } catch (error) {
+      this.logger.error('Error broadcasting log entry', error);
+    }
+  }
+
+  /**
+   * Handle errors in gateway methods and send appropriate error responses to clients
+   * @param client The Socket client that experienced the error
+   * @param message A descriptive error message
+   * @param error The original error object
+   */
+  private handleError(client: Socket, message: string, error: unknown): void {
+    // Create a proper SocketError instance
+    const socketError = error instanceof SocketError 
+      ? error 
+      : new SocketError(
+          message,
+          error instanceof Error 
+            ? { name: error.name, message: error.message } 
+            : { details: String(error) }
+        );
     
-    // Also broadcast to all clients without filters - with renamed event name
-    this.server.emit('backend-log-entry', createSocketResponse('backend-log-entry', logEntry));
+    // Log the error details for server-side troubleshooting
+    this.logger.error(
+      `Socket error: ${socketError.message}`, 
+      error instanceof Error ? error.stack : JSON.stringify(error)
+    );
+    
+    // Send the formatted error response to the client
+    client.emit('error', socketError.toPlainObject());
   }
 
   /**
