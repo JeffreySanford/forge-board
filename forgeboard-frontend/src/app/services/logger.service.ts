@@ -237,13 +237,8 @@ export class LoggerService {
     // Add to local logs
     this.addLog(entry);
     
-    // Add to buffer for sending to server
-    this.logBuffer.push(entry);
-    
-    // If buffer is full, send logs to server
-    if (this.logBuffer.length >= this.bufferSize) {
-      this.flushBuffer();
-    }
+    // Instead of batching, send each log immediately
+    this.sendLogToServer(entry);
   }
 
   /**
@@ -482,63 +477,48 @@ export class LoggerService {
   }
 
   /**
-   * Flush log buffer to server
+   * Flush log buffer to server - modified to not use batch endpoint
+   * This is kept for backward compatibility but now processes logs individually
    */
   private flushBuffer(): void {
     if (this.logBuffer.length === 0) return;
     
-    const logsToSend = [...this.logBuffer];
-    this.logBuffer = [];
+    // Process one log at a time instead of sending the entire batch
+    const logToSend = this.logBuffer.shift();
+    if (logToSend) {
+      this.sendLogToServer(logToSend);
+    }
     
-    this.debug(`Sending ${logsToSend.length} logs to server`, 'LoggerService');
-    
-    // Use LogDispatchService to send logs
-    this.logDispatch.sendLogs(logsToSend)
+    // If we still have logs, schedule another flush
+    if (this.logBuffer.length > 0) {
+      setTimeout(() => this.flushBuffer(), 100);
+    }
+  }
+  
+  /**
+   * Send a single log to the server - new method replacing batch processing
+   */
+  private sendLogToServer(log: LogEntry): void {
+    this.logDispatch.sendLogs([log])
       .subscribe({
         next: (response) => {
           if (!response) {
-            this.warning('No response received from log batch request', 'LoggerService');
+            this.warning('No response received from log request', 'LoggerService');
             return;
           }
           
           if (response.success) {
-            this.debug('Successfully sent logs to server', 'LoggerService');
+            this.debug('Successfully sent log to server', 'LoggerService');
           } else {
-            this.warning(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService');
-            // Re-add logs to buffer for next attempt
-            this.logBuffer = [...logsToSend, ...this.logBuffer];
+            this.warning('Failed to send log to server', 'LoggerService');
+            // Re-add log to buffer for next attempt
+            this.logBuffer.push(log);
           }
         },
         error: (err) => {
-          this.error('Error in log batch response', 'LoggerService', { error: err });
-          // Re-add logs to buffer for next attempt
-          this.logBuffer = [...logsToSend, ...this.logBuffer];
-        }
-      });
-  }
-
-  /**
-   * Send logs to server
-   */
-  private sendLogsToServer(logs: LogEntry[]): void {
-    if (!logs.length) return;
-    
-    this.logDispatch.sendLogs(logs)
-      .subscribe({
-        next: (response) => {
-          if (response.success) { // Fixed: Use success instead of ok
-            this.info(`Successfully sent ${logs.length} logs to server`, 'LoggerService');
-            // Fix: Add proper type for log parameter
-            this.pendingLogs = this.pendingLogs.filter(log => 
-              !logs.some(sentLog => sentLog.id === log.id));
-          } else {
-            this.error(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService', { response });
-            // Log will be retried on next batch
-          }
-        },
-        error: (err) => {
-          this.error('Error sending logs to server', 'LoggerService', { error: err });
-          // Logs will be retried on next batch
+          this.error('Error sending log', 'LoggerService', { error: err });
+          // Re-add log to buffer for next attempt
+          this.logBuffer.push(log);
         }
       });
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, forkJoin } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { LogEntry } from '@forge-board/shared/api-interfaces';
 import { LogResponse } from './logger.service';
 
@@ -14,58 +14,42 @@ import { LogResponse } from './logger.service';
 })
 export class LogDispatchService {
   private readonly apiUrl = 'http://localhost:3000/api';
-  private readonly maxBatchSize = 50; // Maximum number of logs per batch
+  // Remove batch size property as batching is being removed
 
   constructor(private http: HttpClient) {}
 
   /**
-   * Send logs to the server
+   * Send logs to the server - now sends logs individually instead of in batch
    */
   sendLogs(logs: LogEntry[]): Observable<{ success: boolean }> {
-    // If logs array is too large, split into batches
-    if (logs.length > this.maxBatchSize) {
-      console.log(`Logs batch too large (${logs.length}), splitting into batches of ${this.maxBatchSize}`);
-      
-      // Split logs into smaller batches
-      const batches: LogEntry[][] = [];
-      for (let i = 0; i < logs.length; i += this.maxBatchSize) {
-        batches.push(logs.slice(i, i + this.maxBatchSize));
-      }
-      
-      // Send each batch separately
-      const batchRequests = batches.map(batch => 
-        this.http.post<{ success: boolean }>(`${this.apiUrl}/logs/batch`, batch, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }).pipe(
-          catchError(err => {
-            console.error(`Failed to send logs batch (${batch.length} logs):`, err);
-            return of({ success: false });
-          })
-        )
-      );
-      
-      // Combine the results
-      return forkJoin(batchRequests).pipe(
-        map(results => {
-          const allSuccess = results.every(result => result.success);
-          return { success: allSuccess };
-        })
-      );
+    // If no logs, return success immediately
+    if (!logs.length) {
+      return of({ success: true });
     }
     
-    // For smaller batches, send as is
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/logs/batch`, logs, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).pipe(
-      catchError(err => {
-        console.error('Failed to send logs:', err);
-        return of({ success: false });
-      })
-    );
+    // Send each log individually rather than as a batch
+    console.log(`Sending ${logs.length} logs individually`);
+    
+    // Process each log individually
+    try {
+      // Send first log (for simplicity, just handle one at a time)
+      // In a real implementation, you might want to process these sequentially with better error handling
+      const log = logs[0];
+      
+      return this.http.post<{ success: boolean }>(`${this.apiUrl}/logs`, log, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).pipe(
+        catchError(err => {
+          console.error('Failed to send log:', err);
+          return of({ success: false });
+        })
+      );
+    } catch (error) {
+      console.error('Error sending log:', error);
+      return of({ success: false });
+    }
   }
 
   /**

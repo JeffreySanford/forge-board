@@ -65,51 +65,6 @@ export class LoggerController {
     return result;
   }
 
-  @Post('batch')
-  async createBatchLogs(@Body() logDtos: LogDto[]) {
-    this.logger.log(`Creating batch of ${logDtos.length} logs`);
-    
-    // Remove debug logging of content
-    // Only log this info if someone is actively debugging and turns verboseLogging on
-    if (this.verboseLogging && this.debugLogging) {
-      this.logger.debug(`Received ${logDtos.length} logs at ${new Date().toISOString()}`);
-      logDtos.forEach((log, index) => {
-        this.logger.debug(`Log #${index+1}:`);
-        this.logger.debug(`- Level: ${log.level}`);
-        this.logger.debug(`- Source: ${log.source || 'not specified'}`);
-        this.logger.debug(`- Message: ${log.message}`);
-        this.logger.debug(`- Timestamp: ${log.timestamp}`);
-        if (log.data) {
-          this.logger.debug(`- Data: ${JSON.stringify(log.data, null, 2)}`);
-        }
-        this.logger.debug('-------------------');
-      });
-    }
-    
-    try {
-      // Convert LogDto[] to LogEntry[] by adding the required id property
-      // Fix logDtos.map to always provide a timestamp
-      const logEntries: LogEntry[] = logDtos.map(dto => ({
-        ...dto,
-        id: '',
-        timestamp: dto.timestamp || new Date().toISOString()
-      }));
-      
-      const createdLogs = await firstValueFrom(this.loggerService.createMany(logEntries));
-      return { 
-        success: true, 
-        count: createdLogs.length,
-        message: `Successfully saved ${createdLogs.length} logs`
-      };
-    } catch (error) {
-      this.logger.error(`Failed to create batch logs: ${error.message}`, error.stack);
-      throw new HttpException(
-        { message: 'Failed to create batch logs', error: error.message },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
   @Get('stats')
   getLogStatistics(
     @Query('startDate') startDate?: string,

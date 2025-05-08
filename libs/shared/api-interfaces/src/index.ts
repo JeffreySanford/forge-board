@@ -39,7 +39,6 @@ export type {
   LogDto,
   LogFilter,
   LogQueryResponse,
-  LogBatchResponse,
   LogResponse,
   LogStreamUpdate,
   LogStatsResult

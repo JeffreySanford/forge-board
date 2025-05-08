@@ -115,15 +115,6 @@ export interface LogQueryResponse {
 }
 
 /**
- * Response structure for batch log operations
- */
-export interface LogBatchResponse {
-  success: boolean;
-  count: number;
-  timestamp: string;
-}
-
-/**
  * Log entry interface
  */
 export interface LogEntry {

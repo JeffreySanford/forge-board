@@ -3,7 +3,7 @@ import {
   validateHealthData,
   TypeValidator,
   ValidationResult,
-  // Remove or fix imports for validateDiagnosticEvent, validateLogResponse, validateLogBatchResponse
+  // Remove or comment out references to batch response validator
   // Remove these imports if not used, or comment out if not exported
   validateMetricData
 } from '@forge-board/shared/api-interfaces';
@@ -17,7 +17,7 @@ interface CustomValidatedTypes {
   SocketLogEventResponse: Record<string, unknown>;
   SocketLogEventResponseBatch: Record<string, unknown>;
   SocketLogEventResponseQueryBatch: Record<string, unknown>;
-  LogBatchResponse: import('@forge-board/shared/api-interfaces').LogBatchResponse;
+  // Remove LogBatchResponse from custom types
   LogQueryResponse: import('@forge-board/shared/api-interfaces').LogQueryResponse;
   MetricData: import('@forge-board/shared/api-interfaces').MetricData;
   LogEvent: Record<string, unknown>;
@@ -48,9 +48,8 @@ export class TypeDiagnosticsService {
     try {
       // Register built-in validators
       this.registerValidator<'HealthData'>('HealthData', validateHealthData);
-      // this.registerValidator<'DiagnosticEvent'>('DiagnosticEvent', validateDiagnosticEvent);
+      // Remove batch validator registration
       // this.registerValidator<'LogBatchResponse'>('LogBatchResponse', validateLogBatchResponse);
-      // this.registerValidator<'LogQueryResponse'>('LogQueryResponse', validateLogResponse); // Changed from validateLogQueryResponse
       this.registerValidator<'MetricData'>('MetricData', validateMetricData);
       
       // Log success after initialization

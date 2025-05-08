@@ -1,6 +1,6 @@
 import { DiagnosticEvent} from './diagnostic-types';
 import { SocketResponse } from './socket-types';
-import { LogQueryResponse, LogBatchResponse, LogResponse, LogFilter, LogEntry, LogLevelString, LogLevelEnum } from './log-types';
+import { LogQueryResponse, LogResponse, LogFilter, LogEntry, LogLevelString, LogLevelEnum } from './log-types';
 import { User } from './user-types';
 import { HealthData } from './health.type';
 import { MetricData } from './metrics-types';
@@ -43,7 +43,6 @@ export interface ValidatedTypes {
   User: User;
   SocketResponse: SocketResponse<unknown>;
   LogQueryResponse: LogQueryResponse;
-  LogBatchResponse: LogBatchResponse;
   LogResponse: LogResponse;
   [key: string]: unknown;
 }
@@ -301,36 +300,6 @@ export function validateLogResponse(obj: unknown): ValidationResult {
   };
 }
 
-export function validateLogBatchResponse(obj: unknown): ValidationResult {
-  const issues: string[] = [];
-  
-  if (!obj || typeof obj !== 'object') {
-    issues.push('Expected an object');
-    return { valid: false, issues };
-  }
-  
-  const response = obj as Partial<LogBatchResponse>;
-  
-  if (typeof response.success !== 'boolean') {
-    issues.push('success must be a boolean');
-  }
-  
-  if (response.count !== undefined && typeof response.count !== 'number') {
-    issues.push('count must be a number if present');
-  }
-  
-  if (response.timestamp !== undefined && typeof response.timestamp !== 'string') {
-    issues.push('timestamp must be a string if present');
-  }
-  
-  return {
-    valid: issues.length === 0,
-    issues,
-    typeName: 'LogBatchResponse',
-    stringRepresentation: safeStringify(obj)
-  };
-}
-
 export function isHealthData(obj: unknown): obj is HealthData {
   if (!obj || typeof obj !== 'object') return false;
   
@@ -471,6 +440,5 @@ export const validators = {
   isErrorResponse,
   validateSocketResponse,
   validateLogResponse,
-  validateLogBatchResponse,
   safeStringify
 };

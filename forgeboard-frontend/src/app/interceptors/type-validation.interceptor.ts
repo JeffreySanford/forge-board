@@ -17,8 +17,6 @@ export class TypeValidationInterceptor implements HttpInterceptor {
     '/api/metrics': 'MetricData',
     '/api/diagnostics/health': 'HealthData',
     '/api/logs$': 'LogQueryResponse',
-    // Add special case for logs/batch endpoint to use different type validation
-    '/api/logs/batch': 'LogBatchResponse',
     // Add more mappings as needed
   };
 

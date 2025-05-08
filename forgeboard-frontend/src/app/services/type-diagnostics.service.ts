@@ -13,7 +13,6 @@ import {
   validateUser,
   User,
   LogQueryResponse,
-  LogBatchResponse,
   LogResponse
 } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from './logger.service';
@@ -37,7 +36,6 @@ export interface TypeDiagnosticEvent {
  */
 interface CustomValidatedTypes {
   LogQueryResponse: LogQueryResponse;
-  LogBatchResponse: LogBatchResponse;
   LogResponse: LogResponse;
   User: User;
   HealthData: import('@forge-board/shared/api-interfaces').HealthData; // Add HealthData
@@ -79,10 +77,6 @@ export class TypeDiagnosticsService {
     // Use custom types for our validators
     this.registerValidator<'LogQueryResponse'>('LogQueryResponse', 
       this.validateLogQueryResponse.bind(this) as TypeValidator<LogQueryResponse>);
-    
-    // Add validator for LogBatchResponse with proper typing
-    this.registerValidator<'LogBatchResponse'>('LogBatchResponse', 
-      this.validateLogBatchResponse.bind(this) as TypeValidator<LogBatchResponse>);
     
     // Add validator for LogResponse with proper typing
     this.registerValidator<'LogResponse'>('LogResponse', 
@@ -393,50 +387,6 @@ export class TypeDiagnosticsService {
     this.safeLog('debug', `LogQueryResponse validation ${validationResult.valid ? 'succeeded' : 'failed'}`, {
       service: 'TypeDiagnosticsService',
       action: 'validateLogQueryResponse',
-      valid: validationResult.valid,
-      issues: validationResult.issues,
-      objectSummary: !validationResult.valid ? validationResult.stringRepresentation : undefined
-    });
-    
-    return validationResult;
-  }
-
-  /**
-   * Validator for LogBatchResponse type
-   */
-  private validateLogBatchResponse(obj: unknown): ValidationResult {
-    const issues: string[] = [];
-    
-    if (!obj || typeof obj !== 'object') {
-      issues.push('Expected an object');
-      return { valid: false, issues };
-    }
-    
-    const batchObj = obj as ValidationObject;
-    
-    if (typeof batchObj['success'] !== 'boolean') {
-      issues.push('success must be a boolean');
-    }
-    
-    // Optional fields
-    if (batchObj['count'] !== undefined && typeof batchObj['count'] !== 'number') {
-      issues.push('count must be a number if present');
-    }
-    
-    if (batchObj['timestamp'] !== undefined && typeof batchObj['timestamp'] !== 'string') {
-      issues.push('timestamp must be a string if present');
-    }
-    
-    const validationResult = {
-      valid: issues.length === 0,
-      issues,
-      typeName: 'LogBatchResponse',
-      stringRepresentation: safeStringify(obj)
-    };
-    
-    this.safeLog('debug', `LogBatchResponse validation ${validationResult.valid ? 'succeeded' : 'failed'}`, {
-      service: 'TypeDiagnosticsService',
-      action: 'validateLogBatchResponse',
       valid: validationResult.valid,
       issues: validationResult.issues,
       objectSummary: !validationResult.valid ? validationResult.stringRepresentation : undefined
