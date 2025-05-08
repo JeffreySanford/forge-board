@@ -1,18 +1,19 @@
 # ForgeBoard NX
-*Last Updated: May 7, 2025*
+*Last Updated: May 15, 2025*
 
-A sovereign monitoring and management dashboard with Local-First data ownership and blockchain persistence.
+A sovereign monitoring and management dashboard with Local-First data ownership, comprehensive data provenance tracking, and blockchain persistence.
 
 ## Features
 
-- **Local-First Metrics Dashboard**: Monitor system performance metrics with live visualizations that work offline
-- **Blockchain-Backed Kablan Board**: Kanban-style project management with tamper-proof workflow history
-- **Sovereign Diagnostics**: System health monitoring with on-device data authority
-- **Immutable Logging System**: Real-time log collection with blockchain-secured audit trail
-- **On-Device Security Dashboard**: Local vulnerability scanning and FedRAMP 20X compliance tracking
-- **Peer-to-Peer Synchronization**: Optional mesh network capability for team collaboration
+- **Data Provenance Tracking**: Complete lifecycle tracking of all data from inception through disposal
+- **Local-First Architecture**: Your device is the source of authority for all data
+- **Blockchain Persistence**: Immutable, tamper-evident record of all changes
+- **Real-Time Dashboards**: Live metrics, logs, and diagnostics
+- **FedRAMP 20X Ready**: Built to exceed the latest federal security requirements
 
 ## System Architecture
+
+ForgeBoard NX's architecture is built around maintaining complete data provenance:
 
 ```mermaid
 flowchart TD
@@ -20,6 +21,7 @@ flowchart TD
         Frontend["Frontend (Angular)"]
         LocalDB[(Local Database)]
         LiteChain["SlimChain Node"]
+        Provenance["Provenance Engine"]
     end
     
     subgraph "Optional Sync"
@@ -27,13 +29,14 @@ flowchart TD
         RemoteDB[(Remote Database)]
     end
     
-    Frontend -->|"Local-First"| LocalDB
-    Frontend -->|"Sign & Store"| LiteChain
+    Frontend -->|"Data with Provenance"| LocalDB
+    Frontend -->|"Provenance Tracking"| Provenance
+    Provenance -->|"Persist Lifecycle Events"| LiteChain
     LocalDB -->|"Optional P2P Sync"| SyncServer
     LiteChain -->|"Blockchain Federation"| SyncServer
     SyncServer -.->|"Cache Only"| RemoteDB
     
-    class Frontend,LocalDB,LiteChain local;
+    class Frontend,LocalDB,LiteChain,Provenance local;
     class SyncServer,RemoteDB remote;
     
     classDef local fill:#002868,color:#FFFFFF,stroke:#BF0A30,stroke-width:2px;
@@ -42,14 +45,14 @@ flowchart TD
 
 ## Architecture Overview
 
-ForgeBoard NX uses a revolutionary Local-First architecture with:
+ForgeBoard NX uses a revolutionary Local-First architecture with comprehensive data provenance:
 
-- **Frontend**: Angular 19+ with ObservableStore for local data authority
-- **Local Storage**: Embedded database with CRDT-based merge capability
-- **Blockchain Ledger**: SlimChain for immutable, tamper-proof record keeping
-- **Communication**: WebRTC mesh for peer-to-peer sync, WebSockets as fallback
-- **State Management**: RxJS hot observables with persistToChain operators
-- **UI Design**: Patriotic blue/red theme with responsive blueprint layouts
+- **Frontend**: Angular 19+ with ProvenanceStore for complete data lifecycle tracking
+- **Local Storage**: Embedded database with CRDT-based merge capability and provenance preservation
+- **Blockchain Ledger**: SlimChain for immutable, tamper-proof provenance records
+- **Communication**: WebRTC mesh for peer-to-peer sync with provenance verification, WebSockets as fallback
+- **State Management**: RxJS hot observables with trackProvenance operators
+- **UI Design**: Patriotic blue/red theme with responsive blueprint layouts and provenance visualization
 
 ## Core Modules
 
@@ -76,6 +79,7 @@ ForgeBoard NX uses a revolutionary Local-First architecture with:
 
 ## Technical Features
 
+- **Complete Data Provenance**: Tracking the entire lifecycle of data from inception through disposal
 - **Local-First Data Sovereignty**: True data ownership with on-device source of authority
 - **SlimChain Ledger**: Compressed blockchain with efficient storage (≤512 MB) and pruning capabilities
 - **CRDT-Based Synchronization**: Conflict-free replicated data types for seamless collaboration
@@ -86,12 +90,15 @@ ForgeBoard NX uses a revolutionary Local-First architecture with:
 
 ## Documentation
 
-- [API Documentation](./API-DOCUMENTATION.md)
+ForgeBoard NX's documentation is comprehensive and covers all aspects of its architecture:
+
+- [**Local-First Data Provenance**](./LOCAL-FIRST-DATA-PROVENANCE.md) - Understanding complete data lifecycle tracking
+- [Blockchain Persistent Architecture](./BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md)
 - [Frontend-API Architecture](./FRONTEND-API-ARCHITECTURE.md)
-- [Layout System](./LAYOUT.md)
+- [API Documentation](./API-DOCUMENTATION.md)
+- [Local-First vs Cache-First Architecture](./LOCAL-FIRST-VERSUS-CACHE.md)
 - [Coding Standards](./CODING-STANDARDS.md)
-- [Local-First vs Cache-First](./LOCAL-FIRST-VERSUS-CACHE.md)
-- [Blockchain Persistence Architecture](./BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md)
+- [Exceeding Standards](./EXCEEDING-STANDARDS.md)
 
 ## Patriotic Design
 

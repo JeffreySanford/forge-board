@@ -1,36 +1,63 @@
 # 👨‍💻 ForgeBoard NX Coding Standards
-*Last Updated: May 7, 2025*
+
+*Last Updated: May 15, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Status:</strong> Enforced ✓
+    <strong>Code:</strong> TypeScript ✨
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Linting:</strong> Automated 🤖
+    <strong>Architecture:</strong> Local-First 🏠
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Coverage:</strong> 94% 📊
+    <strong>Standard:</strong> SonarQube A+ 🥇
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>CI Compliance:</strong> Passing ✅
+    <strong>Data Provenance:</strong> Complete 🔄
   </div>
 </div>
 
-This document defines the core architectural, coding, and workflow standards for the ForgeBoard NX project. All code should follow these principles for data sovereignty, blockchain integrity, and Local-First operations.
+## Data Provenance Patterns
 
----
-
-## Local-First Architecture
-
-### ObservableStore & Local Data Authority
+### Complete Lifecycle Tracking
 
 ```mermaid
 flowchart TD
-  Component[Component]:::component -->|"State Action"| Store[ObservableStore]:::store
-  Store -->|"persistToChain$()"| Chain[SlimChain]:::chain
-  Store -->|"select()"| Stream[State Stream]:::state
+  Origin[Data Origin Point]:::inception --> Query[External Query]
+  Query --> Response[Data Response]
+  Response --> Verify[Data Verification]
+  Verify --> Store[Data Storage]
+  Store --> Process[Data Processing]
+  Process --> Sync[Optional Sync]
+  Sync --> Dispose[Verified Disposal]
+  
+  classDef inception fill:#002868,stroke:#071442,color:#fff,stroke-width:2px;
+  classDef disposal fill:#BF0A30,stroke:#7D100E,color:#fff,stroke-width:2px;
+```
+
+- **Data Provenance Principle**: Every data element must have a complete, verifiable lifecycle
+- **Lifecycle Transitions**: All state changes must include provenance metadata
+- **Verification Requirements**: Every data transition must be cryptographically verifiable
+- **Attribution**: All data operations must have clear, non-repudiable attribution
+
+### Required Provenance Operators
+
+- **`trackProvenance$()`**: Capture complete data provenance for all data operations
+- **`verifyProvenance$()`**: Verify the integrity of provenance chains
+- **`transitionStage$()`**: Move data to next lifecycle stage with appropriate metadata
+- **`generateProvenanceReport$()`**: Create audit-ready provenance documentation
+
+## Local-First Architecture
+
+### ProvenanceStore & Data Authority
+
+```mermaid
+flowchart TD
+  Component[Component]:::component -->|"State Action with Provenance"| Store[ProvenanceStore]:::store
+  Store -->|"trackProvenance$()"| Chain[SlimChain]:::chain
+  Store -->|"select()"| Stream[State Stream with Provenance]:::state
   Stream -->|"subscribe()"| Component
-  Chain -->|"txReceipt$"| Store
+  Chain -->|"provenanceReceipt$"| Store
   
   classDef component fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
   classDef store fill:#002868,stroke:#BF0A30,stroke-width:2px,color:#FFFFFF;
@@ -39,24 +66,9 @@ flowchart TD
 ```
 
 - **Local-First Principle**: Device is the source of authority (SOA) for all data
-- **Store Pattern**: Use ObservableStore for immutable state with history
-- **Blockchain Integration**: Persist important state changes to SlimChain
-
-### Smart & Presentational Components
-
-```mermaid
-flowchart LR
-  Smart[Smart Component]:::smart -->|Inputs/Outputs| Presentational[Presentational Component]:::present
-  Smart -->|Service Injection| Service[Local Service]:::service
-  Presentational -->|@Input/@Output| Smart
-  classDef smart fill:#002868,stroke:#BF0A30,stroke-width:2px,color:#FFFFFF;
-  classDef present fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
-  classDef service fill:#90BE6D,stroke:#43A047,stroke-width:2px;
-```
-
-- **Smart components**: Handle data, inject services, manage local state
-- **Presentational components**: Render UI, receive data via `@Input`, emit events via `@Output`
-- **Data Flow**: Always prioritize local state over remote state
+- **Store Pattern**: Use ProvenanceStore for immutable state with complete provenance history
+- **Blockchain Integration**: Persist provenance chains to SlimChain for verification
+- **Provenance Requirements**: All state transitions must include complete provenance metadata
 
 ---
 
@@ -101,15 +113,15 @@ flowchart TD
 
 ## Blockchain Persistence Patterns
 
-### SlimChain Integration
+### SlimChain Integration for Provenance
 
 ```mermaid
 flowchart TD
-  Service[Service]:::service -->|"stateDelta$"| Store[ObservableStore]:::store
-  Store -->|"scan + CRDT merge"| MergedState[Merged State]:::state
-  MergedState -->|"persistToChain$()"| Chain[SlimChain]:::chain
-  Chain -->|"append block"| Ledger[(Immutable Ledger)]:::ledger
-  Ledger -->|"txReceipt$"| Store
+  Service[Service]:::service -->|"dataWithProvenance$"| Store[ProvenanceStore]:::store
+  Store -->|"provenance tracking"| MergedState[Provenance Chain]:::state
+  MergedState -->|"trackProvenance$()"| Chain[SlimChain]:::chain
+  Chain -->|"append provenance block"| Ledger[(Immutable Provenance)]:::ledger
+  Ledger -->|"provenanceReceipt$"| Store
   
   classDef service fill:#90BE6D,stroke:#43A047,stroke-width:2px;
   classDef store fill:#002868,stroke:#BF0A30,stroke-width:2px,color:#FFFFFF;
@@ -118,32 +130,32 @@ flowchart TD
   classDef ledger fill:#002868,stroke:#BF0A30,stroke-width:2px,color:#FFFFFF;
 ```
 
-### Required Persistence Operators
+### Required Provenance Operators
 
-- **`persistToChain$()`**: Sign and store state in immutable ledger
-- **`verifyFromChain$()`**: Verify data against blockchain records
-- **`merkleProof$()`**: Generate cryptographic proof for external auditors
-- **`prunableBuffer$()`**: Buffer events with configurable pruning strategy
+- **`trackProvenance$()`**: Capture and verify data origin, transitions, and handling
+- **`verifyProvenanceChain$()`**: Verify complete data lineage against blockchain records
+- **`provenanceMerkleProof$()`**: Generate cryptographic proof for provenance validation
+- **`provenanceRetention$()`**: Apply configurable retention policies with disposal verification
 
 ### Storage Efficiency Guidelines
 
-1. **Delta Compression**: Only store state changes, not full state
-2. **Pruning Strategy**: Implement configurable epoch-based pruning
-3. **Zstd Compression**: Apply level 3 compression to all blockchain data
-4. **Retention Policies**: Default to 512 MB maximum local storage
+1. **Provenance Delta Compression**: Only store provenance transitions, not full state
+2. **Pruning Strategy**: Implement configurable lifecycle-based pruning
+3. **Zstd Compression**: Apply level 3 compression to all provenance data
+4. **Retention Policies**: Default to 512 MB maximum local provenance storage
 
 ---
 
 ## CRDT Synchronization Patterns
 
-### Conflict Resolution
+### Conflict Resolution with Provenance Preservation
 
 ```mermaid
 flowchart LR
-  DeviceA[Device A]:::device -->|"Change 1"| Merge[CRDT Merge]:::merge
-  DeviceB[Device B]:::device -->|"Change 2"| Merge
-  Merge -->|"Deterministic Result"| FinalState[Final State]:::state
-  FinalState -->|"persistToChain$()"| Chain[SlimChain]:::chain
+  DeviceA[Device A]:::device -->|"Change with\nProvenance"| Merge[CRDT Merge with\nProvenance Preservation]:::merge
+  DeviceB[Device B]:::device -->|"Change with\nProvenance"| Merge
+  Merge -->|"Deterministic Result\nwith Merged Provenance"| FinalState[Final State\nwith Complete Provenance]:::state
+  FinalState -->|"trackProvenance$()"| Chain[SlimChain]:::chain
   
   classDef device fill:#002868,stroke:#BF0A30,stroke-width:2px,color:#FFFFFF;
   classDef merge fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
@@ -198,13 +210,13 @@ flowchart LR
 
 ---
 
-## Summary Diagram: Sovereign Data Flow
+## Summary Diagram: Data Provenance Flow
 
 ```mermaid
 flowchart LR
-  FE[Frontend Component]:::component --> SVC[Local-First Service]:::service
-  SVC -->|"persistToChain$()"| CHAIN[SlimChain]:::chain
-  SVC -.->|"Optional P2P Sync"| P2P[WebRTC Mesh]:::p2p
+  FE[Frontend Component]:::component --> SVC[Provenance Service]:::service
+  SVC -->|"trackProvenance$()"| CHAIN[SlimChain]:::chain
+  SVC -.->|"Optional Provenance-Preserving Sync"| P2P[WebRTC Mesh]:::p2p
   SVC -.->|"Optional Fallback"| WS[WebSocket Gateway]:::backend
   P2P -.->|"Mesh Network"| P2P
   WS -.->|"Sync Only"| DB[(Remote Cache)]:::db
@@ -220,6 +232,7 @@ flowchart LR
 ---
 
 For more details, see our comprehensive documentation:
+- [Local-First Data Provenance](./LOCAL-FIRST-DATA-PROVENANCE.md)
 - [Local-First vs Cache-First Architecture](./LOCAL-FIRST-VERSUS-CACHE.md)
 - [Blockchain Persistence Architecture](./BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md)
 - [API Documentation](./API-DOCUMENTATION.md)

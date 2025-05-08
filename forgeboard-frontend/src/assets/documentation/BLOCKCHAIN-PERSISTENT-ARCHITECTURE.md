@@ -1,5 +1,5 @@
 # 🔗 ForgeBoard NX: Blockchain-Persistent Architecture
-*Last Updated: May 7, 2025*
+*Last Updated: May 15, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
@@ -12,67 +12,71 @@
     <strong>Implementation:</strong> Complete ✅
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Data Sovereignty:</strong> 100% 🛡️
+    <strong>Data Provenance:</strong> 100% 🛡️
   </div>
 </div>
 
-> **Mission:** Fuse Local‑First sovereignty with an immutable, storage‑efficient blockchain ledger spanning **frontend**, **libs**, & **backend**.
+> **Mission:** Provide unbroken data provenance through an immutable, storage‑efficient blockchain ledger that verifies the complete lifecycle of all data from inception through disposal.
 
----
+## 1️⃣ Data Provenance Architecture
 
-## 1️⃣ Layer Map
+ForgeBoard's blockchain architecture serves as the cryptographic foundation for complete data provenance tracking across the entire data lifecycle:
 
 ```mermaid
 flowchart TD
     subgraph Frontend (Angular 19)
         A1(UI){{Security Dashboard}}
-        A2(StateSvc){{ObservableStore & ODS}}
+        A2(StateSvc){{ProvenanceStore & ODS}}
+        A3(Crypto){{SignatureService}}
     end
 
     subgraph Shared Libs (libs/blockchain)
-        B1(Adapter)[BlockchainAdapter]
-        B2(Models)[Typed DTOs]
-        B3(Ops)[RxJS Operators]
+        B1(Adapter)[ProvenanceAdapter]
+        B2(Models)[ProvenanceChain DTOs]
+        B3(Ops)[RxJS Provenance Operators]
     end
 
     subgraph Backend (NestJS)
-        C1(Gateway){{BlockchainGateway}}
-        C2(Worker)[SlimChain Worker]
-        C3(Storage)[Embedded Litechain Node]
+        C1(Gateway){{ProvenanceGateway}}
+        C2(Worker)[ProvenanceWorker]
+        C3(Storage)[Immutable Ledger]
     end
 
-    A1 --RxJS--> A2
-    A2 --persistToChain$()--> B1
-    B1 --DTO--> B2
-    B1 --hash/sign--> C1
-    C1 --enqueue--> C2
-    C2 --append block--> C3
-    C3 --txReceipt--> C1-->B1-->A2
+    A1 --"View Data Lineage"--> A2
+    A3 --"Sign Transitions"--> A2
+    A2 --"persistProvenance$()"--> B1
+    B1 --"Data Lifecycle DTOs"--> B2
+    B1 --"Verify & Hash"--> C1
+    C1 --"Enqueue Transition"--> C2
+    C2 --"Tamper-Proof Append"--> C3
+    C3 --"Proof Receipt"--> A2
 ```
 
----
+## 2️⃣ Library Highlights: Data Provenance Focus
 
-## 2️⃣ Library Highlights (`libs/blockchain`)
-
-| File | Responsibility |
+| File | Data Provenance Responsibility |
 |---|---|
-| `blockchain.adapter.ts` | Connects RxJS streams to Litechain SDK |
-| `slimchain.config.ts` | Epoch size, compression, pruning thresholds |
-| `operators/persist-to-chain.ts` | `tap`, `bufferTime`, `mergeMap` → commit |
-| `models/block-tx.dto.ts` | Strongly‑typed, schema‑enforced transactions |
+| `provenance.adapter.ts` | Connects data lifecycle events to verifiable blockchain records |
+| `provenance.config.ts` | Controls retention periods, verification methods, and proof generation |
+| `operators/track-provenance.ts` | RxJS operators for tracking complete data lineage |
+| `models/provenance-record.dto.ts` | Strongly‑typed, schema‑enforced data lifecycle transitions |
+| `services/merkle-proof.service.ts` | Generates cryptographic proofs of data existence and integrity |
 
----
-
-## 3️⃣ Frontend Workflow
+## 3️⃣ Data Lifecycle Tracking
 
 ```mermaid
 gantt
-    title Frontend Event Lifecycle
+    title Complete Data Lifecycle Tracking
     dateFormat  X
-    section Client
-    Delta emitted         : 0, 1
-    persistToChain$ flush : 1, 3
-    txReceipt$ confirmed  : 4, 1
+    section Provenance Chain
+    Data inception         : 0, 1
+    External query         : 1, 1
+    Response received      : 2, 1
+    Verification complete  : 3, 1
+    Storage committed      : 4, 1
+    Processing event       : 5, 1
+    Optional sync          : 6, 1
+    Disposal verified      : 7, 1
 ```
 
 ---
@@ -94,35 +98,35 @@ sequenceDiagram
 
 ---
 
-## 5️⃣ Storage‑Efficiency Cheatsheet
+## 5️⃣ Data Provenance Guarantees
 
-| Setting | Default | Effect |
+ForgeBoard's SlimChain architecture provides these key data provenance guarantees:
+
+| Provenance Guarantee | Implementation | Benefit |
 |---|---|---|
-| `EPOCH_SIZE` | 10 000 tx | Snapshot & prune interval |
-| `COMPRESSION` | Zstd level 3 | 75 % shrink |
-| `LOCAL_RETENTION_MB` | 512 | Keeps chain ≤ 512 MB |
-| `ARCHIVE_TARGET` | `~/ForgeBoard/archive` | Auto‑move old epochs |
+| **Origin Verification** | Digital signatures on inception records | Cryptographic proof of data source |
+| **Chain of Custody** | Unbroken hash chain of all transitions | Complete visibility into who accessed data and when |
+| **Transition Proofs** | Signed state transitions with purpose binding | Every transformation is justified and attributable |
+| **Tamper Evidence** | Merkle tree proof generation | Impossible to modify data without detection |
+| **Temporal Proof** | RFC 3161 compliant trusted timestamps | Legally admissible proof of when events occurred |
+| **Disposal Verification** | Cryptographic disposal certificates | Proof that data was properly destroyed when required |
 
----
-
-## 6️⃣ Dev‑Ops Commands
+## 6️⃣ Dev‑Ops Commands for Provenance Verification
 
 ```bash
 # libs/blockchain/scripts
-pnpm run litechain:init        # create local node
-pnpm run litechain:prune       # manual prune
-nx serve backend --blockchain  # launch NestJS with GW
-nx serve frontend              # hot‑reload Angular
+pnpm run provenance:verify      # verify data chain integrity
+pnpm run provenance:export      # export provenance chain to PDF
+pnpm run provenance:track       # show complete data lifecycle
+pnpm run provenance:audit       # generate FedRAMP-ready audit report
 ```
 
----
+## 7️⃣ Future Data Provenance Roadmap
 
-## 7️⃣ Roadmap
-
-1. **Merkle‑Proof Export** for external auditors (PDF w/ QR).  
-2. **WebRTC‑Mesh Sync** to enable LAN peer redundancy.  
-3. **Zero‑Knowledge Roll‑ups** for FedRAMP evidence without raw data leaks.
+1. **Zero-Knowledge Proofs** for privacy-preserving provenance verification (Q4 2025)  
+2. **Cross-Chain Attestations** for multi-system provenance tracking (Q1 2026)  
+3. **Quantum-Resistant Signatures** to future-proof provenance chains (Q2 2026)  
 
 ---
 
-**Legendary Outcome:** A fully auditable, tamper‑proof security ledger that scales from developer laptop to air‑gapped datacenter—all while preserving true Local‑First data ownership.
+**Legendary Outcome:** Complete cryptographic tracking of data from birth to grave—ensuring unmodified, verified data with full accountability at every step of its lifecycle.
