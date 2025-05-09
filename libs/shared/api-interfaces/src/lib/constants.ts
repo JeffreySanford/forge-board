@@ -12,7 +12,13 @@ export const API_ENDPOINTS = {
   STATUS: '/api/status',
   TILES: '/api/tiles',
   KABLAN: '/api/kablan',
-  AUTH: '/api/auth'
+  AUTH: '/api/auth',
+  HISTORICAL_METRICS: '/api/historical-metrics',
+  HISTORICAL_METRICS_PERFORMANCE: '/api/historical-metrics/performance',
+  HISTORICAL_METRICS_LOGS: '/api/historical-metrics/logs',
+  HISTORICAL_METRICS_KABLAN: '/api/historical-metrics/kablan',
+  HISTORICAL_METRICS_SECURITY: '/api/historical-metrics/security',
+  HISTORICAL_METRICS_SUMMARY: '/api/historical-metrics/summary'
 };
 
 /**

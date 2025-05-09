@@ -11,6 +11,10 @@ export interface MetricData {
   disk?: number;    // Optional disk usage percentage
   network?: number; // Optional network usage percentage
   time: string;     // ISO timestamp
+  value?: number;   // Generic value for metrics processing
+  
+  // Allow additional properties for extended metrics
+  [key: string]: number | string | undefined;
 }
 
 /**

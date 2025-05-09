@@ -56,6 +56,25 @@ export type {
   FedRampEvent
 } from './lib/security-event';
 
+// Export historical metrics types
+export type {
+  MetricsInterval,
+  MetricsSource,
+  MetricsDataPoint,
+  MetricsSeries,
+  SystemPerformanceSnapshot,
+  LogActivitySummary,
+  KablanActivitySummary,
+  SecurityMetricsSummary,
+  HistoricalMetrics,
+  HistoricalMetricsRequest,
+  HistoricalMetricsResponse,
+  MetricsVisualizationConfig
+} from './lib/historical-metrics';
+
+// Export metrics condenser
+export { MetricsCondenser } from './lib/metrics-condenser';
+
 // Re-export all type definitions so they can be imported from the library's root
 export * from './lib/api-response';
 export * from './lib/metric-types';
@@ -75,7 +94,9 @@ export {
   validateUser,
   typeValidators,
   registerTypeValidator,
-  safeStringify
+  safeStringify,
+  validateHistoricalMetrics,
+  validateSystemPerformance
 } from './lib/type-validation';
 
 // Export additional type validation types

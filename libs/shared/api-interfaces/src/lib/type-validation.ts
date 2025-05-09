@@ -4,6 +4,7 @@ import { LogQueryResponse, LogResponse, LogFilter, LogEntry, LogLevelString, Log
 import { User } from './user-types';
 import { HealthData } from './health.type';
 import { MetricData } from './metrics-types';
+import { HistoricalMetrics, SystemPerformanceSnapshot } from './historical-metrics';
 
 export interface ValidationResult {
   valid: boolean;
@@ -422,6 +423,95 @@ export function safeStringify(obj: unknown): string {
   }
 }
 
+export function validateHistoricalMetrics(obj: unknown): ValidationResult {
+  const issues: string[] = [];
+  
+  if (!obj || typeof obj !== 'object') {
+    issues.push('Expected an object');
+    return { valid: false, issues };
+  }
+  
+  const metrics = obj as Partial<HistoricalMetrics>;
+  
+  if (!metrics.id) issues.push('Missing id');
+  if (!metrics.timestamp) issues.push('Missing timestamp');
+  if (!metrics.source) issues.push('Missing source');
+  if (!metrics.data) issues.push('Missing data');
+  
+  // Handle optional extended properties - remove direct references
+  // Check data structure only if available
+  if (metrics.data && typeof metrics.data !== 'object') {
+    issues.push('Data must be an object');
+  }
+  
+  // Instead of directly checking systemPerformance, check if it's an object when present
+  const extendedData = metrics as Record<string, unknown>;
+  if (extendedData['systemPerformance'] !== undefined &&
+      (typeof extendedData['systemPerformance'] !== 'object' || extendedData['systemPerformance'] === null)) {
+    return { valid: false, issues: ['systemPerformance must be an object'] };
+  }
+
+  // Similarly for interval
+  if (extendedData['interval'] !== undefined && typeof extendedData['interval'] !== 'string') {
+    return { valid: false, issues: ['interval must be a string'] };
+  }
+  
+  return {
+    valid: issues.length === 0,
+    issues,
+    typeName: 'HistoricalMetrics'
+  };
+}
+
+/**
+ * Validates if the object matches the SystemPerformanceSnapshot interface
+ */
+export function validateSystemPerformance(obj: unknown): ValidationResult {
+  if (!obj || typeof obj !== 'object') {
+    return { valid: false, issues: ['Expected an object'] };
+  }
+
+  const snapshot = obj as Partial<SystemPerformanceSnapshot>;
+  const issues: string[] = [];
+
+  if (!snapshot.timestamp) {
+    issues.push('Missing timestamp field');
+  }
+
+  if (typeof snapshot.cpu !== 'number') {
+    issues.push('Missing or invalid cpu field');
+  }
+
+  if (typeof snapshot.memory !== 'number') {
+    issues.push('Missing or invalid memory field');
+  }
+
+  if (typeof snapshot.activeConnections !== 'number') {
+    issues.push('Missing or invalid activeConnections field');
+  }
+
+  if (typeof snapshot.requestsPerMinute !== 'number') {
+    issues.push('Missing or invalid requestsPerMinute field');
+  }
+
+  if (typeof snapshot.errorsPerMinute !== 'number') {
+    issues.push('Missing or invalid errorsPerMinute field');
+  }
+
+  if (typeof snapshot.averageResponseTime !== 'number') {
+    issues.push('Missing or invalid averageResponseTime field');
+  }
+
+  if (typeof snapshot.activeUsers !== 'number') {
+    issues.push('Missing or invalid activeUsers field');
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues
+  };
+}
+
 export const validators = {
   typeValidators,
   registerTypeValidator,
@@ -440,5 +530,7 @@ export const validators = {
   isErrorResponse,
   validateSocketResponse,
   validateLogResponse,
-  safeStringify
+  safeStringify,
+  validateHistoricalMetrics,
+  validateSystemPerformance
 };

@@ -165,7 +165,7 @@ export class MetricsService implements OnDestroy {
       this.socket.on('system-metrics', (data: MetricSocketResponse) => {
         if (data.status === 'success') {
           // Add subtle visual effect to console for data updates
-          console.log(`%c[MetricsService] Received metrics: CPU: ${data.data.cpu.toFixed(1)}%, MEM: ${data.data.memory.toFixed(1)}%`, 
+          console.log(`%c[MetricsService] Received metrics: CPU: ${data.data?.cpu?.toFixed(1) ?? '0.0'}%, MEM: ${data.data?.memory?.toFixed(1) ?? '0.0'}%`, 
             'color: #43a047; font-style: italic;');
           this.metricsSubject.next(data.data);
         }
