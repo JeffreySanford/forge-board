@@ -1,0 +1,18 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "github.copilot.enable": {
+    "plaintext": true,
+    "markdown": true,
+    "scminput": true
+  },
+
+  // ↓ Add Continue settings ↓
+  "continue.provider": "ollama",
+  "continue.apiBase": "http://localhost:11434/",
+  "continue.model": "codellama:7b-instruct",
+  "continue.tabAutocompleteModel": {
+    "provider": "ollama",
+    "apiBase": "http://localhost:11434/",
+    "model": "codellama:7b-instruct"
+  }
+}

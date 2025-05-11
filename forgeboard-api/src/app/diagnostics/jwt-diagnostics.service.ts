@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { BehaviorSubject, Observable, shareReplay } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
 
 // Define a type for JWT payload
@@ -65,18 +65,36 @@ export interface JwtVerificationResult {
 
 /**
  * JWT Authentication diagnostics service
- * Tracks authentication events for diagnostic purposes
+ * 
+ * Provides hot observable streams for monitoring authentication activities:
+ * - Authentication events (login success/failure, token validations)
+ * - Authentication statistics
+ * - Token verification utilities
+ * 
+ * @example
+ * // Subscribe to authentication statistics
+ * jwtDiagnosticsService.getAuthStats().subscribe(stats => {
+ *   console.log(`Success rate: ${stats.successCount / stats.totalAttempts * 100}%`);
+ * });
  */
 @Injectable()
-export class JwtDiagnosticsService {
+export class JwtDiagnosticsService implements OnModuleDestroy {
   private readonly logger = new Logger(JwtDiagnosticsService.name);
   
   // Store authentication events with a size limit
   private authEvents: AuthDiagnosticEvent[] = [];
   private readonly maxEvents = 100;
   
-  // Observable sources
+  /**
+   * BehaviorSubject for authentication events
+   * Hot observable that maintains the complete event history
+   */
   private authEventsSubject = new BehaviorSubject<AuthDiagnosticEvent[]>([]);
+  
+  /**
+   * BehaviorSubject for authentication statistics
+   * Hot observable that provides the current stats to all subscribers
+   */
   private authStatsSubject = new BehaviorSubject<AuthStats>({
     totalAttempts: 0,
     successCount: 0,
@@ -98,7 +116,18 @@ export class JwtDiagnosticsService {
     failedVerifications: 0
   };
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {
+    this.logger.log('JWT Diagnostics Service initialized with BehaviorSubject streams');
+  }
+
+  /**
+   * Clean up resources when the module is destroyed
+   */
+  onModuleDestroy(): void {
+    this.logger.log('JwtDiagnosticsService cleaning up resources');
+    this.authEventsSubject.complete();
+    this.authStatsSubject.complete();
+  }
 
   /**
    * Record an authentication event
@@ -139,17 +168,19 @@ export class JwtDiagnosticsService {
   }
   
   /**
-   * Get authentication events as observable
+   * Get authentication events as hot observable
+   * Uses shareReplay(1) to ensure all subscribers get the most recent value
    */
   getAuthEvents(): Observable<AuthDiagnosticEvent[]> {
-    return this.authEventsSubject.asObservable();
+    return this.authEventsSubject.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Get authentication stats as observable
+   * Get authentication stats as hot observable
+   * Uses shareReplay(1) to ensure all subscribers get the most recent value
    */
   getAuthStats(): Observable<AuthStats> {
-    return this.authStatsSubject.asObservable();
+    return this.authStatsSubject.asObservable().pipe(shareReplay(1));
   }
   
   /**
@@ -184,12 +215,20 @@ export class JwtDiagnosticsService {
 
   /**
    * Verify JWT token
+   * Uses options for verification if provided
    */
   verifyToken(token: string, options?: TokenVerificationOptions): JwtVerificationResult {
     try {
-      // We're not using options directly but it's part of the function interface
+      // Apply options if provided
+      const verifyOptions = options ? {
+        ignoreExpiration: options.ignoreExpiration,
+        audience: options.audience,
+        issuer: options.issuer
+      } : undefined;
+
       // Use the JwtService to verify the token
-      const payload = this.jwtService.verify(token) as JwtPayload;
+      // Pass the verifyOptions as the second argument
+      const payload = this.jwtService.verify<JwtPayload>(token, verifyOptions);
       this.stats.tokenVerifications++;
       
       // Extract expiration and issuance date if available

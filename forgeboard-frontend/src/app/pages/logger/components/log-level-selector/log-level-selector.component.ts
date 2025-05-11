@@ -1,30 +1,29 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { LogLevelEnum } from '@forge-board/shared/api-interfaces';
 
-interface LogLevelOption {
+interface LevelOption {
   level: LogLevelEnum;
-  color: string;
   selected: boolean;
+  color: string; // Added color property
 }
 
 @Component({
   selector: 'app-log-level-selector',
   templateUrl: './log-level-selector.component.html',
   styleUrls: ['./log-level-selector.component.scss'],
-  standalone: true,
-  imports: [CommonModule]
+  standalone: false
 })
 export class LogLevelSelectorComponent implements OnInit {
   @Input() selectedLevels: LogLevelEnum[] = [];
   @Output() levelsChanged = new EventEmitter<LogLevelEnum[]>();
 
-  levelOptions: LogLevelOption[] = [
-    { level: LogLevelEnum.DEBUG, color: '#9e9e9e', selected: false },
-    { level: LogLevelEnum.INFO, color: '#2196f3', selected: false },
-    { level: LogLevelEnum.WARN, color: '#ff9800', selected: false },
-    { level: LogLevelEnum.ERROR, color: '#f44336', selected: false },
-    { level: LogLevelEnum.FATAL, color: '#9c27b0', selected: false }
+  // Updated levels to include a color property
+  levels: LevelOption[] = [
+    { level: LogLevelEnum.DEBUG, selected: false, color: '#007bff' }, // Example color
+    { level: LogLevelEnum.INFO, selected: false, color: '#28a745' },  // Example color
+    { level: LogLevelEnum.WARN, selected: false, color: '#ffc107' },  // Example color
+    { level: LogLevelEnum.ERROR, selected: false, color: '#dc3545' }, // Example color
+    { level: LogLevelEnum.FATAL, selected: false, color: '#343a40' }  // Example color
   ];
 
   ngOnInit(): void {
@@ -32,21 +31,36 @@ export class LogLevelSelectorComponent implements OnInit {
     this.syncSelectedLevels();
   }
 
-  toggleLevel(level: LogLevelOption): void {
+  selectAll(): void {
+    this.levels.forEach(l => (l.selected = true));
+    this.updateSelected();
+  }
+
+  selectNone(): void {
+    this.levels.forEach(l => (l.selected = false));
+    this.updateSelected();
+  }
+
+  toggleLevel(level: LevelOption): void {
     level.selected = !level.selected;
-    this.emitSelectedLevels();
+    this.updateSelected();
   }
 
   private syncSelectedLevels(): void {
-    this.levelOptions.forEach(option => {
+    this.levels.forEach(option => {
       option.selected = this.selectedLevels.includes(option.level);
     });
   }
 
-  private emitSelectedLevels(): void {
-    const selected = this.levelOptions
-      .filter(option => option.selected)
-      .map(option => option.level);
-    this.levelsChanged.emit(selected);
+  private updateSelected(): void {
+    this.selectedLevels = this.levels
+      .filter(l => l.selected)
+      .map(l => l.level);
+    this.levelsChanged.emit(this.selectedLevels);
+  }
+
+  // Helper to convert enum to string
+  getLevelString(level: LogLevelEnum): string {
+    return LogLevelEnum[level];
   }
 }

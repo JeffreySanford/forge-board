@@ -12,8 +12,20 @@ export type { SuccessResponse } from './lib/api-response';
 
 // Socket interfaces and helpers
 export { createSocketResponse, createErrorResponse as createSocketErrorResponse } from './lib/socket-types';
-export type { SocketResponse, SocketEvent, SocketLogEvent, SocketInfo, SocketMetrics, SocketStatusUpdate, SocketConnectionError } from './lib/socket-types';
-export type * from './lib/socket-registry-types';
+export type { SocketResponse } from './lib/socket-types'; // SocketResponse is unique to socket-types.ts
+
+// Types from socket-registry-types.ts - these are considered the canonical definitions
+export type { 
+  SocketEvent,
+  SocketInfo,
+  SocketMetrics,
+  SocketStatusUpdate,
+  SocketConnectionError,
+  SocketLogEvent,
+  DiagnosticSocketEvent
+} from './lib/socket-registry-types';
+
+export * from './lib/socket-info.dto'; // Added export for SocketInfoDto
 
 // Authentication helpers (credentials and token responses)
 export { __authInterfaces } from './lib/auth-interfaces';
@@ -22,29 +34,42 @@ export type { AuthCredentials, AuthTokenResponse } from './lib/auth-interfaces';
 // User and auth state definitions
 export { UserRole } from './lib/user-types'; // Changed from type export to direct export
 export type { User, JwtPayload, AuthState } from './lib/user-types';
-
-// Tile interfaces
 export type * from './lib/tile-types';
-
-// Health interfaces
 export type * from './lib/health.type';
-
-// Diagnostic interfaces
 export type { DiagnosticEvent, DiagnosticEventResponse } from './lib/diagnostic-types';
-
-// Export log-related types and interfaces
-export type {
-  LogLevelString,
-  LogEntry,
-  LogDto,
-  LogFilter,
-  LogQueryResponse,
-  LogResponse,
-  LogStreamUpdate,
-  LogStatsResult
+export * from './lib/health-timeline'; // Export HealthTimelinePoint and related types
+// Removed invalid user-interfaces import
+// Export enums and functions from log-types
+export { 
+  LogLevelEnum, 
+  stringToLogLevelEnum, 
+  logLevelEnumToString,
+  __logTypes
 } from './lib/log-types';
 
-// Export security event types and interfaces
+// Import and re-export LogFilter interface
+import { LogLevelEnum } from './lib/log-types';
+// Define LogFilter interface to be exported
+export interface LogFilter {
+  level?: LogLevelEnum | LogLevelEnum[];
+  service?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  limit?: number;
+  skip?: number;
+  afterTimestamp?: string;
+}
+export type { 
+  LogLevelString,  
+  LogResponse, 
+  LogStreamUpdate, 
+  LogStatsResult, 
+  LogQueryResponse, 
+  LogEntry, 
+  LogDto 
+} from './lib/log-types';
+
 export type {
   SecurityEventSeverity,
   SecurityEventStatus,
@@ -77,11 +102,11 @@ export { MetricsCondenser } from './lib/metrics-condenser';
 
 // Re-export all type definitions so they can be imported from the library's root
 export * from './lib/api-response';
-export * from './lib/metric-types';
+export type { MetricData } from './lib/metrics-types'; // Explicit re-export
+export * from './lib/metrics-types'; // Ensure new metrics-types.ts is exported
 export * from './lib/socket-types';
 export * from './lib/user-types';
 export * from './lib/tile-types';
-export * from './lib/log-types';
 export * from './lib/security-event';
 
 // Import and re-export log-helpers

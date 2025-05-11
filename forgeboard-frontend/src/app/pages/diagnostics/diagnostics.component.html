@@ -11,7 +11,7 @@
     <div class="health-card">
       <div class="health-status" [ngClass]="health.status.toLowerCase()">
         <span class="status-pill">{{health.status}}</span>
-        <span class="uptime">Uptime: {{formatUptime(health.uptime)}}</span>
+        <span class="uptime">Uptime: {{formatUptime(health.uptime ?? 0)}}</span>
       </div>
       <div class="health-details">
         <div class="timeline">
@@ -156,25 +156,32 @@
   <div class="errors-section" *ngIf="errors.length > 0">
     <h3>Error Logs</h3>
     <div class="error-list">
-      <div class="error-item" *ngFor="let error of errors">
-        {{error}}
-      </div>
+      <!-- TODO: Display errors -->
+      <pre *ngFor="let error of errors">{{ error }}</pre>
     </div>
   </div>
 
   <!-- Live Metrics Section -->
   <div class="metrics-section">
     <h3>Live Metrics</h3>
-    <div class="metrics-display" *ngIf="metrics$ | async as m">
-      <div class="metric">
-        <label>CPU:</label> {{m.data.cpu | number:'1.1-1'}}%
-      </div>
-      <div class="metric">
-        <label>Memory:</label> {{m.data.memory | number:'1.1-1'}}%
-      </div>
-      <div class="metric">
-        <label>Time:</label> {{m.data.time | date:'HH:mm:ss'}}
-      </div>
+    <div class="metrics-display">
+      <ng-container *ngIf="liveMetrics$ | async as metrics; else loadingMetrics">
+        <div *ngIf="metrics; else waitingForData">
+          <p><strong>CPU Usage:</strong> {{ metrics.cpu.toFixed(2) }}%</p>
+          <p><strong>Memory Usage:</strong> {{ metrics.memory.toFixed(2) }}%</p>
+          <p *ngIf="metrics.disk !== undefined"><strong>Disk Usage:</strong> {{ metrics.disk.toFixed(2) }}%</p>
+          <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ metrics.network.toFixed(2) }}%</p>
+          <p><strong>Last Update:</strong> {{ metrics.time | date:'mediumTime' }}</p>
+          <p *ngIf="metrics.value !== undefined"><strong>Value:</strong> {{ metrics['value'] }}</p>
+          <!-- You can add more specific fields if your MetricData has them -->
+        </div>
+        <ng-template #waitingForData>
+          <p>Waiting for live metrics data...</p>
+        </ng-template>
+      </ng-container>
+      <ng-template #loadingMetrics>
+        <p>Loading live metrics stream...</p>
+      </ng-template>
     </div>
   </div>
 

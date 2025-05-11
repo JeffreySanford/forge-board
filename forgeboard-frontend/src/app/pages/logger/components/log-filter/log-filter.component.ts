@@ -1,12 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { LogLevelEnum, ExtendedLogFilter } from '@forge-board/shared/api-interfaces';
+import { LogFilter, LogLevelEnum } from '@forge-board/shared/api-interfaces';
 
 interface SourceOption {
   value: string;
@@ -17,20 +12,11 @@ interface SourceOption {
   selector: 'app-log-filter',
   templateUrl: './log-filter.component.html',
   styleUrls: ['./log-filter.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule
-  ]
+  standalone: false
 })
 export class LogFilterComponent {
-  @Input() filter: ExtendedLogFilter = { level: LogLevelEnum.DEBUG };
-  
+  @Input() filter: LogFilter = { level: LogLevelEnum.DEBUG };
+
   @Input() set service(value: string) {
     this._service = value || '';
     this.sourcesControl.setValue([value]);
@@ -52,7 +38,7 @@ export class LogFilterComponent {
   }
   
   @Output() serviceChange = new EventEmitter<string>();
-  @Output() filterChange = new EventEmitter<ExtendedLogFilter>();
+  @Output() filterChange = new EventEmitter<LogFilter>();
   
   sourcesControl = new FormControl<string[]>([]);
   
@@ -68,11 +54,18 @@ export class LogFilterComponent {
         this.serviceChange.emit(this._service);
       } else if (values && values.length > 1) {
         // Multiple services selected, use filters
-        this.updateFilter({ service: undefined, sources: values });
-      } else {
+        this.updateFilter({ service: values.join(',') });
+      } else if (values && values.length === 0) { 
+        // No services selected
+        
         // No services selected
         this._service = '';
         this.serviceChange.emit('');
+        this.updateFilter({ service: '' });
+        console.log('No services selected');
+      } else {
+        // Multiple services selected, use filters
+        this.updateFilter({ service: values ? values.join(',') : '' });
       }
     });
   }
@@ -94,8 +87,8 @@ export class LogFilterComponent {
     this.serviceChange.emit('');
   }
   
-  updateFilter(partialFilter: Partial<ExtendedLogFilter>): void {
-    const updatedFilter: ExtendedLogFilter = {
+  updateFilter(partialFilter: Partial<LogFilter>): void {
+    const updatedFilter: LogFilter = {
       ...this.filter,
       ...partialFilter
     };

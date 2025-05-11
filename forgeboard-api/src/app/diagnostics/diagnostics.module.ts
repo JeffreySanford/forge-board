@@ -4,26 +4,25 @@ import { DiagnosticsService } from './diagnostics.service';
 import { DiagnosticsGateway } from '../gateways/diagnostics.gateway';
 import { SocketModule } from '../socket/socket.module';
 import { JwtDiagnosticsService } from './jwt-diagnostics.service';
-import { JwtService } from '../auth/jwt.service';
 import { AuthModule } from '../auth/auth.module';
+import { MetricsModule } from '../metrics/metrics.module'; // Added MetricsModule import
 
 @Module({
   imports: [
     SocketModule,
-    forwardRef(() => AuthModule)
+    forwardRef(() => AuthModule),
+    MetricsModule, // Added MetricsModule
   ],
   controllers: [DiagnosticsController],
   providers: [
     DiagnosticsService,
-    DiagnosticsGateway, // Add DiagnosticsGateway as a provider
-    JwtDiagnosticsService, // Register JwtDiagnosticsService
-    JwtService, // Register JwtService for DI
+    DiagnosticsGateway,
+    JwtDiagnosticsService,
   ],
   exports: [
     DiagnosticsService,
-    DiagnosticsGateway, // Export it so it can be used in other modules
-    JwtDiagnosticsService, // Export JwtDiagnosticsService
-    JwtService, // Export JwtService for use in other modules
+    DiagnosticsGateway,
+    JwtDiagnosticsService,
   ],
 })
 export class DiagnosticsModule {}

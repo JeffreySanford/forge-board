@@ -55,16 +55,26 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
 
 /**
  * Filter for fetching logs
+ * All fields are optional since filters are often created empty and populated conditionally
  */
 export interface LogFilter {
+  // Filter by log level (single or multiple)
   level?: LogLevelEnum | LogLevelEnum[];
+  
+  // Filter by service/component name
   service?: string;
+  
+  // Date range filters
   startDate?: string;
   endDate?: string;
+  afterTimestamp?: string;
+  
+  // Text search
   search?: string;
+  
+  // Pagination
   limit?: number;
-  skip?: number; // Added skip property
-  afterTimestamp?: string; // Added afterTimestamp property
+  skip?: number;
 }
 
 /**
@@ -100,7 +110,7 @@ export interface LogStatsResult {
 }
 
 /**
- * Response structure for log query requests
+ * Response for log query operations
  */
 export interface LogQueryResponse {
   status: boolean;
@@ -108,25 +118,30 @@ export interface LogQueryResponse {
   totalCount: number;
   filtered: boolean;
   timestamp: string;
-  stats?: {
-    byLevel: Record<string, number>;
-    bySource: Record<string, number>;
-  };
+  total?: number; // Total number of logs before pagination
+  page?: number; // Current page number
+  pages?: number; // Total number of pages
 }
 
 /**
  * Log entry interface
  */
 export interface LogEntry {
-  id: string;
+  // Core fields that are always required
   level: LogLevelEnum;
   message: string;
-  source?: string; // Made optional
+  
+  // Fields that might be auto-generated if not provided
+  id: string;
   timestamp: string;
+  
+  // Optional fields
+  source?: string;
   data?: Record<string, unknown>;
   context?: string;
   details?: Record<string, unknown>;
-  // Additional properties
+  
+  // UI-specific display properties (frontend only)
   isLoggingLoop?: boolean;
   displayMessage?: string;
   rawData?: string;

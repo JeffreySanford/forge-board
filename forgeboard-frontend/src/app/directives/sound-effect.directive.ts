@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs';
 
 @Directive({
   selector: '[appSoundEffect]',
-  standalone: true
+  standalone: false
 })
 export class SoundEffectDirective implements OnDestroy {
   @Input() soundType: SoundType = SoundType.KEYSTRIKE;

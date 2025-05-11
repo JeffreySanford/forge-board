@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { TileType } from '@forge-board/shared/api-interfaces';
+import { TileType, SocketInfo, DiagnosticEvent } from '@forge-board/shared/api-interfaces';
 import { TileStateService } from '../../../services/tile-state.service';
 import { Subscription } from 'rxjs';
+import { DiagnosticsService } from '../../../services/diagnostics.service';
 
 @Component({
   selector: 'app-diagnostics',
@@ -24,9 +25,20 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // Default order of tiles
   tileOrder: TileType[] = ['health', 'memory', 'connection', 'logs', 'uptime', 'activity'];
   
+  // Properties referenced in the template
+  health: any = { status: 'unknown', uptime: 0 };
+  services: string[] = [];
+  controllers: string[] = [];
+  gateways: string[] = [];
+  errors: string[] = [];
+  socketStatus = 'disconnected';
+  
   private subscription = new Subscription();
 
-  constructor(private tileStateService: TileStateService) {}
+  constructor(
+    private tileStateService: TileStateService,
+    private diagnosticsService: DiagnosticsService
+  ) {}
 
   ngOnInit(): void {
     // Load tile order from backend
@@ -180,5 +192,14 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
           console.error('Error saving tile visibility:', err);
         }
       });
+  }
+
+  getEventTypeClass(type: string): string {
+    switch (type) {
+      case 'error': return 'event-error';
+      case 'warning': return 'event-warning';
+      case 'info': return 'event-info';
+      default: return 'event-default';
+    }
   }
 }

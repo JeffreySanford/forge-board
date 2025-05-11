@@ -12,15 +12,25 @@
         "outputPath": "dist/forgeboard-frontend",
         "index": "forgeboard-frontend/src/index.html",
         "main": "forgeboard-frontend/src/main.ts",
-        "polyfills": ["zone.js"],
+        "polyfills": "forgeboard-frontend/src/polyfills.ts",
         "tsConfig": "forgeboard-frontend/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
         "assets": [
           "forgeboard-frontend/src/favicon.ico",
-          "forgeboard-frontend/src/assets",
-          "forgeboard-frontend/src/assets/images"
+          "forgeboard-frontend/src/assets"
         ],
-        "styles": ["forgeboard-frontend/src/styles.scss"],
-        "scripts": []
+        "styles": [
+          "forgeboard-frontend/src/styles.scss"
+        ],
+        "scripts": [],
+        "allowedCommonJsDependencies": [
+          "@nestjs/microservices",
+          "class-transformer/storage",
+          "socket.io-client",
+          "stream-browserify",
+          "crypto-browserify",
+          "os-browserify/browser"
+        ]
       },
       "configurations": {
         "production": {
@@ -28,12 +38,18 @@
             {
               "type": "initial",
               "maximumWarning": "2mb",
-              "maximumError": "3mb"
+              "maximumError": "5mb"
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "20kb",
-              "maximumError": "40kb"
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "fileReplacements": [
+            {
+              "replace": "forgeboard-frontend/src/environments/environment.ts",
+              "with": "forgeboard-frontend/src/environments/environment.prod.ts"
             }
           ],
           "outputHashing": "all"
@@ -51,31 +67,15 @@
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
-      "options": {
-        "buildTarget": "forgeboard-frontend:build:development"
-      },
       "configurations": {
         "production": {
-          "buildTarget": "forgeboard-frontend:build:production"
+          "browserTarget": "forgeboard-frontend:build:production"
+        },
+        "development": {
+          "browserTarget": "forgeboard-frontend:build:development"
         }
       },
-      "dependsOn": ["^build"]
-    },
-    "extract-i18n": {
-      "executor": "@angular-devkit/build-angular:extract-i18n",
-      "options": {
-        "browserTarget": "forgeboard-frontend:build"
-      }
-    },
-    "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": [
-          "forgeboard-frontend/**/*.ts",
-          "forgeboard-frontend/**/*.html"
-        ]
-      }
+      "defaultConfiguration": "development"
     },
     "test": {
       "executor": "@nx/jest:jest",
@@ -91,13 +91,15 @@
         }
       }
     },
-    "serve-static": {
-      "executor": "@nx/web:file-server",
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "buildTarget": "forgeboard-frontend:build",
-        "staticFilePath": "dist/forgeboard-frontend"
+        "lintFilePatterns": [
+          "forgeboard-frontend/**/*.ts",
+          "forgeboard-frontend/**/*.html"
+        ]
       }
     }
-  },
-  "tags": []
+  }
 }

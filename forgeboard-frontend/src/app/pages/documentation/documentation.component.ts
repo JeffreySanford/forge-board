@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { DocumentationService, DocFile } from '../../services/documentation.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { finalize } from 'rxjs/operators';
 
 // Define interfaces for documentation content structure
 interface DocSection {
@@ -9,14 +12,14 @@ interface DocSection {
   content: string;
   codeSnippets?: CodeSnippet[];
   subsections?: DocSubsection[];
-  expanded?: boolean; // Added the expanded property
+  expanded?: boolean;
 }
 
 interface DocSubsection {
   id: string;
   title: string;
   content: string;
-  codeSnippets?: CodeSnippet[]; // Added missing property
+  codeSnippets?: CodeSnippet[];
 }
 
 interface CodeSnippet {
@@ -31,6 +34,12 @@ interface DocTab {
   sections?: DocSection[];
   icon?: string; // Material icon name
   expanded?: boolean;
+  path?: string; // Path to markdown file
+  isMarkdown?: boolean;
+  renderedContent?: SafeHtml;
+  loading?: boolean;
+  files?: DocFile[]; // Associated files for this tab
+  category?: string; // Category name if this tab represents a category
 }
 
 @Component({
@@ -40,6 +49,21 @@ interface DocTab {
   standalone: false
 })
 export class DocumentationComponent implements OnInit {
+  // Dynamic tabs loaded from documentation service
+  dynamicTabs: DocTab[] = [];
+  // Loading state
+  isLoading = true;
+  // Error state
+  loadError: string | null = null;  // Search query and results
+  searchQuery = '';
+  searchResults = new BehaviorSubject<{tab: string, section: string, subsection?: string, content: string}[]>([]);
+  isSearching = false;
+  // Active tab index
+  activeTabIndex = 0;
+  // Active section tracking
+  activeSectionId: string | null = null;
+  
+  // Static tabs for backup and demonstration
   tabs: DocTab[] = [
     { 
       label: 'Overview', 
@@ -370,35 +394,230 @@ POST /api/metrics/register
     },
   ];
   
-  // Active tab and section tracking
-  activeTabIndex = 0;
-  activeSectionId: string | null = null;
-  
-  // Search functionality
-  searchQuery = '';
-  searchResults = new BehaviorSubject<{tab: string, section: string, subsection?: string, content: string}[]>([]);
-  isSearching = false;
-  
   constructor(
+    private docService: DocumentationService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) { }
 
   ngOnInit(): void {
-    // Check for tab parameter in URL
+    this.loadDocumentation();
+    
+    // Check for query params to navigate to specific documentation
     this.route.queryParams.subscribe(params => {
-      if (params['tab']) {
-        const tabIndex = this.tabs.findIndex(tab => tab.label.toLowerCase() === params['tab'].toLowerCase());
-        if (tabIndex >= 0) {
-          this.activeTabIndex = tabIndex;
-        }
+      const category = params['category'];
+      const file = params['file'];
+      
+      if (category) {
+        // Find or create tab for this category
+        this.navigateToCategory(category);
       }
       
-      if (params['section']) {
-        this.activeSectionId = params['section'];
-        this.scrollToSection(this.activeSectionId);
+      if (file) {
+        // Load specific file
+        this.loadDocumentationFile(file);
       }
     });
+  }
+  
+  /**
+   * Load documentation from service
+   */
+  loadDocumentation(): void {
+    this.isLoading = true;
+    
+    // Load categories first
+    this.docService.getDocumentationCategories()
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe({
+        next: (categories) => {
+          // Create tabs from categories
+          this.dynamicTabs = categories.map(category => {
+            return {
+              label: category.title,
+              icon: this.getCategoryIcon(category.name),
+              content: `${category.title} documentation`,
+              category: category.name,
+              files: category.files,
+              isMarkdown: false
+            };
+          });
+          
+          // Add links to README.md and main docs
+          this.loadMainReadme();
+        },
+        error: (err) => {
+          console.error('Failed to load documentation categories', err);
+          this.loadError = 'Failed to load documentation. Using static content instead.';
+        }
+      });
+  }
+  
+  /**
+   * Load README.md as the first tab
+   */
+  loadMainReadme(): void {
+    this.docService.getDocumentationByPath('/README.md')
+      .subscribe({
+        next: (content) => {
+          // Add README as first tab
+          this.dynamicTabs.unshift({
+            label: 'README',
+            icon: 'description',
+            content: '',
+            isMarkdown: true,
+            renderedContent: this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content)),
+            path: '/README.md'
+          });
+        },
+        error: () => {
+          // If README.md not found at root, try in assets/documentation
+          this.docService.getDocumentationByPath('README.md')
+            .subscribe(content => {
+              this.dynamicTabs.unshift({
+                label: 'README',
+                icon: 'description',
+                content: '',
+                isMarkdown: true,
+                renderedContent: this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content)),
+                path: 'README.md'
+              });
+            });
+        }
+      });
+  }
+  
+  /**
+   * Get a material icon name for a category
+   */
+  getCategoryIcon(category: string): string {
+    const iconMap: Record<string, string> = {
+      'general': 'home',
+      'developer': 'code',
+      'security': 'security',
+      'FedRAMP': 'verified',
+      'marketing': 'campaign',
+      'small-business': 'business'
+    };
+    
+    return iconMap[category] || 'article';
+  }
+  
+  /**
+   * Load a specific documentation file
+   */
+  loadDocumentationFile(filename: string): void {
+    const tab = this.dynamicTabs.find(t => t.files?.some(f => f.name === filename));
+    
+    if (tab) {
+      // Navigate to tab
+      const tabIndex = this.dynamicTabs.indexOf(tab);
+      if (tabIndex >= 0) {
+        this.activeTabIndex = tabIndex;
+      }
+      
+      // Load file content
+      this.docService.getDocumentationByName(filename)
+        .subscribe(content => {
+          tab.renderedContent = this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content));
+          tab.isMarkdown = true;
+        });
+    } else {
+      // Try to load directly
+      this.docService.getDocumentationByName(filename)
+        .subscribe(content => {
+          // Create new tab
+          const newTab: DocTab = {
+            label: this.formatFilenameAsTitle(filename),
+            icon: 'description',
+            content: '',
+            isMarkdown: true,
+            renderedContent: this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content)),
+            path: filename
+          };
+          
+          this.dynamicTabs.push(newTab);
+          this.activeTabIndex = this.dynamicTabs.length - 1;
+        });
+    }
+  }
+  
+  /**
+   * Navigate to a specific category
+   */
+  navigateToCategory(categoryName: string): void {
+    const tab = this.dynamicTabs.find(t => t.category === categoryName);
+    
+    if (tab) {
+      const tabIndex = this.dynamicTabs.indexOf(tab);
+      if (tabIndex >= 0) {
+        this.activeTabIndex = tabIndex;
+      }
+    }
+  }
+  
+  /**
+   * Format a filename as a title
+   */
+  formatFilenameAsTitle(filename: string): string {
+    // Remove extension
+    let title = filename.replace(/\.[^/.]+$/, "");
+    // Replace dashes and underscores with spaces
+    title = title.replace(/[_-]/g, ' ');
+    // Title case
+    return title
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  
+  /**
+   * Simple markdown to HTML conversion
+   * In a real app, use a proper markdown library like marked
+   */
+  markdownToHtml(markdown: string): string {
+    if (!markdown) return '';
+    
+    // This is a simple placeholder implementation
+    // In production, use a library like marked.js
+    let html = markdown;
+    
+    // Headers
+    html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+    
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Links
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+    
+    // Code blocks
+    html = html.replace(/```(\w*)([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+    
+    // Inline code
+    html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+    
+    // Lists
+    html = html.replace(/^\* (.*?)$/gm, '<li>$1</li>');
+    html = html.replace(/<li>.*?<\/li>(?=\n<li>)/g, match => {
+      return '<ul>' + match;
+    });
+    html = html.replace(/<\/li>(?!\n<li>)/g, '</li></ul>');
+    
+    // Paragraphs
+    html = html.replace(/^(?!<[a-z]).+/gm, '<p>$&</p>');
+    
+    return html;
   }
 
   /**

@@ -43,5 +43,13 @@ export const TILE_TYPES = {
   KABLAN: 'kablan'
 };
 
+// Add new fallback endpoints with full URLs
+export const FALLBACK_ENDPOINTS = {
+  // Use relative paths instead of hardcoded localhost URLs
+  LOGS: '/api/logs',
+  LOGS_MOCK: '/api/mock-data/logs', 
+  LOGS_V2: '/api/v2/logs'
+};
+
 // Mark this file as a Constants module
 export const __constants = true;

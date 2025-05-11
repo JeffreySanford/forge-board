@@ -1,0 +1,33 @@
+<div class="socket-monitoring-container">
+  <h3>Active Sockets</h3>
+  <button mat-raised-button color="primary" (click)="fetchActiveSockets()" [disabled]="isLoading">
+    <mat-icon *ngIf="!isLoading">refresh</mat-icon>
+    <mat-progress-spinner *ngIf="isLoading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+    <span *ngIf="isLoading; else notLoadingText">Loading...</span>
+    <ng-template #notLoadingText>Refresh Sockets</ng-template>
+  </button>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!isLoading && !error && activeSockets.length === 0" class="empty-state">
+    No active sockets found.
+  </div>
+
+  <div *ngIf="activeSockets.length > 0" class="sockets-list">
+    <mat-card *ngFor="let socket of activeSockets" class="socket-card">      <mat-card-header>
+        <mat-card-title>Socket ID: {{ socket.id }}</mat-card-title>
+        <mat-card-subtitle>Namespace: {{ socket.namespace }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p><strong>Status:</strong> {{ socket.status || 'Active' }}</p>
+        <p><strong>Connected At:</strong> {{ socket.connectTime | date:'medium' }}</p>
+        <p><strong>Last Activity:</strong> {{ socket.lastActivity | date:'medium' }}</p>
+        <p><strong>IP Address:</strong> {{ socket.clientIp }}</p>
+        <p><strong>User Agent:</strong> {{ socket.userAgent }}</p>
+        <p><strong>Events Count:</strong> {{ socket.events.length || 0 }}</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

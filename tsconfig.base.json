@@ -14,8 +14,14 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
+    "useDefineForClassFields": false,
     "paths": {
-      "@forge-board/shared/api-interfaces": ["libs/shared/api-interfaces/src/index.ts"]
+      "@forge-board/shared/api-interfaces": [
+        "libs/shared/api-interfaces/src/index.ts"
+      ],
+      "@/*": ["./forgeboard-frontend/src/*"],
+      "@shims/*": ["./forgeboard-frontend/src/app/shims/*"],
+      "@services/*": ["./forgeboard-frontend/src/app/services/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

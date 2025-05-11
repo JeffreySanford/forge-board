@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { Socket } from 'socket.io-client';
+import { HttpClient } from '@angular/common/http'; // Import HttpClient
+import { SocketInfo } from '@forge-board/shared/api-interfaces'; // Import SocketInfo
 
 interface SocketConnection {
   namespace: string;
@@ -14,8 +16,9 @@ interface SocketConnection {
 export class SocketRegistryService {
   private sockets: Map<string, SocketConnection> = new Map();
   private socketsSubject = new BehaviorSubject<SocketConnection[]>([]);
+  private apiUrl = '/api/sockets'; // Define the API URL
 
-  constructor() {
+  constructor(private http: HttpClient) { // Inject HttpClient
     console.log('Socket Registry Service initialized');
   }
 
@@ -60,6 +63,13 @@ export class SocketRegistryService {
     }
     
     this.updateSocketsSubject();
+  }
+
+  /**
+   * Fetches all active sockets from the backend.
+   */
+  getBackendActiveSockets(): Observable<SocketInfo[]> {
+    return this.http.get<SocketInfo[]>(`${this.apiUrl}/active`);
   }
 
   /**

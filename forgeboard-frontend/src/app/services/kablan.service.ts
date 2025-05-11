@@ -52,10 +52,16 @@ export interface KablanCard {
 @Injectable({
   providedIn: 'root'
 })
-export class KablanService implements OnDestroy {
-  // API URLs
-  private readonly apiUrl = `${environment.apiBaseUrl}/kablan`;
-  private readonly socketUrl = environment.socketBaseUrl;
+export class KablanService implements OnDestroy {  // API URLs
+  // Cast environment to specific type to access properties
+  private readonly typedEnv = environment as unknown as {
+    apiBaseUrl: string;
+    socketBaseUrl: string;
+    apiUrl: string;
+    socketUrl: string;
+  };
+  private readonly apiUrl = `${this.typedEnv.apiBaseUrl || this.typedEnv.apiUrl}/kablan`;
+  private readonly socketUrl = this.typedEnv.socketBaseUrl || this.typedEnv.socketUrl;
   
   // Socket connection
   private socket: Socket | null = null;
@@ -284,10 +290,9 @@ export class KablanService implements OnDestroy {
     this.reconnecting = true;
     
     this.logger.info('[KablanService] Attempting to reconnect to backend', 'KablanService');
-    
-    // Explicitly use the global status endpoint, NOT kablan-specific
+      // Explicitly use the global status endpoint, NOT kablan-specific
     // This ensures we're connecting to /api/status which exists in the backend
-    const statusEndpoint = `${environment.apiBaseUrl}/status`;
+    const statusEndpoint = `${this.typedEnv.apiBaseUrl || this.typedEnv.apiUrl}/status`;
     this.logger.info('[KablanService] Checking backend availability at: ' + statusEndpoint, 'KablanService');
     
     this.http.get(statusEndpoint).pipe(

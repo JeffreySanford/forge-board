@@ -1,32 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { 
   JwtDiagnosticsService, 
   AuthDiagnosticEvent, 
   AuthStats 
 } from '../../services/jwt-diagnostics.service';
 import { Subscription } from 'rxjs';
-import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTableModule } from '@angular/material/table';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-jwt-diagnostics',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatDividerModule,
-    MatIconModule,
-    MatChipsModule,
-    MatTableModule,
-    MatBadgeModule,
-    MatButtonModule
-  ],
+  standalone: false,
   template: `
     <div class="jwt-diagnostics-container">
       <h2>JWT Authentication Diagnostics</h2>

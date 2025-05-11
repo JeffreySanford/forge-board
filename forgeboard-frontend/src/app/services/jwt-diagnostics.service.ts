@@ -55,7 +55,7 @@ export class JwtDiagnosticsService implements OnDestroy {
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
   // Mock data interval
-  private mockDataInterval: NodeJS.Timeout | null = null;
+  private mockDataInterval: any = null;
   
   constructor(
     private http: HttpClient,
@@ -217,7 +217,11 @@ export class JwtDiagnosticsService implements OnDestroy {
   
   // Start mock data generation
   private startMockDataGeneration(): void {
-    if (this.mockDataInterval) return;
+    // Ensure we clear any existing interval first
+    if (this.mockDataInterval !== null) {
+      clearInterval(this.mockDataInterval);
+      this.mockDataInterval = null;
+    }
     
     console.log('JwtDiagnosticsService: Starting mock data generation');
     
@@ -264,7 +268,7 @@ export class JwtDiagnosticsService implements OnDestroy {
       
       // Update stats
       this.authStatsSubject.next({...mockStats});
-    }, 3000);
+    }, 5000);
     
     // Update backend status
     this.backendStatusService.updateGatewayStatus('auth-diagnostics', false, true);

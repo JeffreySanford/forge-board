@@ -1,7 +1,80 @@
 <div class="documentation-container">
   <h1>ForgeBoard Documentation</h1>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading documentation...</p>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="loadError" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ loadError }}</p>
+  </div>
   
-  <mat-tab-group>
+  <!-- Search bar -->
+  <div class="search-container">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search documentation</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (keyup.enter)="searchDocumentation()">
+      <mat-icon matSuffix *ngIf="!searchQuery">search</mat-icon>
+      <mat-icon matSuffix *ngIf="searchQuery" (click)="clearSearch()" style="cursor: pointer">clear</mat-icon>
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="searchDocumentation()" [disabled]="!searchQuery">Search</button>
+  </div>
+  
+  <!-- Search results -->
+  <div *ngIf="isSearching" class="search-results">
+    <h3>Search Results</h3>
+    <mat-list>
+      <mat-list-item *ngFor="let result of searchResults | async" (click)="navigateToResult(result)" class="search-result-item">
+        <mat-icon matListIcon>article</mat-icon>
+        <h4 matLine>{{ result.tab }} > {{ result.section }} {{ result.subsection ? '> ' + result.subsection : '' }}</h4>
+        <p matLine [innerHTML]="result.content"></p>
+      </mat-list-item>
+      <mat-list-item *ngIf="(searchResults | async)?.length === 0 && isSearching">
+        <mat-icon matListIcon color="warn">info</mat-icon>
+        <h4 matLine>No results found</h4>
+        <p matLine>Try a different search term</p>
+      </mat-list-item>
+    </mat-list>
+  </div>
+  
+  <!-- Dynamic Documentation Tabs -->
+  <mat-tab-group [(selectedIndex)]="activeTabIndex" *ngIf="!isLoading && dynamicTabs.length > 0">
+    <mat-tab *ngFor="let tab of dynamicTabs">
+      <ng-template mat-tab-label>
+        <mat-icon *ngIf="tab.icon">{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </ng-template>
+      
+      <div class="tab-content">
+        <!-- Markdown content -->
+        <div *ngIf="tab.isMarkdown" class="markdown-content">
+          <div [innerHTML]="tab.renderedContent"></div>
+        </div>
+        
+        <!-- Category content with files -->
+        <div *ngIf="tab.category && tab.files?.length" class="category-content">
+          <h2>{{ tab.label }}</h2>
+          <p>{{ tab.content }}</p>
+          
+          <mat-list>
+            <h3 mat-subheader>Documentation Files</h3>
+            <mat-list-item *ngFor="let file of tab.files" (click)="loadDocumentationFile(file.name)">
+              <mat-icon mat-list-icon>description</mat-icon>
+              <h4 mat-line>{{ formatFilenameAsTitle(file.name) }}</h4>
+              <p mat-line>{{ file.path }}</p>
+            </mat-list-item>
+          </mat-list>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+  
+  <!-- Fallback Static Tabs -->
+  <mat-tab-group *ngIf="!isLoading && (!dynamicTabs || dynamicTabs.length === 0)">
     <mat-tab *ngFor="let tab of tabs" [label]="tab.label">
       <div class="tab-content">
         <div class="content-section">

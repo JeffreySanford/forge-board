@@ -23,6 +23,7 @@ export const environment = {
     }
   },
   useInMemoryMongo: true,
-  mongoUri: 'In-memory MongoDB'
+  mongoUri: 'In-memory MongoDB',
+  logsPath: 'logs' // Custom path for logs endpoint (default is 'logs')
 };
 // Real keys and secrets are now in .env and should be loaded at runtime.

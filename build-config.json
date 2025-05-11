@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "name": "build-without-types",
+  "root": ".",
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:application",
+      "options": {
+        "outputPath": "dist/forgeboard-frontend",
+        "browser": "forgeboard-frontend/src/main.ts",
+        "polyfills": ["forgeboard-frontend/src/polyfills.ts"],
+        "styles": ["forgeboard-frontend/src/styles.scss"],
+        "scripts": [],
+        "index": "forgeboard-frontend/src/index.html", 
+        "tsConfig": "forgeboard-frontend/tsconfig.app.json",
+        "assets": [
+          "forgeboard-frontend/src/favicon.ico",
+          "forgeboard-frontend/src/assets"
+        ],
+        "optimization": true,
+        "outputHashing": "all",
+        "sourceMap": false,
+        "namedChunks": false,
+        "extractLicenses": true,
+        "vendorChunk": false,
+        "buildOptimizer": true,
+        "allowedCommonJsDependencies": [
+          "class-transformer/storage",
+          "socket.io-client"
+        ],
+        "preserveSymlinks": true,
+        "skipTypeChecking": true,
+        "browserTarget": "forgeboard-frontend:build:production",
+        "fileReplacements": [
+          {
+            "replace": "forgeboard-frontend/src/environments/environment.ts",
+            "with": "forgeboard-frontend/src/environments/environment.prod.ts"
+          }
+        ]
+      }
+    }
+  }
+}

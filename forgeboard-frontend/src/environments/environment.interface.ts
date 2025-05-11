@@ -73,7 +73,35 @@ export interface Environment {
     
     /**
      * Enable console logging
-     */
-    enableConsole: boolean;
+     */    enableConsole: boolean;
   };
+  
+  /**
+   * MongoDB configuration
+   */
+  mongo?: {
+    /**
+     * MongoDB URI (e.g., mongodb://localhost:27017/forgeboard)
+     */
+    uri: string;
+    /**
+     * MongoDB connection options
+     */
+    options: Record<string, any>;
+  };
+  
+  /**
+   * Flag to use in-memory MongoDB for development
+   */
+  useInMemoryMongo: boolean;
+  
+  /**
+   * MongoDB URI display value
+   */
+  mongoUri: string;
+  
+  /**
+   * Path for logs endpoint (default is 'logs')
+   */
+  logsPath: string;
 }

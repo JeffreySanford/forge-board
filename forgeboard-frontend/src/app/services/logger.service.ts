@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { v4 as uuid } from 'uuid';
 import { LogDispatchService } from './log-dispatch.service';
 import { SocketRegistryService } from './socket-registry.service';
 import { 
@@ -54,7 +53,7 @@ export interface LogResponse {
   totalCount: number;
   filtered: boolean;
   status: boolean;
-  total: number;
+  total?: number; // Make total optional to match the shared interface
   timestamp: string;
 }
 
@@ -64,12 +63,17 @@ export interface LogResponse {
 export class LoggerService {
   private logs: LogEntry[] = [];
   private logsSubject = new BehaviorSubject<LogEntry[]>([]);
-  
-  // Add subject for new log entries received via socket
+    // Add subject for new log entries received via socket
   private newLogEntrySubject = new Subject<LogEntry>();
   public newLogEntry$ = this.newLogEntrySubject.asObservable();
   
-  private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
+  // Cast environment to specific type to access properties
+  private readonly typedEnv = environment as unknown as {
+    apiBaseUrl: string;
+    apiUrl: string;
+  };
+  
+  private readonly apiUrl = `${this.typedEnv.apiBaseUrl || this.typedEnv.apiUrl}/logs`;
 
   // Maximum number of logs to keep in memory
   private readonly maxLogSize = 1000;
@@ -221,14 +225,11 @@ export class LoggerService {
   /**
    * Add a log entry to the local store and optionally send to server
    */
-  logMessage(level: LogLevelType, message: string, source: string = 'app', data?: Record<string, unknown>): void {
-    // Convert the string level to enum using the shared helper function
-    const levelEnum = stringToLogLevelEnum(level);
-    
+  logMessage(level: LogLevelType, message: string, source: string = 'app', data?: Record<string, unknown>): LogEntry {
     const entry: LogEntry = {
-      id: uuid(), // Now using the uuid function
+      id: this.generateId(),
       timestamp: new Date().toISOString(),
-      level: levelEnum,
+      level: stringToLogLevelEnum(level),
       message,
       source,
       data
@@ -239,6 +240,17 @@ export class LoggerService {
     
     // Instead of batching, send each log immediately
     this.sendLogToServer(entry);
+    
+    // Return the log entry
+    return entry;
+  }
+
+  /** Simple unique-id generator to replace uuid() */
+  private generateId(): string {
+    return (
+      Date.now().toString(36) +
+      Math.random().toString(36).substring(2, 8)
+    );
   }
 
   /**
@@ -356,108 +368,85 @@ export class LoggerService {
   }
 
   /**
-   * Log a debug message (older API)
+   * Log a debug message
+   * @param message Message to log
+   * @param sourceOrMetadata Source component or metadata object
+   * @param data Additional data to include
    */
-  debug(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log a debug message (detailed diagnostics)
-   */
-  debug(message: string, metadata?: LogMetadata): void;
-  /**
-   * Debug implementation that handles both versions
-   */
-  debug(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+  debug(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): LogEntry {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('debug', message, sourceOrMetadata, data);
+      return this.logMessage('debug', message, sourceOrMetadata as string, data);
     } else {
-      this.log(LogLevel.DEBUG, message, sourceOrMetadata);
-    }
-  }
-
-  /**
-   * Log an info message (older API)
-   */
-  info(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log an info message (normal operations)
-   */
-  info(message: string, metadata?: LogMetadata): void;
-  /**
-   * Info implementation that handles both versions
-   */
-  info(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('info', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.INFO, message, sourceOrMetadata);
-    }
-  }
-
-  /**
-   * Log a warning message (older API)
-   */
-  warning(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log a warning message (potential issues)
-   */
-  warning(message: string, metadata?: LogMetadata): void;
-  /**
-   * Warning implementation that handles both versions
-   */
-  warning(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('warning', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.WARN, message, sourceOrMetadata);
+      return this.logMessage('debug', message, undefined, { ...sourceOrMetadata, ...data });
     }
   }
   
   /**
-   * Alias for warning method (older API)
+   * Log an info message
+   * @param message Message to log
+   * @param sourceOrMetadata Source component or metadata object
+   * @param data Additional data to include
    */
-  warn(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Alias for warning method (newer API)
-   */
-  warn(message: string, metadata?: LogMetadata): void;
-  /**
-   * Warn implementation that delegates to warning
-   */
-  warn(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    this.warning(message, typeof sourceOrMetadata === 'string' ? sourceOrMetadata : undefined, data);
-  }
-
-  /**
-   * Log an error message (older API)
-   */
-  error(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log an error message (recoverable errors)
-   */
-  error(message: string, metadata?: LogMetadata): void;
-  /**
-   * Error implementation that handles both versions
-   */
-  error(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
+  info(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): LogEntry {
     if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('error', message, sourceOrMetadata, data);
+      return this.logMessage('info', message, sourceOrMetadata as string, data);
     } else {
-      this.log(LogLevel.ERROR, message, sourceOrMetadata);
+      return this.logMessage('info', message, undefined, { ...sourceOrMetadata, ...data });
+    }
+  }
+  
+  /**
+   * Log a warning message
+   * @param message Message to log
+   * @param sourceOrMetadata Source component or metadata object
+   * @param data Additional data to include
+   */
+  warning(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): LogEntry {
+    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
+      return this.logMessage('warning', message, sourceOrMetadata as string, data);
+    } else {
+      return this.logMessage('warning', message, undefined, { ...sourceOrMetadata, ...data });
+    }
+  }
+  
+  /**
+   * Log an error message
+   * @param message Message to log
+   * @param errorOrSource Error object, source component, or metadata object
+   * @param data Additional data to include
+   */
+  error(message: string, errorOrSource?: Error | string | LogMetadata, data?: Record<string, unknown>): LogEntry {
+    // Handle when errorOrSource is an Error object
+    if (errorOrSource instanceof Error) {
+      const errorData = {
+        errorMessage: errorOrSource.message,
+        errorName: errorOrSource.name,
+        errorStack: errorOrSource.stack,
+        ...data
+      };
+      return this.logMessage('error', message, undefined, errorData);
+    }
+    
+    // Handle when errorOrSource is a string or LogMetadata
+    if (typeof errorOrSource === 'string' || errorOrSource === undefined) {
+      return this.logMessage('error', message, errorOrSource as string, data);
+    } else {
+      return this.logMessage('error', message, undefined, { ...errorOrSource, ...data });
     }
   }
 
   /**
    * Log a trace message (most detailed)
    */
-  trace(message: string, metadata?: LogMetadata): void {
-    this.log(LogLevel.TRACE, message, metadata);
+  trace(message: string, metadata?: LogMetadata): LogEntry {
+    return this.log(LogLevel.TRACE, message, metadata);
   }
 
   /**
    * Log a fatal message (unrecoverable errors)
    */
-  fatal(message: string, metadata?: LogMetadata): void {
-    this.log(LogLevel.FATAL, message, metadata);
+  fatal(message: string, metadata?: LogMetadata): LogEntry {
+    return this.log(LogLevel.FATAL, message, metadata);
   }
 
   /**
@@ -541,8 +530,18 @@ export class LoggerService {
   /**
    * Core logging function
    */
-  private log(level: LogLevel, message: string, metadata?: LogMetadata): void {
-    if (level < this.config.level) return;
+  private log(level: LogLevel, message: string, metadata?: LogMetadata): LogEntry {
+    if (level < this.config.level) {
+      // Create a minimal log entry for skipped logs
+      return {
+        id: this.generateId(),
+        timestamp: new Date().toISOString(),
+        level: this.mapLogLevelToLogLevelEnum(level),
+        message,
+        source: metadata?.service || 'LoggerService',
+        data: metadata
+      };
+    }
     
     const timestamp = this.config.includeTimestamp ? new Date().toISOString() : null;
     
@@ -562,7 +561,7 @@ export class LoggerService {
     const logLevelEnum = this.mapLogLevelToLogLevelEnum(level);
     
     const entry: LogEntry = {
-      id: uuid(),
+      id: this.generateId(),
       timestamp: new Date().toISOString(),
       level: logLevelEnum,
       message,
@@ -593,8 +592,10 @@ export class LoggerService {
         this.writeToConsole('error', formattedMessage, consoleData);
         break;
     }
+    
+    return entry;
   }
-  
+
   /**
    * Map internal LogLevel enum to the shared LogLevelEnum
    */

@@ -26,10 +26,35 @@ interface CalloutLine {
   dingVolume?: number;
 }
 
+// Add proper interfaces for database health data
+interface DBConnection {
+  active: number;
+  status: string;
+}
+
+interface DBPerformance {
+  avgQueryTime: number;
+  status: string;
+}
+
+interface DBStorage {
+  used: number;
+  status: string;
+}
+
+// Use this interface in the updateDatabaseStatus method to remove the unused variable warning
+interface DatabaseHealth {
+  status: 'up' | 'down' | 'degraded' | 'error' | 'warning';
+  connections: DBConnection;
+  performance: DBPerformance;
+  storage: DBStorage;
+  message?: string; // Added message field to match usage in the code
+}
+
 interface StatusMetric {
   name: string;
   value: string | number;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown'; // Added 'unknown' to the valid status types
 }
 
 interface SystemStatus {
@@ -488,57 +513,6 @@ export class FooterComponent implements OnInit, OnDestroy {
     });
   }
   
-  // Enhance existing backend monitoring
-  private enhanceBackendMonitoring(): void {
-    // Existing backend status monitoring should be enhanced to include metrics
-    // ...existing code...
-  }
-  
-  // Monitor database status
-  private monitorDatabaseStatus(): void {
-    // Subscribe to diagnostics service for database status
-    this.subscriptions.add(
-      this.diagnosticsService.getHealthUpdates().subscribe(health => {
-        if (health && health.details && health.details.database) {
-          const dbHealth = health.details.database;
-          
-          this.databaseStatus.metrics = [
-            {
-              name: 'Connection Pool',
-              value: dbHealth.connections?.active || 'N/A',
-              status: dbHealth.connections?.status || 'healthy'
-            },
-            {
-              name: 'Query Time',
-              value: `${dbHealth.performance?.avgQueryTime || 'N/A'} ms`,
-              status: dbHealth.performance?.status || 'healthy'
-            },
-            {
-              name: 'Storage',
-              value: `${dbHealth.storage?.used || 'N/A'} MB`,
-              status: dbHealth.storage?.status || 'healthy'
-            }
-          ];
-          
-          // Determine overall status
-          if (dbHealth.status === 'error') {
-            this.databaseStatus.status = 'unhealthy';
-            this.databaseStatus.animationClass = 'pulse-red';
-          } else if (dbHealth.status === 'warning') {
-            this.databaseStatus.status = 'degraded';
-            this.databaseStatus.animationClass = 'pulse-yellow';
-          } else {
-            this.databaseStatus.status = 'healthy';
-            this.databaseStatus.animationClass = 'pulse-green';
-          }
-          
-          this.databaseStatus.message = dbHealth.message || '';
-          this.databaseStatus.lastUpdated = new Date();
-        }
-      })
-    );
-  }
-  
   // Show detailed status view
   showStatusDetails(status: SystemStatus): void {
     this.activeStatus = status;
@@ -631,38 +605,39 @@ export class FooterComponent implements OnInit, OnDestroy {
     // No need to implement this method as we're using a getter
     // This method is just a placeholder to avoid the TypeScript error
   }
-
   // Update database status based on systemHealth
   private updateDatabaseStatus(): void {
-    if (!this.systemHealth || !this.systemHealth.details || !this.systemHealth.details.database) {
+    if (!this.systemHealth || !this.systemHealth.details || !this.systemHealth.details['database']) {
       return;
     }
 
-    const dbHealth = this.systemHealth.details.database;
+    // Cast to known structure first to avoid type mismatch
+    const dbHealth = this.systemHealth.details['database'] as unknown as DatabaseHealth;
     
     this.databaseStatus.metrics = [
       {
         name: 'Connection Pool',
         value: dbHealth.connections?.active || 'N/A',
-        status: dbHealth.connections?.status || 'healthy'
+        status: this.mapStatusString(dbHealth.connections?.status)
       },
       {
         name: 'Query Time',
         value: `${dbHealth.performance?.avgQueryTime || 'N/A'} ms`,
-        status: dbHealth.performance?.status || 'healthy'
+        status: this.mapStatusString(dbHealth.performance?.status)
       },
       {
         name: 'Storage',
         value: `${dbHealth.storage?.used || 'N/A'} MB`,
-        status: dbHealth.storage?.status || 'healthy'
+        status: this.mapStatusString(dbHealth.storage?.status)
       }
     ];
     
-    // Determine overall status
-    if (dbHealth.status === 'error') {
+    // Use type-safe comparisons
+    const status = dbHealth.status?.toLowerCase() || '';
+    if (status === 'error') {
       this.databaseStatus.status = 'unhealthy';
       this.databaseStatus.animationClass = 'pulse-red';
-    } else if (dbHealth.status === 'warning') {
+    } else if (status === 'warning') {
       this.databaseStatus.status = 'degraded';
       this.databaseStatus.animationClass = 'pulse-yellow';
     } else {
@@ -672,5 +647,248 @@ export class FooterComponent implements OnInit, OnDestroy {
     
     this.databaseStatus.message = dbHealth.message || '';
     this.databaseStatus.lastUpdated = new Date();
+  }
+  
+  // Helper method to map string status to enum status
+  private mapStatusString(status?: string): 'healthy' | 'degraded' | 'unhealthy' {
+    if (!status) return 'healthy';
+    switch(status.toLowerCase()) {
+      case 'error': return 'unhealthy';
+      case 'warning': return 'degraded';
+      default: return 'healthy';
+    }
+  }
+
+  /**
+   * Enhance backend monitoring with additional metrics and tracking
+   */
+  private enhanceBackendMonitoring(): void {
+    // Subscribe to backend status service for detailed metrics
+    this.subscriptions.add(
+      this.backendStatusService.getStatus().subscribe(status => {
+        if (!status) return;
+        
+        // Update metrics based on gateway status
+        let connectedGateways = 0;
+        let totalGateways = 0;
+        
+        if (status.gateways && Array.isArray(status.gateways)) {
+          totalGateways = status.gateways.length;
+          connectedGateways = status.gateways.filter(g => g.connected).length;
+        }
+        
+        // Add metrics to backendStatusSystem
+        const backendSystem = this.backendStatusSystem;
+        backendSystem.metrics = [
+          {
+            name: 'Connected Gateways',
+            value: `${connectedGateways}/${totalGateways}`,
+            status: connectedGateways === totalGateways ? 'healthy' : 'degraded'
+          },
+          {
+            name: 'Mock Data',
+            value: status.anyMockData ? 'Yes' : 'No',
+            status: status.anyMockData ? 'degraded' : 'healthy'
+          }
+        ];
+        
+        // Determine overall status
+        if (!status.allConnected) {
+          backendSystem.status = 'degraded';
+          backendSystem.message = 'Some services are disconnected';
+          backendSystem.animationClass = 'pulse-yellow';
+        } else if (status.anyMockData) {
+          backendSystem.status = 'degraded';
+          backendSystem.message = 'Using mock data due to connectivity issues';
+          backendSystem.animationClass = 'pulse-yellow';
+        } else {
+          backendSystem.status = 'healthy';
+          backendSystem.message = 'All backend services connected';
+          backendSystem.animationClass = 'pulse-green';
+        }
+        
+        backendSystem.lastUpdated = new Date();
+      })
+    );
+    
+    // Subscribe to diagnostics health updates for more backend info
+    this.subscriptions.add(
+      this.diagnosticsService.getHealthUpdates().subscribe(health => {
+        if (!health) return;
+        
+        // Add additional metrics from health data
+        const backendSystem = this.backendStatusSystem;
+        const existingMetrics = [...backendSystem.metrics];
+        
+        // Add uptime metric if available
+        if (health.uptime) {
+          const uptimeMetric = {
+            name: 'Uptime',
+            value: this.formatUptime(health.uptime),
+            status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy'
+          };
+          
+          // Replace existing uptime metric or add new one
+          const uptimeIndex = existingMetrics.findIndex(m => m.name === 'Uptime');
+          if (uptimeIndex >= 0) {
+            existingMetrics[uptimeIndex] = uptimeMetric;
+          } else {
+            existingMetrics.push(uptimeMetric);
+          }
+        }
+        
+        // Update backend metrics
+        backendSystem.metrics = existingMetrics;
+        backendSystem.lastUpdated = new Date();
+      })
+    );
+  }
+
+  /**
+   * Monitor database status and metrics
+   */
+  private monitorDatabaseStatus(): void {
+    // Initially set database status to unknown
+    this.databaseStatus.status = 'unknown';
+    this.databaseStatus.message = 'Connecting to database...';
+    this.databaseStatus.animationClass = 'flicker-blue';
+    
+    // Subscribe to health updates for database information
+    this.subscriptions.add(
+      this.diagnosticsService.getHealthUpdates().subscribe(health => {
+        if (!health || !health.details) return;
+        
+        // Try to extract database status from health details
+        const dbDetails = health.details['database'];
+        if (!dbDetails) return;
+        
+        try {
+          // Parse database details (might be a string that needs parsing)
+          const dbHealth = typeof dbDetails === 'string' 
+            ? JSON.parse(dbDetails)
+            : dbDetails as Record<string, any>;
+          
+          // Extract database metrics
+          this.databaseStatus.metrics = [
+            {
+              name: 'Status',
+              value: dbHealth.status || 'unknown',
+              status: this.mapDatabaseStatus(dbHealth.status)
+            }
+          ];
+          
+          // Add connection metrics if available
+          if (dbHealth.connections) {
+            this.databaseStatus.metrics.push({
+              name: 'Connections',
+              value: dbHealth.connections.active || '0',
+              status: this.mapStatusString(dbHealth.connections.status)
+            });
+          }
+          
+          // Add performance metrics if available
+          if (dbHealth.performance) {
+            this.databaseStatus.metrics.push({
+              name: 'Query Time',
+              value: `${dbHealth.performance.avgQueryTime || 'N/A'} ms`,
+              status: this.mapStatusString(dbHealth.performance.status)
+            });
+          }
+          
+          // Add storage metrics if available
+          if (dbHealth.storage) {
+            this.databaseStatus.metrics.push({
+              name: 'Storage',
+              value: `${dbHealth.storage.used || 'N/A'} MB`,
+              status: this.mapStatusString(dbHealth.storage.status)
+            });
+          }
+          
+          // Update database status
+          this.databaseStatus.status = this.mapDatabaseStatus(dbHealth.status);
+          this.databaseStatus.message = dbHealth.message || '';
+          
+          // Set appropriate animation class
+          switch (this.databaseStatus.status) {
+            case 'healthy':
+              this.databaseStatus.animationClass = 'pulse-green';
+              break;
+            case 'degraded':
+              this.databaseStatus.animationClass = 'pulse-yellow';
+              break;
+            case 'unhealthy':
+              this.databaseStatus.animationClass = 'pulse-red';
+              break;
+            default:
+              this.databaseStatus.animationClass = 'flicker-blue';
+          }
+          
+          this.databaseStatus.lastUpdated = new Date();
+        } catch (error) {
+          console.error('Error parsing database health data:', error);
+          this.databaseStatus.status = 'unknown';
+          this.databaseStatus.message = 'Error parsing database status';
+          this.databaseStatus.animationClass = 'flicker-blue';
+        }
+      })
+    );
+    
+    // Fallback for when no database status is available after some time
+    setTimeout(() => {
+      if (this.databaseStatus.status === 'unknown') {
+        this.databaseStatus.message = 'No database information available';
+        this.databaseStatus.metrics = [
+          {
+            name: 'Status',
+            value: 'Unknown',
+            status: 'degraded'
+          }
+        ];
+      }
+    }, 10000); // Wait 10 seconds for data before showing fallback
+  }
+  
+  /**
+   * Map database status string to system status
+   */
+  private mapDatabaseStatus(status?: string): 'healthy' | 'degraded' | 'unhealthy' | 'unknown' {
+    if (!status) return 'unknown';
+    
+    switch (status.toLowerCase()) {
+      case 'up':
+      case 'healthy':
+      case 'green':
+      case 'ok':
+        return 'healthy';
+      case 'degraded':
+      case 'warning':
+      case 'yellow':
+        return 'degraded';
+      case 'down':
+      case 'unhealthy':
+      case 'error':
+      case 'red':
+        return 'unhealthy';
+      default:
+        return 'unknown';
+    }
+  }
+
+  // Helper function to format uptime (to be used in enhanceBackendMonitoring)
+  private formatUptime(seconds: number): string {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
   }
 }

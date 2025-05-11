@@ -1,0 +1,29 @@
+<div 
+  class="storage-indicator-container"
+  [ngClass]="'storage-type-' + storageType"
+  [matTooltip]="getTooltipText()"
+  matTooltipPosition="above">
+  <div class="storage-icon">
+    <span [ngSwitch]="storageType">
+      <ng-container *ngSwitchCase="'memory'">💾</ng-container>
+      <ng-container *ngSwitchCase="'localStorage'">📱</ng-container>
+      <ng-container *ngSwitchCase="'mongodb'">🍃</ng-container>
+      <ng-container *ngSwitchCase="'blockchain'">🔗</ng-container>
+      <ng-container *ngSwitchDefault>?</ng-container>
+    </span>
+  </div>
+  <div class="storage-info">
+    <div class="storage-name">{{ storageType | titlecase }}</div>
+    <!-- You can uncomment the line below if you want to display the description directly, -->
+    <!-- though it might be verbose for an indicator. -->
+    <!-- <div class="storage-description-text">{{ getStorageDescription() }}</div> -->
+  </div>
+  <div [ngClass]="{
+    'database-icon': storageType === 'mongodb',
+    'memory-icon': storageType === 'memory',
+    'local-storage-icon': storageType === 'localStorage',
+    'blockchain-icon': storageType === 'blockchain',
+    'default-storage-icon': !storageType
+  }" [matTooltip]="storageType ? (storageType | titlecase) : 'Unknown Storage Type'">
+  </div>
+</div>

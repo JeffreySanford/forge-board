@@ -126,8 +126,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       });
       
     // Initialize database status from environment
-    this.dbStatus = environment.useInMemoryMongo ? 'green' : 'yellow';
-    this.dbStatusText = environment.mongoUri;
+    // Cast environment to unknown first to appease TypeScript, then to specific type
+    const typedEnv = environment as unknown as {
+      useInMemoryMongo: boolean;
+      mongoUri: string;
+      apiBaseUrl: string;
+      socketBaseUrl: string;
+      logsPath: string;
+    };
+    this.dbStatus = typedEnv.useInMemoryMongo ? 'green' : 'yellow';
+    this.dbStatusText = typedEnv.mongoUri;
 
     this.refreshInterval = this.refreshIntervalService.getInterval();
     

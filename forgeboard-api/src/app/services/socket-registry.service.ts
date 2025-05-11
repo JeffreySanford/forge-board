@@ -1,21 +1,32 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { SocketInfo, SocketMetrics, SocketStatusUpdate, DiagnosticSocketEvent } from '@forge-board/shared/api-interfaces';
-import { BehaviorSubject, Observable, Subject, Subscription, fromEvent, merge } from 'rxjs';
-import { takeUntil, tap, share } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject, Subscription, fromEvent, merge, shareReplay } from 'rxjs';
+import { takeUntil, tap } from 'rxjs/operators';
 
 /**
  * SocketRegistryService
  *
- * Manages the lifecycle of WebSocket connections and their associated RxJS subscriptions.
- * Provides observables for socket events, metrics, and status updates.
+ * Manages the lifecycle of WebSocket connections using reactive patterns with RxJS.
+ * Provides hot observables for socket events, metrics, and status updates.
  *
  * Features:
  * - Track socket connections with metadata
  * - Monitor socket events (connect, disconnect, messages)
  * - Gather socket metrics (counts, errors)
- * - Provide reactive streams of socket activity
+ * - Provide hot observable streams of socket activity
  * - Auto-cleanup resources on service destruction
+ * 
+ * @example
+ * // Subscribe to socket connections
+ * socketRegistry.socketConnections().subscribe(({ socketId, socket }) => {
+ *   console.log(`New socket connected: ${socketId}`);
+ * });
+ * 
+ * // Get metrics updates as a hot observable
+ * socketRegistry.metricUpdates().subscribe(metrics => {
+ *   console.log(`Active connections: ${metrics.activeConnections}`);
+ * });
  */
 @Injectable()
 export class SocketRegistryService<TData = unknown> implements OnModuleDestroy {
@@ -43,19 +54,48 @@ export class SocketRegistryService<TData = unknown> implements OnModuleDestroy {
     messagesReceived: 0
   };
 
-  // Event streams
+  /**
+   * Hot observable for socket events using BehaviorSubject
+   * Emits events to all subscribers with the most recent event to new subscribers
+   */
   private readonly socketEvent$ = new BehaviorSubject<{ socketId: string; event: string; data?: TData }>(
     { socketId: 'system', event: 'init' }
   );
+  
+  /**
+   * Hot observable for socket errors
+   */
   private readonly socketError$ = new Subject<{ socketId: string; error: unknown }>();
+  
+  /**
+   * Hot observable for socket connect events
+   */
   private readonly socketConnect$ = new Subject<{ socketId: string; socket: Socket }>();
+  
+  /**
+   * Hot observable for socket disconnect events
+   */
   private readonly socketDisconnect$ = new Subject<{ socketId: string }>();
+  
+  /**
+   * Hot observable for metrics updates using BehaviorSubject
+   * Emits metrics to all subscribers with the most recent metrics to new subscribers
+   */
   private readonly metricsUpdate$ = new BehaviorSubject<SocketMetrics>(this.metrics);
+  
+  /**
+   * Hot observable for status updates using BehaviorSubject
+   * Emits status to all subscribers with the most recent status to new subscribers
+   */
   private readonly statusUpdate$ = new BehaviorSubject<SocketStatusUpdate<TData>>({
     activeSockets: [],
     metrics: this.metrics
   });
-  
+
+  constructor() {
+    this.logger.log('SocketRegistryService initialized with reactive patterns');
+  }
+
   /**
    * Register a socket with the registry
    *
@@ -266,57 +306,51 @@ export class SocketRegistryService<TData = unknown> implements OnModuleDestroy {
   }
   
   /**
-   * Observe socket events
-   * 
-   * @returns Observable of socket events
+   * Observe socket events as a hot observable
+   * @returns Hot observable of socket events with shared subscription
    */
   socketEvents(): Observable<{ socketId: string; event: string; data?: TData }> {
-    return this.socketEvent$.asObservable().pipe(share());
+    return this.socketEvent$.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Observe socket errors
-   * 
-   * @returns Observable of socket errors
+   * Observe socket errors as a hot observable
+   * @returns Hot observable of socket errors with shared subscription
    */
   socketErrors(): Observable<{ socketId: string; error: unknown }> {
-    return this.socketError$.asObservable().pipe(share());
+    return this.socketError$.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Observe socket connections
-   * 
-   * @returns Observable of socket connect events
+   * Observe socket connections as a hot observable
+   * @returns Hot observable of socket connect events with shared subscription
    */
   socketConnections(): Observable<{ socketId: string; socket: Socket }> {
-    return this.socketConnect$.asObservable().pipe(share());
+    return this.socketConnect$.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Observe socket disconnections
-   * 
-   * @returns Observable of socket disconnect events
+   * Observe socket disconnections as a hot observable
+   * @returns Hot observable of socket disconnect events with shared subscription
    */
   socketDisconnections(): Observable<{ socketId: string }> {
-    return this.socketDisconnect$.asObservable().pipe(share());
+    return this.socketDisconnect$.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Observe metrics updates
-   * 
-   * @returns Observable of socket metrics
+   * Observe metrics updates as a hot observable
+   * @returns Hot observable of socket metrics with shared subscription
    */
   metricUpdates(): Observable<SocketMetrics> {
-    return this.metricsUpdate$.asObservable().pipe(share());
+    return this.metricsUpdate$.asObservable().pipe(shareReplay(1));
   }
   
   /**
-   * Observe status updates
-   * 
-   * @returns Observable of socket status updates
+   * Observe status updates as a hot observable
+   * @returns Hot observable of socket status updates with shared subscription
    */
   statusUpdates(): Observable<SocketStatusUpdate<TData>> {
-    return this.statusUpdate$.asObservable().pipe(share());
+    return this.statusUpdate$.asObservable().pipe(shareReplay(1));
   }
   
   /**
@@ -352,7 +386,6 @@ export class SocketRegistryService<TData = unknown> implements OnModuleDestroy {
 
   /**
    * Clean up all resources when module is destroyed
-   * This satisfies the ESLint rule by explicitly calling disconnect/unsubscribe on each property
    */
   onModuleDestroy(): void {
     this.logger.log('Socket registry service destroying, cleaning up resources');
@@ -370,22 +403,11 @@ export class SocketRegistryService<TData = unknown> implements OnModuleDestroy {
     
     // Complete and explicitly unsubscribe from all subjects
     this.socketEvent$.complete();
-    this.socketEvent$.unsubscribe();
-    
     this.socketError$.complete();
-    this.socketError$.unsubscribe();
-    
     this.socketConnect$.complete();
-    this.socketConnect$.unsubscribe();
-    
     this.socketDisconnect$.complete();
-    this.socketDisconnect$.unsubscribe();
-    
     this.metricsUpdate$.complete();
-    this.metricsUpdate$.unsubscribe();
-    
     this.statusUpdate$.complete();
-    this.statusUpdate$.unsubscribe();
     
     // Unsubscribe all per-socket subscriptions
     this.subscriptions.forEach((sub, socketId) => {

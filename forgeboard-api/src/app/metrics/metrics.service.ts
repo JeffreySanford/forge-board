@@ -1,13 +1,35 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BehaviorSubject, Observable, interval, Subscription, shareReplay } from 'rxjs';
 import { MetricData } from '@forge-board/shared/api-interfaces';
 
+/**
+ * Service providing real-time system metrics via hot observables
+ * 
+ * Features:
+ * - Continuously updated metrics via BehaviorSubject (hot observable)
+ * - Configurable update interval
+ * - Realistic data simulation with temporal correlation
+ * 
+ * @example
+ * // Subscribe to the metrics stream
+ * metricsService.getMetrics().subscribe(metrics => {
+ *   console.log(`CPU: ${metrics.cpu}%, Memory: ${metrics.memory}%`);
+ * });
+ * 
+ * // Change the update interval
+ * metricsService.setUpdateInterval(1000).subscribe(interval => {
+ *   console.log(`Metrics now updating every ${interval}ms`);
+ * });
+ */
 @Injectable()
-export class MetricsService implements OnModuleInit {
+export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MetricsService.name);
   private updateInterval = 3000; // Default update interval of 3000ms
   
-  // Use BehaviorSubject to track metrics state
+  /**
+   * BehaviorSubject to track metrics state as a hot observable
+   * Initialized with generated metrics and emits to all subscribers
+   */
   private metricsSubject = new BehaviorSubject<MetricData>(this.generateMetrics());
   private updateSubscription: Subscription;
   
@@ -23,7 +45,7 @@ export class MetricsService implements OnModuleInit {
   private simulatedLoad = 0;
   
   constructor() {
-    this.logger.log('Metrics Service initialized with 3000ms default interval');
+    this.logger.log('Metrics Service initialized with BehaviorSubject hot observable');
   }
   
   onModuleInit() {
@@ -36,7 +58,23 @@ export class MetricsService implements OnModuleInit {
     this.prevDisk = 50 + Math.random() * 10;
     this.prevNetwork = 25 + Math.random() * 10;
   }
+  
+  /**
+   * Clean up resources when the module is destroyed
+   */
+  onModuleDestroy() {
+    this.logger.log('MetricsService cleaning up resources');
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+    this.metricsSubject.complete();
+  }
 
+  /**
+   * Set the metrics update interval
+   * @param interval The new interval in milliseconds
+   * @returns Hot observable emitting the new interval
+   */
   setUpdateInterval(interval: number): Observable<number> {
     // Ensure minimum interval is 20ms
     this.updateInterval = Math.max(interval, 20);
@@ -45,12 +83,17 @@ export class MetricsService implements OnModuleInit {
     // Restart the timer with the new interval
     this.startMetricsTimer();
     
+    // Return a hot observable with the new interval
     return new BehaviorSubject<number>(this.updateInterval).asObservable();
   }
 
+  /**
+   * Get the metrics stream as a hot observable
+   * @returns Hot observable of MetricData that emits on each update
+   */
   getMetrics(): Observable<MetricData> {
-    // Return observable stream of metrics
-    return this.metricsSubject.asObservable();
+    // Return observable stream of metrics with replay to ensure consistent values
+    return this.metricsSubject.asObservable().pipe(shareReplay(1));
   }
   
   /**

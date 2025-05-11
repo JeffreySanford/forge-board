@@ -5,7 +5,7 @@ import { KablanBoardComponent } from './pages/kablan-board/kablan-board.componen
 import { MetricComponent } from './pages/metrics/metric.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { LoggerViewComponent } from './pages/logger/logger-view.component';
-import { DiagnosticsComponent } from './pages/metrics/diagnostics/diagnostics.component';
+import { DiagnosticsComponent } from './pages/diagnostics/diagnostics.component'; // Corrected import path
 import { SecurityDashboardComponent } from './pages/security-dashboard/security-dashboard.component';
 
 const routes: Routes = [
@@ -16,6 +16,7 @@ const routes: Routes = [
   { path: 'kablan', component: KablanBoardComponent },
   { path: 'logs', component: LoggerViewComponent },
   { path: 'security', component: SecurityDashboardComponent },
+  { path: 'sockets', loadChildren: () => import('./pages/socket/socket.module').then(m => m.SocketModule) },
   { path: 'documentation', loadChildren: () => import('./pages/documentation/documentation.module').then(m => m.DocumentationModule) },
   { path: '404', component: NotFoundComponent },
   { path: '**', redirectTo: '/404' } // Redirect all unknown routes to 404 page

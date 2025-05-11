@@ -1,0 +1,124 @@
+.storage-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+  .indicator-icon {
+    font-size: 24px;
+    color: #fff; // Default icon color
+    z-index: 2;
+  }
+
+  .indicator-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: currentColor; // Pulse color will be set by ngClass
+    opacity: 0.3;
+    transform: scale(0.8);
+    animation: pulse-animation 2s infinite ease-out;
+    z-index: 1;
+  }
+
+  // Type-specific styles
+  &.memory {
+    background-color: #4CAF50; // Green
+    color: #4CAF50;
+    .indicator-icon { color: #fff; }
+  }
+  &.localStorage {
+    background-color: #2196F3; // Blue
+    color: #2196F3;
+    .indicator-icon { color: #fff; }
+  }
+  &.mongodb {
+    background-color: #FF9800; // Orange
+    color: #FF9800;
+    .indicator-icon { color: #fff; }
+  }
+  &.blockchain {
+    background-color: #9C27B0; // Purple
+    color: #9C27B0;
+    .indicator-icon { color: #fff; }
+  }
+
+  .storage-details {
+    display: none; // Hidden by default
+    position: absolute;
+    bottom: 125%; // Position above the indicator
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    width: max-content;
+    max-width: 250px;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+
+    h4 {
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    p {
+      margin-bottom: 0;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    // Arrow
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: #333 transparent transparent transparent;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    .storage-details {
+      display: block;
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+}
+
+// Ensure mat-icon is styled correctly if not globally done
+::ng-deep .mat-icon {
+  vertical-align: middle;
+}

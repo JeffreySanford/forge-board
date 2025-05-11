@@ -22,7 +22,7 @@ export interface MetricData {
  */
 export interface MetricResponse {
   success: boolean;
-  data?: MetricData | null;
+  data?: MetricData | MetricData[] | null; // Can be single, array, or null
   timestamp: string;
   status: string;
   message?: string;
@@ -38,13 +38,23 @@ export interface MetricFilter {
   maxCpu?: number;
   minMemory?: number;
   maxMemory?: number;
+  types?: string[];   // Added from metric-types.ts
+  sources?: string[]; // Added from metric-types.ts
 }
 
 /**
- * Metric update data
+ * Metric update data (for batch updates)
  */
 export interface MetricUpdate {
   metrics: MetricData[];
+  timestamp: string;
+}
+
+/**
+ * Individual metric data point, often used in time series.
+ */
+export interface MetricDataPoint { // Added from metric-types.ts
+  value: number;
   timestamp: string;
 }
 

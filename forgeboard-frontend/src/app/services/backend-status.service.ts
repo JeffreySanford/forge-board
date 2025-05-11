@@ -118,6 +118,13 @@ export class BackendStatusService {
   }
 
   /**
+   * Returns an observable of the backend status summary.
+   */
+  public getStatusSummary(): Observable<BackendStatusSummary> {
+    return this.statusSummarySubject.asObservable();
+  }
+
+  /**
    * Get the status summary observable
    */
   getStatus(): Observable<BackendStatusSummary> {

@@ -12,7 +12,13 @@ export class ErrorService {
    * Handle API errors by redirecting to the appropriate error page
    */
   handleApiError(error: HttpErrorResponse, path?: string): void {
-    console.error('API Error:', error);
+    // Log error details in a structured format for easier debugging
+    console.error(`API Error [${error.status}]: ${this.getErrorMessage(error.status)} - ${error.message}`, {
+      url: error.url,
+      statusText: error.statusText,
+      timestamp: new Date().toISOString(),
+      errorDetails: error.error
+    });
     
     // Get error details
     const code = error.status || 500;

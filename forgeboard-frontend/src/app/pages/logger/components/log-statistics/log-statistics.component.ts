@@ -8,8 +8,7 @@ import { Subject, takeUntil } from 'rxjs';
   selector: 'app-log-statistics',
   templateUrl: './log-statistics.component.html',
   styleUrls: ['./log-statistics.component.scss'],
-  standalone: true,
-  imports: [CommonModule]
+  standalone: false
 })
 export class LogStatisticsComponent implements OnInit, OnDestroy {
   @Input() stats: Record<string, number> = {

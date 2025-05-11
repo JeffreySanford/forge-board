@@ -1,10 +1,11 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { createSocketResponse } from '@forge-board/shared/api-interfaces';
-import { SocketRegistryService } from '../socket/socket-registry.service';
-import { DiagnosticsService } from '../diagnostics/diagnostics.service';
+import { WebSocketGateway, WebSocketServer, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage } from '@nestjs/websockets';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { DiagnosticsService } from './diagnostics.service';
+import { createSocketResponse, HealthTimelinePoint, SocketResponse, SocketLogEvent } from '@forge-board/shared/api-interfaces';
+import { SocketRegistryService } from '../socket/socket-registry.service';
 import { SocketLoggerService } from '../socket/socket-logger.service';
+import { Subscription } from 'rxjs';
 
 @WebSocketGateway({
   namespace: 'diagnostics',
@@ -14,37 +15,62 @@ import { SocketLoggerService } from '../socket/socket-logger.service';
 })
 export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
+  
+  private healthInterval!: NodeJS.Timeout;
+  private socketStatusInterval!: NodeJS.Timeout;
   private readonly logger = new Logger(DiagnosticsGateway.name);
-
-  private healthInterval: NodeJS.Timeout;
-  private socketStatusInterval: NodeJS.Timeout;
+  private timelineSubscription!: Subscription;
 
   constructor(
-    private socketRegistry: SocketRegistryService,
-    private diagnosticsService: DiagnosticsService,
-    private readonly socketLogger: SocketLoggerService
+    private readonly diagnosticsService: DiagnosticsService,
+    private readonly socketRegistry: SocketRegistryService,
+    private readonly socketLogger: SocketLoggerService,
   ) {
     this.logger.log('DiagnosticsGateway created');
   }
 
-  afterInit() {
+  afterInit(): void {
     this.logger.log('Diagnostics Socket.IO server initialized with namespace /diagnostics');
     
     // Emit health updates at regular intervals
     this.healthInterval = setInterval(() => {
       const health = this.diagnosticsService.getHealth();
       this.logger.debug('Emitting health update', health);
-      // Check if there are connected clients without using size
+      // Check if there are connected clients
       if (this.server && Object.keys(this.server.sockets.sockets).length > 0) {
         this.server.emit('health-update', createSocketResponse('health-update', health));
       }
     }, 10000);
+    
+    // Emit socket status updates at regular intervals
+    this.socketStatusInterval = setInterval(() => {
+      // Get active sockets and metrics
+      const activeSockets = this.socketRegistry.getActiveSockets();
+      const metrics = this.socketRegistry.getMetrics();
+      
+      const status = {
+        activeSockets,
+        metrics
+      };
+      
+      this.logger.debug('Emitting socket status update');
+      if (this.server && Object.keys(this.server.sockets.sockets).length > 0) {
+        this.server.emit('socket-status', createSocketResponse('socket-status', status));
+      }
+    }, 15000);
+
+    // Subscribe to timelinePoints and emit updates
+    this.timelineSubscription = this.diagnosticsService.timelinePoints$.subscribe(
+      (points: HealthTimelinePoint[]) => {
+        this.logger.verbose(`Emitting timeline update with ${points.length} points.`);
+        this.server.emit('timeline-update', createSocketResponse('timeline-update', points));
+      }
+    );
   }
 
-  handleConnection(client: Socket) {
+  handleConnection(client: Socket): void {
     this.logger.log(`Client connected to diagnostics namespace: ${client.id}`);
-    // Update to pass only the socket parameter
     this.socketRegistry.registerSocket(client);
     this.socketLogger.log(
       client.id,
@@ -56,9 +82,13 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
     // Send initial health data
     const health = this.diagnosticsService.getHealth();
     client.emit('health-update', createSocketResponse('health-update', health));
+
+    // Send initial timeline data
+    const timelinePoints = this.diagnosticsService.getTimelinePointsValue();
+    client.emit('timeline-update', createSocketResponse('timeline-update', timelinePoints));
   }
   
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected from diagnostics namespace: ${client.id}`);
     this.socketLogger.log(
       client.id,
@@ -69,7 +99,7 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
   }
   
   @SubscribeMessage('get-health')
-  handleGetHealth(client: Socket) {
+  handleGetHealth(client: Socket): SocketResponse<unknown> {
     this.logger.verbose(`Client ${client.id} requested health data`);
     const health = this.diagnosticsService.getHealth();
     
@@ -80,25 +110,21 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
       'Client requested health data'
     );
     
-    return { event: 'health-data', data: createSocketResponse('health-data', health) };
+    return createSocketResponse('health-data', health);
   }
   
   @SubscribeMessage('get-socket-status')
-  handleGetSocketStatus(client: Socket) {
+  handleGetSocketStatus(client: Socket): SocketResponse<{ activeSockets: unknown; metrics: unknown }> {
     this.logger.verbose(`Client ${client.id} requested socket status`);
     
-    const activeSockets = this.socketRegistry.getActiveSockets().map(s => ({
-      id: s.id,
-      namespace: s.namespace,
-      clientIp: s.clientIp,
-      userAgent: s.userAgent,
-      connectTime: s.connectTime,
-      lastActivity: s.lastActivity
-    }));
-    
+    // Get active sockets and metrics
+    const activeSockets = this.socketRegistry.getActiveSockets();
     const metrics = this.socketRegistry.getMetrics();
     
-    const response = { activeSockets, metrics };
+    const status = {
+      activeSockets,
+      metrics
+    };
     
     this.socketLogger.log(
       client.id,
@@ -107,46 +133,36 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
       'Client requested socket status'
     );
     
-    return {
-      event: 'socket-status',
-      data: createSocketResponse('socket-status', response)
-    };
+    return createSocketResponse('socket-status', status);
   }
   
   @SubscribeMessage('get-socket-logs')
-  handleGetSocketLogs(client: Socket) {
+  handleGetSocketLogs(client: Socket): SocketResponse<SocketLogEvent[]> {
     this.logger.verbose(`Client ${client.id} requested socket logs`);
-    
-    const logs = this.socketLogger.getLogs();
+    // getLogs takes a number limit, not a socketId
+    const logs = this.socketLogger.getLogs(50); // Get the last 50 logs
     
     this.socketLogger.log(
       client.id,
       'diagnostics',
       'get-socket-logs',
-      'Client requested socket logs'
+      `Client requested socket logs. Found ${logs.length} logs.`,
+      { count: logs.length }
     );
     
-    return {
-      event: 'socket-logs',
-      data: createSocketResponse('socket-logs', logs)
-    };
+    return createSocketResponse('socket-logs-data', logs);
   }
-  
-  onModuleDestroy() {
+
+  onModuleDestroy(): void {
+    this.logger.log('Destroying DiagnosticsGateway, clearing intervals and subscriptions.');
     if (this.healthInterval) {
       clearInterval(this.healthInterval);
     }
     if (this.socketStatusInterval) {
       clearInterval(this.socketStatusInterval);
-      this.socketStatusInterval = null;
     }
-    
-    // Any other cleanup needed
-    this.logger.log('Diagnostics gateway resources cleaned up');
-  }
-
-  private sendSocketLogs(client: Socket): void {
-    const logs = this.socketLogger.getLogs(100); // Add limit parameter
-    client.emit('socket-logs', createSocketResponse('socket-logs', logs));
+    if (this.timelineSubscription) {
+      this.timelineSubscription.unsubscribe();
+    }
   }
 }

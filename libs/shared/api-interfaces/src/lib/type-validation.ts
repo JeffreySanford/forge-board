@@ -225,7 +225,33 @@ export function isErrorResponse<T>(obj: unknown): obj is SocketResponse<T> {
   return isSocketResponse(obj) && obj.status === 'error';
 }
 
+/**
+ * Safely stringify an object, handling circular references
+ * @param obj Object to stringify
+ * @returns String representation of the object
+ */
+export function safeStringify(obj: unknown): string {
+  if (obj === undefined) return 'undefined';
+  if (obj === null) return 'null';
+  
+  try {
+    const cache = new Set();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) {
+          return '[Circular Reference]';
+        }
+        cache.add(value);
+      }
+      return value;
+    }, 2);
+  } catch (error) {
+    return `[Error during stringify: ${error instanceof Error ? error.message : String(error)}]`;
+  }
+}
+
 export function validateSocketResponse<T>(obj: unknown): ValidationResult {
+  // Implementation of validateSocketResponse
   const issues: string[] = [];
   
   if (!obj || typeof obj !== 'object') {
@@ -235,18 +261,27 @@ export function validateSocketResponse<T>(obj: unknown): ValidationResult {
   
   const response = obj as Partial<SocketResponse<T>>;
   
-  if (!response.status) {
-    issues.push('Missing status');
-  } else if (response.status !== 'success' && response.status !== 'error') {
-    issues.push('status must be "success" or "error"');
+  if (response.status !== 'success' && response.status !== 'error') {
+    issues.push('status must be either "success" or "error"');
   }
   
+  if (response.status === 'error') {
+    // Use type assertion with 'in' operator for safer property access
+    if (!('error' in response) || typeof response['error'] !== 'string') {
+      issues.push('error must be a string when status is "error"');
+    }
+  }
+  
+  if (!response.timestamp) {
+    issues.push('Missing timestamp');
+  } else if (typeof response.timestamp !== 'string') {
+    issues.push('timestamp must be a string');
+  }
+  
+  // Don't validate the data property itself, just check it exists
   if (!('data' in response)) {
     issues.push('Missing data property');
   }
-  
-  if (!response.timestamp) issues.push('Missing timestamp');
-  else if (typeof response.timestamp !== 'string') issues.push('timestamp must be a string');
   
   return {
     valid: issues.length === 0,
@@ -404,23 +439,6 @@ export function validateUser(obj: unknown): ValidationResult {
     typeName: 'User',
     stringRepresentation: safeStringify(obj)
   };
-}
-
-export function safeStringify(obj: unknown): string {
-  try {
-    const cache = new Set();
-    return JSON.stringify(obj, (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (cache.has(value)) {
-          return '[Circular Reference]';
-        }
-        cache.add(value);
-      }
-      return value;
-    }, 2);
-  } catch (e) {
-    return String(obj);
-  }
 }
 
 export function validateHistoricalMetrics(obj: unknown): ValidationResult {

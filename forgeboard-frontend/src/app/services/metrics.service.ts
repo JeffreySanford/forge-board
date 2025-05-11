@@ -5,6 +5,7 @@ import { MetricData } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
 import { RefreshIntervalService } from './refresh-interval.service';
 import { Socket, io } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 
 // Console styling for better debugging experience
 const CONSOLE_STYLES = {
@@ -34,8 +35,8 @@ interface SocketConnectionError {
 })
 export class MetricsService implements OnDestroy {
   private socket: Socket | null = null;
-  private readonly socketUrl = 'http://localhost:3000';
-  private readonly apiUrl = 'http://localhost:3000/api/metrics';
+  private readonly socketUrl = environment.socketBaseUrl;
+  private readonly apiUrl = `${environment.apiBaseUrl}/metrics`;
   private metricsSubject = new Subject<MetricData>();
   private subscriptions = new Subscription();
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);

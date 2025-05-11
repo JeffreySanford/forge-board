@@ -1,0 +1,16 @@
+<div class="storage-indicator" [ngClass]="storageType">
+  <div class="indicator-icon" [matTooltip]="getTooltipText()">
+    <!-- Icon based on storage type -->
+    <mat-icon *ngIf="storageType === 'memory'">memory</mat-icon>
+    <mat-icon *ngIf="storageType === 'localStorage'">storage</mat-icon>
+    <mat-icon *ngIf="storageType === 'mongodb'">database</mat-icon>
+    <mat-icon *ngIf="storageType === 'blockchain'">link</mat-icon>
+  </div>
+  <div class="indicator-pulse"></div>
+  
+  <!-- Animated details on hover -->
+  <div class="storage-details">
+    <h4>Storage: {{ storageType | titlecase }}</h4>
+    <p>{{ getStorageDescription() }}</p>
+  </div>
+</div>

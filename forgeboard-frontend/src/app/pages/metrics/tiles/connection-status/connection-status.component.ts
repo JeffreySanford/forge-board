@@ -37,7 +37,7 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy, Tile {
   usingMockData = false;
   
   // Update timer for duration
-  private durationTimer: number | null = null;
+  private durationTimer: Timeout | null = null;
   
   // Subscriptions
   private subscriptions = new Subscription();
@@ -67,11 +67,12 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy, Tile {
         }
       })
     );
-    
-    // Track socket status updates for metrics
+      // Track socket status updates for metrics
     this.subscriptions.add(
       this.diagnosticsService.getSocketStatus().subscribe(status => {
-        this.updateSocketMetrics(status);
+        if (status) {
+          this.updateSocketMetrics(status);
+        }
       })
     );
     

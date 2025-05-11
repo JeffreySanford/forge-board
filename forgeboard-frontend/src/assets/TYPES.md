@@ -4,7 +4,51 @@
 
 Welcome to the **Forge Board Type System** documentation! This document provides a comprehensive overview of the type system used throughout the Forge Board application. Our type system is designed to ensure consistency, reliability, and maintainability across both frontend and backend components.
 
-> **"A well-typed codebase is a well-defended fortress against runtime errors."**
+## 🔄 Reactive Programming with RxJS
+
+Forge Board leverages RxJS's hot observables for reactive state management throughout the application. Key implementation details:
+
+### 🔥 Hot Observables with BehaviorSubject
+
+Services use `BehaviorSubject` to create hot observables that:
+- Emit the current value upon subscription
+- Multicasts to all subscribers
+- Maintains state between emissions
+- Ensures all subscribers get consistent data
+
+### 📡 Observable Architecture
+
+Our reactive architecture follows these patterns:
+
+1. **State Management**: Services maintain state using `BehaviorSubject`
+2. **Public API**: Expose data as `Observable` using `.asObservable()`
+3. **Multicasting**: Use `shareReplay(1)` for consistent data across subscribers
+4. **Cleanup**: Proper completion of subjects in `OnDestroy`/`OnModuleDestroy`
+
+### 📊 Example Pattern
+
+```typescript
+@Injectable()
+export class ExampleService implements OnDestroy {
+  // Private BehaviorSubject for state management
+  private dataSubject = new BehaviorSubject<DataType[]>([]);
+  
+  // Public hot observable API
+  public data$ = this.dataSubject.asObservable().pipe(
+    shareReplay(1)
+  );
+  
+  // Update internal state
+  updateData(newData: DataType[]): void {
+    this.dataSubject.next(newData);
+  }
+  
+  // Clean up
+  ngOnDestroy(): void {
+    this.dataSubject.complete();
+  }
+}
+```
 
 ## 🔄 Shared Types
 
@@ -466,3 +510,155 @@ The type system is a living part of our codebase. If you identify new patterns o
 _"Type safety isn't just a compile-time concern; it's a design philosophy that leads to more robust, maintainable code."_
 
 **Last Updated**: May 7, 2025
+
+## Core Type Philosophy
+
+Forge Board follows these key principles in its type system:
+
+1. **Strong Typing Everywhere**: No implicit `any` types allowed
+2. **Shared Types**: Core interfaces defined in shared libraries
+3. **Browser-Server Compatibility**: Special handling for Node.js modules in browser
+4. **Provenance Tracking**: Data origin is always traceable
+
+## Type Architecture
+
+```mermaid
+flowchart TD
+    SharedLib[Shared API Interfaces]
+    ClientModels[Frontend Models]
+    ServerModels[Backend Models]
+    BrowserShims[Browser Shims]
+    
+    SharedLib --> ClientModels
+    SharedLib --> ServerModels
+    BrowserShims -.-> ClientModels
+    
+    style SharedLib fill:#002868,stroke:#071442,stroke-width:2px,color:#fff
+    style ClientModels fill:#BF0A30,stroke:#7D100E,stroke-width:2px,color:#fff
+    style ServerModels fill:#BF0A30,stroke:#7D100E,stroke-width:2px,color:#fff
+    style BrowserShims fill:#F9C74F,stroke:#F3722C,stroke-width:2px
+```
+
+## Browser Shims Type System
+
+Our application provides typed browser shims for Node.js built-in modules. These shims:
+
+1. **Match Node.js API**: Follow same method signatures and return types
+2. **Implement Browser Alternatives**: Use Web APIs under the hood
+3. **Track Usage**: Log when shim methods are called
+4. **Indicate Source**: Clearly identify data that comes from shims
+
+Example of properly typed shim usage:
+
+```typescript
+// Service layer with strong typing
+import { Observable, of, catchError } from 'rxjs';
+import * as cryptoShim from '../shims/crypto';
+
+export interface HashResult {
+  algorithm: string;
+  hash: string;
+  timestamp: string;
+  isShimData?: boolean;
+}
+
+// Strongly-typed method with backend/shim switching
+generateHash(data: string, algorithm = 'sha256'): Observable<HashResult> {
+  return this.http.get<HashResult>('/api/hash', { params: { data, algorithm } }).pipe(
+    catchError(() => {
+      // Fallback to shim with proper typing
+      const hash = cryptoShim.createHash(algorithm);
+      hash.update(data);
+      return of({
+        algorithm,
+        hash: hash.digest('hex') as string,
+        timestamp: new Date().toISOString(),
+        isShimData: true
+      });
+    })
+  );
+}
+```
+
+## Key Type Interfaces
+
+### System Module Types
+
+```typescript
+// System information interface
+export interface SystemInfo {
+  platform: string;
+  arch: string;
+  hostname: string;
+  cpus: CpuInfo[];
+  memory: {
+    total: number;
+    free: number;
+    used: number;
+    percentUsed: number;
+  };
+  uptime: number;
+  network: Record<string, NetworkInterfaceInfo[]>;
+}
+
+// Hash result interface
+export interface HashResult {
+  algorithm: string;
+  hash: string;
+  timestamp: string;
+}
+
+// Path result interface
+export interface PathResult {
+  original: string | string[];
+  result: string;
+  timestamp: string;
+}
+```
+
+### Status Tracking Types
+
+```typescript
+// Gateway status interface
+export interface GatewayStatus {
+  name: string;
+  connected: boolean;
+  usingMockData: boolean;
+}
+
+// Backend status summary
+export interface BackendStatusSummary {
+  gateways: GatewayStatus[];
+  allConnected: boolean;
+  anyMockData: boolean;
+}
+```
+
+### Security Event Types
+
+```typescript
+// Security event types
+export type SecurityEventType = 'sbom' | 'sca' | 'zap' | 'supplyChain' | 'fedramp';
+
+// Security event interface
+export interface SecurityEvent {
+  id: string;
+  type: SecurityEventType; 
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+  source: string;
+  verified: boolean;
+}
+```
+
+## Best Practices
+
+1. **Use Shared Interfaces**: Import from `@forge-board/shared/api-interfaces`
+2. **Explicit Types**: Declare param/return types for all functions and methods
+3. **No Implicit Any**: Configure `tsconfig.json` with `"noImplicitAny": true`
+4. **Use Generics**: Especially for service methods and observables
+
+With this type system, we maintain consistency and type safety across our entire application, even when dealing with the complexities of Node.js modules in a browser environment.

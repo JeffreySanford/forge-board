@@ -4,7 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { TokenEncryption } from '../utils/token-encryption';
-import { User } from '@forge-board/shared/api-interfaces';
+import { User, UserRole } from '@forge-board/shared/api-interfaces';
 
 interface LoginResponse {
   user: User;
@@ -86,7 +86,7 @@ export class AuthService {
     this.currentUser = {
       id: 'guest-user',
       username: 'guest',
-      role: 'guest',
+      role: UserRole.GUEST,
       guestExpiry: new Date(Date.now() + 24*60*60*1000).toISOString() // 24 hours
     };
     return of(this.currentUser);
@@ -118,6 +118,7 @@ export class AuthService {
    * Check if user has specific role
    */
   hasRole(role: string): boolean {
-    return this.currentUser?.role === role;
+    if (!this.currentUser) return false;
+    return this.currentUser.role === role;
   }
 }

@@ -1,7 +1,7 @@
-import { Injectable, Logger as NestLogger } from '@nestjs/common';
+import { Injectable, Logger as NestLogger, OnModuleDestroy } from '@nestjs/common';
 import { LogLevelEnum, LogFilter, LogEntry } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
-import { Observable, BehaviorSubject, Subject, map, filter as rxFilter } from 'rxjs';
+import { Observable, BehaviorSubject, Subject, map, filter as rxFilter, shareReplay } from 'rxjs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Log } from '../models/log.model';
@@ -13,22 +13,57 @@ export interface LogStatsResult {
   bySource: Record<string, number>;
 }
 
+/**
+ * Logger service providing reactive log management
+ * 
+ * Features:
+ * - Real-time log stream via hot observables (BehaviorSubject)
+ * - Filtering and querying capabilities
+ * - Integrates with MongoDB for persistence
+ * - Supports various log levels
+ * 
+ * @example
+ * // Subscribe to filtered logs
+ * loggerService.getLogs({ level: LogLevelEnum.ERROR }).subscribe(logs => {
+ *   console.log(`Found ${logs.length} error logs`);
+ * });
+ * 
+ * // Log a new message and react to it
+ * loggerService.info('User logged in', 'auth-service', { userId: '123' })
+ *   .subscribe(logEntry => console.log(`Log created with ID: ${logEntry.id}`));
+ */
 @Injectable()
-export class LoggerService {
+export class LoggerService implements OnModuleDestroy {
   private readonly nestLogger = new NestLogger(LoggerService.name);
   
-  // BehaviorSubject to store and emit logs
+  /**
+   * BehaviorSubject to store and emit logs as a hot observable
+   * New subscribers immediately receive the current logs
+   */
   private logsSubject = new BehaviorSubject<LogEntry[]>([]);
   
   private readonly maxLogs = 1000; // Maximum number of logs to keep in memory
   private readonly enableConsoleOutput: boolean;
   
-  // Subject to notify subscribers when a new log is created
+  /**
+   * Subject to notify subscribers when a new log is created
+   * This is a true hot observable - only emits new logs after subscription
+   */
   public readonly newLogEntry$ = new Subject<LogEntry>();
 
   constructor(@InjectModel(Log.name) private logModel: Model<Log>) {
     // Set to false in production to avoid duplicate logging
     this.enableConsoleOutput = process.env.NODE_ENV !== 'production';
+    this.nestLogger.log('Logger Service initialized with reactive streams');
+  }
+
+  /**
+   * Clean up resources when the module is destroyed
+   */
+  onModuleDestroy(): void {
+    this.nestLogger.log('LoggerService cleaning up resources');
+    this.logsSubject.complete();
+    this.newLogEntry$.complete();
   }
 
   // Create a log entry with the specified level
@@ -114,7 +149,10 @@ export class LoggerService {
     return this.log(LogLevelEnum.DEBUG, message, context, meta);
   }
   
-  // Get logs with optional filtering - match the method signature used in controller
+  /**
+   * Get logs with optional filtering
+   * Returns a hot observable stream of log entries
+   */
   getLogs(filter: LogFilter = { level: LogLevelEnum.INFO }): Observable<LogEntry[]> {
     return this.logsSubject.pipe(
       map(logs => {
@@ -171,7 +209,9 @@ export class LoggerService {
         }
         
         return filteredLogs;
-      })
+      }),
+      // Make it hot with replay to ensure all subscribers get the same filtered data
+      shareReplay(1)
     );
   }
   

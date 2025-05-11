@@ -9,7 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { DiagnosticsComponent } from './diagnostics.component';
 import { DiagnosticsService } from './diagnostics.service';
-import { JwtDiagnosticsComponent } from '../../components/jwt-diagnostics/jwt-diagnostics.component';
+import { JwtDiagnosticsModule } from '../../components/jwt-diagnostics/jwt-diagnostics.module'; // Import JwtDiagnosticsModule
 
 @NgModule({
   declarations: [DiagnosticsComponent],
@@ -22,7 +22,7 @@ import { JwtDiagnosticsComponent } from '../../components/jwt-diagnostics/jwt-di
     MatDividerModule,
     MatProgressBarModule,
     MatChipsModule,
-    JwtDiagnosticsComponent // Add the component to imports since it's standalone
+    JwtDiagnosticsModule, // Add JwtDiagnosticsModule to imports
   ],
   exports: [DiagnosticsComponent],
   providers: [DiagnosticsService]

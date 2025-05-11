@@ -1,7 +1,14 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, fromEvent, takeUntil, merge } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, fromEvent, takeUntil, map } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { SecurityEvent } from '@forge-board/shared/api-interfaces';
+import { environment } from '../../environments/environment';
+import { SystemService } from './system.service';
+
+interface ConnectionStatus {
+  connected: boolean;
+  mockMode: boolean;
+}
 
 /**
  * SecurityService
@@ -22,12 +29,12 @@ export class SecurityService implements OnDestroy {
   private supplyChain$ = new BehaviorSubject<SecurityEvent | null>(null);
   private fedramp$ = new BehaviorSubject<SecurityEvent | null>(null);
   private error$ = new BehaviorSubject<string | null>(null);
-  private status$ = new BehaviorSubject<{
-    connected: boolean;
-    mockMode: boolean;
-  }>({ connected: false, mockMode: true });
+  private status$ = new BehaviorSubject<ConnectionStatus>({ 
+    connected: false, 
+    mockMode: true 
+  });
 
-  constructor() {
+  constructor(private systemService: SystemService) {
     this.initializeSocket();
   }
 
@@ -35,7 +42,7 @@ export class SecurityService implements OnDestroy {
    * Initialize the WebSocket connection and set up event listeners
    */
   private initializeSocket(): void {
-    this.socket = io('/security-stream', {
+    this.socket = io(`${environment.socketBaseUrl}/security-stream`, {
       path: '/api/socket.io',
       transports: ['websocket'],
       autoConnect: true,
@@ -58,9 +65,9 @@ export class SecurityService implements OnDestroy {
           console.log('SecurityService: Socket disconnected');
         });
       
-      fromEvent(this.socket, 'security-stream-status')
+      fromEvent<ConnectionStatus>(this.socket, 'security-stream-status')
         .pipe(takeUntil(this.destroy$))
-        .subscribe((status: any) => {
+        .subscribe((status) => {
           this.status$.next(status);
         });
       
@@ -68,9 +75,9 @@ export class SecurityService implements OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe(event => this.handleSecurityEvent(event));
       
-      fromEvent(this.socket, 'connect_error')
+      fromEvent<Error>(this.socket, 'connect_error')
         .pipe(takeUntil(this.destroy$))
-        .subscribe((err: any) => {
+        .subscribe((err) => {
           this.error$.next('Connection error: ' + err.message);
           console.error('SecurityService: Connection error', err);
         });
@@ -135,6 +142,15 @@ export class SecurityService implements OnDestroy {
     }
   }
 
+  /**
+   * Verify the integrity of security data using hash verification
+   */
+  verifyDataIntegrity(data: string, expectedHash: string): Observable<boolean> {
+    return this.systemService.generateHash(data).pipe(
+      map(result => result.hash === expectedHash)
+    );
+  }
+
   // Expose observables for component subscriptions
   get sbom(): Observable<SecurityEvent | null> { return this.sbom$.asObservable(); }
   get sca(): Observable<SecurityEvent | null> { return this.sca$.asObservable(); }
@@ -142,7 +158,7 @@ export class SecurityService implements OnDestroy {
   get supplyChain(): Observable<SecurityEvent | null> { return this.supplyChain$.asObservable(); }
   get fedramp(): Observable<SecurityEvent | null> { return this.fedramp$.asObservable(); }
   get error(): Observable<string | null> { return this.error$.asObservable(); }
-  get status(): Observable<{ connected: boolean; mockMode: boolean }> { return this.status$.asObservable(); }
+  get status(): Observable<ConnectionStatus> { return this.status$.asObservable(); }
 
   /**
    * Clean up resources when component is destroyed
