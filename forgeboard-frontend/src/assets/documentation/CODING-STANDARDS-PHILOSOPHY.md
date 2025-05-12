@@ -171,3 +171,4 @@ Our coding standards aren't rigid for rigidity's sake—they're precise because 
 These standards are the foundation that allows ForgeBoard NX to deliver its revolutionary promise: a fully-compliant, truly Local-First, cryptographically secure platform that puts data back in the hands of its rightful owners.
 
 *ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+

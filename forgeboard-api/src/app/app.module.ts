@@ -35,8 +35,6 @@ import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
 import { SeedService } from './seed.service';
 import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 import { LogsModule } from './logs/logs.module';
-import { CommonModule } from '@angular/common'; // Import CommonModule
-import { MatTooltipModule } from '@angular/material/tooltip'; // Import MatTooltipModule
 import { SystemModule } from './system/system.module';
 
 @Module({
@@ -78,8 +76,6 @@ import { SystemModule } from './system/system.module';
     UserModule,
     LogsModule, // Add LogsModule here
     // JwtModule removed for v10+
-    CommonModule, // Add CommonModule to imports
-    MatTooltipModule, // Add MatTooltipModule to imports
     SystemModule,
   ],
   controllers: [

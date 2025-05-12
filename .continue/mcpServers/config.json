@@ -1,10 +1,4 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "github.copilot.enable": {
-    "plaintext": true,
-    "markdown": true,
-    "scminput": true
-  },
   "continue.provider": "ollama",
   "continue.apiBase": "http://localhost:11434/",
   "continue.model": "codellama-q4-0",

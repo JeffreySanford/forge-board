@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { SystemService, SystemInfo } from './system.service';
+import { SystemService, SystemInfo, HashResult } from './system.service';
 
 @Controller('api/system')
 export class SystemController {
@@ -11,15 +11,18 @@ export class SystemController {
   }
 
   @Get('hash')
-  generateHash(@Query('data') data: string, @Query('algorithm') algorithm = 'sha256') {
+  generateHash(
+    @Query('data') data: string,
+    @Query('algorithm') algorithm?: string,
+  ): HashResult {
     return this.systemService.generateHash(data, algorithm);
   }
-  
+
   @Get('path/normalize')
   normalizePath(@Query('path') path: string) {
     return this.systemService.normalizePath(path);
   }
-  
+
   @Get('path/join')
   joinPaths(@Query('paths') pathsString: string) {
     const paths = pathsString.split(',');
