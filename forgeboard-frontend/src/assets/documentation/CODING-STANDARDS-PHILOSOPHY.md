@@ -10,55 +10,55 @@
     <strong>Compliance:</strong> FedRAMP 20X 🔒
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Architecture:</strong> Local-First 🏠
+    <strong>Architecture:</strong> Server-Authoritative 🛡️
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Purpose:</strong> Data Sovereignty 🛡️
+    <strong>Purpose:</strong> Data Integrity & Security 🛡️
   </div>
 </div>
 
 ## Why Our Coding Standards Are Necessarily Rigorous
 
-At first glance, ForgeBoard NX's coding standards may appear unusually strict or "draconian." However, these standards aren't arbitrary restrictions—they are the essential foundation that enables us to meet our extraordinary commitments to **data sovereignty**, **security compliance**, and **true Local-First architecture**.
+At first glance, ForgeBoard NX's coding standards may appear unusually strict or "draconian." However, these standards aren't arbitrary restrictions—they are the essential foundation that enables us to meet our extraordinary commitments to **server-managed data integrity**, **security compliance (FedRAMP 20X)**, and **robust server-authoritative architecture**.
 
 ### 1. FedRAMP 20X Compliance Demands Precision
 
 ```mermaid
 flowchart LR
-  LaxStandards[Lax Standards] -->|"Results in"| Vulnerabilities[Security Vulnerabilities]
+  LaxStandards[Lax Standards] -->|"Results in"| Vulnerabilities[Security Vulnerabilities & Data Leaks]
   Vulnerabilities -->|"Prevents"| FedRAMPCompliance[FedRAMP 20X Compliance]
-  RigorousStandards[Rigorous Standards] -->|"Ensures"| ConsistentControls[Consistent Control Implementation]
-  ConsistentControls -->|"Enables"| FedRAMPCompliance
+  RigorousStandards[Rigorous Standards] -->|"Ensures"| ConsistentServerControls[Consistent Server-Side Control Implementation]
+  ConsistentServerControls -->|"Enables"| FedRAMPCompliance
 ```
 
 ForgeBoard operates in environments where compliance isn't optional—it's mandatory. The FedRAMP 20X framework (released July 2025) introduces the most stringent security requirements yet for federal cloud systems:
 
-- Our coding patterns must create **verifiable security controls** that map directly to NIST SP 800-53 Rev 5 requirements
-- The **blockchain-based auditing** requires specific persistence patterns that cannot be modified ad-hoc
-- **SBOM (Software Bill of Materials)** generation demands consistent, traceable code structures
-- **Zero Trust Architecture** principles must be embedded in every data access pattern
+- Our coding patterns must create **verifiable server-side security controls** that map directly to NIST SP 800-53 Rev 5 requirements.
+- The **server-managed blockchain-based auditing** requires specific persistence patterns that ensure data integrity and non-repudiation.
+- **SBOM (Software Bill of Materials)** generation for server components demands consistent, traceable code structures.
+- **Zero Trust Architecture** principles must be embedded in every data access pattern, authenticated and authorized by the server.
 
 These aren't merely "best practices"—they're legal requirements with potential penalties for non-compliance.
 
-### 2. True Local-First Architecture Requires Discipline
+### 2. Robust Server-Authoritative Architecture Requires Discipline
 
 <div style="border-left: 5px solid #BF0A30; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-Unlike most applications that merely cache data locally, ForgeBoard NX implements <b>true Local-First architecture</b> where your device is the authoritative source of truth. This fundamental inversion of the traditional client-server model requires rigorously consistent patterns.
+ForgeBoard NX implements a <b>server-authoritative architecture</b> where the server is the ultimate source of truth and control for all data. This model ensures data integrity, consistent application of business rules, and centralized security enforcement, which requires rigorously consistent patterns.
 </div>
 
-Our Local-First approach delivers unmatched benefits:
+Our server-authoritative approach delivers critical benefits:
 
-- Complete data ownership and sovereignty
-- Offline-first operation with no degraded experience
-- Peer-to-peer collaboration without central servers
-- Cryptographically verifiable audit trails
+- Centralized data ownership and control.
+- Consistent application of security policies.
+- Reliable data synchronization and conflict resolution managed by the server.
+- Cryptographically verifiable audit trails maintained on the server.
 
 However, these benefits come with architectural constraints that cannot be compromised:
 
-- **ObservableStore Pattern**: Enforcing immutable state management prevents data corruption during sync
-- **CRDT Data Types**: Requiring specific Conflict-free Replicated Data Types ensures deterministic merges across devices
-- **WebRTC Communication**: Our connection strategies must follow explicit patterns to maintain security during P2P operations
-- **Blockchain Persistence**: Data integrity depends on consistent hashing and signing patterns
+- **Server-Side State Management**: Enforcing immutable state management on the server prevents data corruption and ensures reliable history.
+- **Controlled Data Exposure**: Clients receive data only through authorized API endpoints, ensuring policies are enforced.
+- **Secure Communication Protocols**: Our connection strategies must follow explicit patterns to maintain security during client-server interactions.
+- **Server-Side Blockchain Persistence**: Data integrity depends on consistent hashing and signing patterns managed by the server.
 
 ### 3. Security at the Core, Not as an Afterthought
 
@@ -74,8 +74,8 @@ flowchart TD
   
   subgraph ForgeBoard [ForgeBoard Development]
     direction TB
-    FB1[Security Patterns First] --> FB2[Feature Implementation]
-    FB2 --> FB3[Automated Security Validation]
+    FB1[Server-Side Security Patterns First] --> FB2[Feature Implementation]
+    FB2 --> FB3[Automated Security Validation (Server & Client)]
     FB3 -->|"Pass"| FB4[Verified Deployment]
     FB3 -->|"Fail"| FB1
   end
@@ -87,21 +87,21 @@ flowchart TD
   class FB1,FB2,FB3,FB4 forgeboard;
 ```
 
-In ForgeBoard NX, security isn't a layer added later—it's the fundamental architecture:
+In ForgeBoard NX, security isn't a layer added later—it's the fundamental architecture, centered around server control:
 
-- **Shared DTOs**: Our strict typing system means data validation happens consistently across all layers
-- **RxJS Patterns**: Required cleanup and error handling prevents memory leaks and unhandled promises
-- **Persistence Operators**: Standardized blockchain operations ensure tamper-evident audit trails
-- **Presentation Components**: UI patterns that separate smart vs. dumb components prevent accidental data exposure
+- **Shared DTOs**: Our strict typing system means data validation happens consistently, with the server as the final arbiter.
+- **RxJS Patterns**: Required cleanup and error handling in client-server communication prevents issues.
+- **Server-Side Persistence Operators**: Standardized blockchain operations on the server ensure tamper-evident audit trails.
+- **Presentation Components**: UI patterns that separate smart vs. dumb components prevent accidental client-side data manipulation that could bypass server controls.
 
 ### 4. Maintainability at Scale Requires Consistency
 
 ForgeBoard NX is designed for large, distributed teams working on critical infrastructure. The rigid standards create an environment where:
 
-- New developers can quickly understand code patterns regardless of which team wrote them
-- Automated testing can rely on consistent structures
-- Security scanning tools can validate compliance across the entire codebase
-- Cross-team collaboration works seamlessly
+- New developers can quickly understand server-side code patterns regardless of which team wrote them.
+- Automated testing can rely on consistent API contracts and server behaviors.
+- Security scanning tools can validate compliance across the entire server codebase.
+- Cross-team collaboration works seamlessly due to well-defined server interfaces.
 
 ### 5. Our Patriotic Mission and Visual Identity
 
@@ -166,9 +166,9 @@ We provide comprehensive tooling to help developers meet these standards:
 
 ## Conclusion
 
-Our coding standards aren't rigid for rigidity's sake—they're precise because the mission demands precision. When federal systems, sensitive data, and user sovereignty are at stake, "good enough" simply isn't good enough. 
+Our coding standards aren't rigid for rigidity's sake—they're precise because the mission demands precision. When federal systems, sensitive data, and data integrity are at stake, "good enough" simply isn't good enough. 
 
-These standards are the foundation that allows ForgeBoard NX to deliver its revolutionary promise: a fully-compliant, truly Local-First, cryptographically secure platform that puts data back in the hands of its rightful owners.
+These standards are the foundation that allows ForgeBoard NX to deliver its revolutionary promise: a fully-compliant, server-authoritative, cryptographically secure platform that ensures data integrity and controlled access.
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard NX — Secure Data, Server-Guarded. Build Legendary.* 🦅✨
 

@@ -221,8 +221,8 @@ Type enforcement ensures:
 
 Our Security Dashboard uses the type system to maintain tamper-evident security records:
 
-- **Local-First SBOM Validation**: Type validation for Software Bill of Materials integrity
-- **On-Device SCA Type Checking**: Validates vulnerability scan results
+- **SBOM Validation**: Type validation for Software Bill of Materials integrity
+- **SCA Type Checking**: Validates vulnerability scan results
 - **OWASP ZAP Findings**: Strongly-typed security findings from dynamic analysis
 - **FedRAMP Blockchain Evidence**: Type-validated compliance evidence
 

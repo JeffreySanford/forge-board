@@ -1,7 +1,7 @@
 # ForgeBoard NX – Security Dashboard 🦅🔒
 *Last Updated: May 7, 2025*
 
-Welcome to the **Security Dashboard** for the ForgeBoard NX monorepo! This sovereign security interface provides a real-time bird's-eye view of our application's security posture with **true data ownership** through our Local-First architecture. It appears in the main menu alongside Home, Metrics, Kablam Board, Logs, Diagnostics, and Documentation, offering developers and DevSecOps engineers an interactive hub for all things security.
+Welcome to the **Security Dashboard** for the ForgeBoard NX monorepo! This security interface provides a real-time bird's-eye view of our application's security posture. It appears in the main menu alongside Home, Metrics, Kablam Board, Logs, Diagnostics, and Documentation, offering developers and DevSecOps engineers an interactive hub for all things security.
 
 This README serves as a comprehensive guide and living documentation for the Security Dashboard feature. Here we'll cover its purpose, design, setup, and future roadmap in detail – with plenty of examples, visuals, and tips to get you started. Let's dive in! 🎉
 
@@ -9,52 +9,52 @@ This README serves as a comprehensive guide and living documentation for the Sec
 
 ### Required Features
 
-1. **SBOM Status Visualization**: Display the status of Software Bill of Materials (SBOM) for each build with **Local-First persistence**.
-2. **SCA Scan Results**: Integrate Software Composition Analysis (SCA) results to highlight vulnerabilities with **on-device scanning**.
+1. **SBOM Status Visualization**: Display the status of Software Bill of Materials (SBOM) for each build, with data managed by the server.
+2. **SCA Scan Results**: Integrate Software Composition Analysis (SCA) results to highlight vulnerabilities, with scans performed and managed server-side.
 3. **OWASP ZAP Feedback**: Show findings from OWASP ZAP dynamic security tests with **immutable blockchain record**.
-4. **Supply Chain Signature Verification**: Verify and display the status of supply chain security checks using **client-side verification**.
+4. **Supply Chain Signature Verification**: Verify and display the status of supply chain security checks, with verification orchestrated by the server.
 5. **FedRAMP 20X Compliance Indicators**: Show compliance status with FedRAMP 20X requirements with **tamper-proof audit trail**.
-6. **Real-Time Updates**: Push updates live via WebSockets with **optional sync-server federation**.
+6. **Real-Time Updates**: Push updates live via WebSockets from the server.
 
 ### Current Progress
 
-- **SBOM Status Visualization**: Fully implemented with Local-First storage. SBOM components stored directly on device with privacy-preserving synchronization.
-- **SCA Scan Results**: Implemented with on-device Grype scanning using offline vulnerability database shards.
+- **SBOM Status Visualization**: Fully implemented with server-managed storage. SBOM components stored and processed on the server.
+- **SCA Scan Results**: Implemented with server-side Grype scanning using centralized vulnerability databases.
 - **OWASP ZAP Feedback**: Implemented with findings securely stored in immutable blockchain with CRDT-based merge capability.
-- **Supply Chain Signature Verification**: Implemented with client-side signature verification using embedded Cosign.
+- **Supply Chain Signature Verification**: Implemented with server-side signature verification using embedded Cosign.
 - **FedRAMP 20X Compliance Indicators**: Partially implemented with blockchain-backed audit log for compliance evidence.
-- **Real-Time Updates**: WebSocket gateway implemented with mesh network capability for peer-to-peer updates.
+- **Real-Time Updates**: WebSocket gateway implemented for server-to-client updates.
 
 ### Issues
 
 1. **~~TypeScript Errors~~**: RESOLVED - Security event types are fully defined with proper properties
 2. **~~Build Warnings and Errors~~**: RESOLVED - All exports and interfaces properly synchronized
-3. **~~Nx Cloud Connection~~**: RESOLVED - Local-first mode enabled, with optional cloud sync
+3. **~~Nx Cloud Connection~~**: RESOLVED - Server-authoritative mode enabled.
 4. **~~ESLint Rule Violations~~**: RESOLVED - All components properly handle socket cleanup
 
 ### Next Steps
 
 1. ✅ Update the `SecurityEvent` type to include all required properties.
 2. ✅ Fix missing exports and type mismatches in shared interfaces.
-3. ✅ Implement Local-First SlimChain for immutable security records.
-4. ✅ Add mesh network capability for peer-to-peer security data sharing.
-5. 🔄 Expand sharded vulnerability database for improved offline scanning.
+3. ✅ Implement SlimChain for immutable security records on the server.
+4. ✅ Enhance WebSocket gateway for robust real-time data delivery.
+5. 🔄 Expand server-side vulnerability database for improved scanning.
 
 ---
 
 ## Overview 🎯
 
-The **Security Dashboard** is designed as a truly sovereign security interface that aggregates and visualizes crucial security data from our build and deployment pipeline in one convenient interface - all while putting **you** in control of your data. It answers questions like: *"What's in our software? Are there known vulnerabilities? Have we tested for common exploits? Are our artifacts signed and trusted?"* – all in real time and with Local-First data ownership.
+The **Security Dashboard** is designed as a security interface that aggregates and visualizes crucial security data from our build and deployment pipeline in one convenient interface. It answers questions like: *"What's in our software? Are there known vulnerabilities? Have we tested for common exploits? Are our artifacts signed and trusted?"* – all in real time, with data managed and authorized by the server.
 
 **Key capabilities of the Security Dashboard include:** 
 
-- **📦 Local-First SBOM Visualization:** Stores and displays Software Bill of Materials (SBOM) for each build directly on your device, ensuring you know **what components** make up your applications without requiring cloud connectivity.
-- **🐛 On-Device SCA Scan Results:** Performs Software Composition Analysis (SCA) directly on your device using sharded vulnerability databases, highlighting **known vulnerabilities** in your components with zero cloud dependency.
+- **📦 SBOM Visualization:** Stores and displays Software Bill of Materials (SBOM) for each build, ensuring you know **what components** make up your applications. Data is processed and served by the backend.
+- **🐛 SCA Scan Results:** Performs Software Composition Analysis (SCA) on the server using centralized vulnerability databases, highlighting **known vulnerabilities** in your components.
 - **⚡ Immutable OWASP ZAP Feedback:** Shows findings from OWASP ZAP dynamic security tests, stored in a tamper-proof blockchain ledger, ensuring **audit-ready security evidence** that can't be modified after the fact.
-- **🔐 Client-Side Supply Chain Verification:** Verifies and displays the status of **supply chain security checks** using embedded Cosign, performing cryptographic verification locally without requiring third-party trust.
+- **🔐 Supply Chain Verification:** Verifies and displays the status of **supply chain security checks** using server-side Cosign, performing cryptographic verification.
 - **🛡️ FedRAMP 20X Blockchain Evidence:** Shows compliance status with FedRAMP 20X requirements, with all evidence stored in an immutable blockchain ledger that provides irrefutable proof for auditors.
 
-All of this is updated **in real-time** 📡 through a combination of local state updates and optional peer-to-peer synchronization. As scans run and new data comes in, the dashboard's views update live – no page refresh or cloud roundtrip needed. This sovereignty helps the team respond quickly to any emerging issues, even in air-gapped environments.
+All of this is updated **in real-time** 📡 through server-pushed WebSocket updates. As scans run and new data comes in, the dashboard's views update live – no page refresh needed. This helps the team respond quickly to any emerging issues.
 
 ## Architecture & Design 🏗️
 

@@ -2,31 +2,31 @@
 *Last Updated: May 15, 2025*
 
 <div style="background-color: #F0F4FF; border-left: 5px solid #002868; padding: 15px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-This playbook highlights specific capabilities where ForgeBoard exceeds industry standards. Rather than merely meet expectations, we set new benchmarks—especially in <strong style="color:#BF0A30;">comprehensive data provenance</strong>, security, and sovereign control.
+This playbook highlights specific capabilities where ForgeBoard exceeds industry standards. Rather than merely meet expectations, we set new benchmarks—especially in <strong style="color:#BF0A30;">comprehensive data provenance (server-managed)</strong>, security, and controlled data access.
 </div>
 
 ## 1️⃣ Where We Exceed Expectations
 
-1. **Data Provenance**: Complete lifecycle tracking from inception through disposal with cryptographic verification
-2. **Local‑First Architecture**: Device-resident authority with complete provenance tracking
-3. **SlimChain Ledger**: Immutable, tamper-proof record keeping with provenance verification
-4. **Strong Typing**: Shared DTOs across the entire stack, including provenance metadata
-5. **RXJS‑Only Reactivity**: Observable streams with provenance tracking operators
-6. **FedRAMP 20X Prep**: Exceeding federal security standards with complete data lineage
-7. **Disk‑Growth Guardrails**: Efficient provenance storage with compression and pruning
-8. **Patriotic UX**: American-made software with values built in
+1. **Data Provenance**: Complete lifecycle tracking from inception through disposal with server-side cryptographic verification.
+2. **Server-Authoritative Architecture**: Server is the definitive source of truth, ensuring data integrity and controlled access, with comprehensive provenance tracking.
+3. **SlimChain Ledger**: Immutable, tamper-proof record keeping on the server with provenance verification.
+4. **Strong Typing**: Shared DTOs across the entire stack, including provenance metadata.
+5. **RXJS‑Only Reactivity**: Observable streams for efficient client-server communication, with server-originated provenance tracking operators.
+6. **FedRAMP 20X Prep**: Exceeding federal security standards with complete, server-managed data lineage.
+7. **Disk‑Growth Guardrails**: Efficient server-side provenance storage with compression and pruning.
+8. **Patriotic UX**: American-made software with values built in.
 
 ## 2️⃣ Pillar‑to‑Doc Matrix
 
 | 🚩 **Pillar** | ✨ **How We Exceed** | 📄 **Primary Doc** | 🔗 **Cross‑Refs** |
 |---|---|---|---|
-| **Data Provenance** | Complete lifecycle tracking with cryptographic verification | LOCAL-FIRST-DATA-PROVENANCE.md | BLOCKCHAIN-PERSISTENT-ARCHITECTURE, API-DOCUMENTATION, FRONTEND-API-ARCHITECTURE |
-| **Local‑First SOA** | Device‑resident authority with provenance tracking | LOCAL-FIRST-VERSUS-CACHE.md | Frontend-API-Architecture, Coding-Standards |
-| **SlimChain Ledger** | Immutable, auto‑compressing blockchain store with provenance verification | BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md | API-DOCUMENTATION (txReceipt endpoint), AUTHENTICATION (device keys) |
-| **Strong Typing** | Shared DTOs across Mongoose + Litechain, including provenance metadata | Coding-Standards.md | API-DOCUMENTATION (Schema section) |
-| **RXJS‑Only Reactivity** | ObservableStore + ODS patterns with provenance tracking | LOCAL-FIRST-VERSUS-CACHE.md | Frontend-API-Architecture |
-| **FedRAMP 20X Prep** | Merkle Proof exports & ZK roll‑ups for complete provenance verification | BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md | API-DOCUMENTATION (Evidence endpoint TODO) |
-| **Disk‑Growth Guardrails** | Delta+Zstd, epochs, rotation with efficient provenance storage | LOCAL-FIRST-VERSUS-CACHE.md | BLOCKCHAIN-PERSISTENT-ARCHITECTURE |
+| **Data Provenance (Server-Managed)** | Complete lifecycle tracking with server-side cryptographic verification | SERVER-SIDE-DATA-PROVENANCE.md (New or Updated Doc Needed) | BLOCKCHAIN-PERSISTENT-ARCHITECTURE, API-DOCUMENTATION, FRONTEND-API-ARCHITECTURE |
+| **Server-Authoritative SOA** | Server as the single source of truth with robust access controls and provenance tracking | FRONTEND-API-ARCHITECTURE.md | CODING-STANDARDS.md, API-DOCUMENTATION.md |
+| **SlimChain Ledger** | Immutable, auto‑compressing blockchain store on the server with provenance verification | BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md | API-DOCUMENTATION (txReceipt endpoint), AUTHENTICATION (server keys) |
+| **Strong Typing** | Shared DTOs across Mongoose + Litechain, including provenance metadata | CODING-STANDARDS.md | API-DOCUMENTATION (Schema section) |
+| **RXJS‑Only Reactivity** | ObservableStore + ODS patterns for client state, with server-driven provenance tracking | FRONTEND-API-ARCHITECTURE.md | CODING-STANDARDS.md |
+| **FedRAMP 20X Prep** | Merkle Proof exports & ZK roll‑ups for complete server-managed provenance verification | BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md | API-DOCUMENTATION (Evidence endpoint TODO) |
+| **Disk‑Growth Guardrails (Server)** | Delta+Zstd, epochs, rotation with efficient server-side provenance storage | BLOCKCHAIN-PERSISTENT-ARCHITECTURE.md | SERVER-INFRASTRUCTURE.md (New or Updated Doc Needed) |
 | **Patriotic UX** | Red‑white‑blue theme & blueprint visuals | LAYOUT.md | Frontend-API-Architecture |
 
 ---
@@ -54,7 +54,7 @@ sequenceDiagram
 
 ## 4️⃣ How To Grow This Playbook
 
-1. **Add a new spec?** → Drop it in `/docs/` and update the Pillar Matrix.  
+1. **Add a new spec?** → Drop it in the main documentation folder (`forgeboard-frontend/src/assets/documentation/`) and update the Pillar Matrix.  
 2. **Update an API?** → Modify API-DOCUMENTATION.md; reference it here under the pillar it supports.  
 3. **Architecture drift?** → Raise an *Exceeding-Gap* issue; CI will block merge until this file tracks the change.  
 4. **Need graphics?** → Use Mermaid in‑doc; diagrams auto‑render in Storybook site.

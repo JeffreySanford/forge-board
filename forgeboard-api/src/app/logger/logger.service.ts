@@ -1,7 +1,7 @@
 import { Injectable, Logger as NestLogger, OnModuleDestroy } from '@nestjs/common';
 import { LogLevelEnum, LogFilter, LogEntry } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
-import { Observable, BehaviorSubject, Subject, map, filter as rxFilter, shareReplay } from 'rxjs';
+import { Observable, BehaviorSubject, Subject, map, filter as rxFilter, shareReplay, of, take, bufferTime } from 'rxjs'; // Added bufferTime
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Log } from '../models/log.model';
@@ -13,12 +13,17 @@ export interface LogStatsResult {
   bySource: Record<string, number>;
 }
 
+// Define service names for loop prevention to avoid circular dependencies if importing services
+const LOGS_SERVICE_NAME = 'LogsService';
+const LOGGER_SERVICE_NAME = 'LoggerService';
+
 /**
  * Logger service providing reactive log management
  * 
  * Features:
- * - Real-time log stream via hot observables (BehaviorSubject)
- * - Filtering and querying capabilities
+ * - Real-time log stream via hot observables (BehaviorSubject for current logs, Subject for new entries)
+ * - Batched stream of new log entries (`batchedNewLogEntries$`) for efficient real-time updates.
+ * - Filtering and querying capabilities for historical logs
  * - Integrates with MongoDB for persistence
  * - Supports various log levels
  * 
@@ -34,7 +39,7 @@ export interface LogStatsResult {
  */
 @Injectable()
 export class LoggerService implements OnModuleDestroy {
-  private readonly nestLogger = new NestLogger(LoggerService.name);
+  private readonly nestLoggerInstance = new NestLogger(LOGGER_SERVICE_NAME); // Renamed to avoid confusion with the class name
   
   /**
    * BehaviorSubject to store and emit logs as a hot observable
@@ -47,23 +52,42 @@ export class LoggerService implements OnModuleDestroy {
   
   /**
    * Subject to notify subscribers when a new log is created
-   * This is a true hot observable - only emits new logs after subscription
+   * This is a true hot observable - only emits new logs after subscription.
+   * Consider using `batchedNewLogEntries$` for more efficient real-time updates
+   * if individual log emissions are too frequent.
    */
   public readonly newLogEntry$ = new Subject<LogEntry>();
+
+  /**
+   * Observable that batches new log entries from `newLogEntry$`.
+   * Emits an array of log entries collected over a specified time interval (e.g., 1 second)
+   * or after a certain number of entries have accumulated (e.g., 100), whichever comes first.
+   * Only emits non-empty batches. This is useful for reducing the frequency of updates
+   * to clients or other services consuming real-time logs.
+   * The stream is shared and replays the last emitted batch to new subscribers.
+   */
+  public readonly batchedNewLogEntries$: Observable<LogEntry[]>;
 
   constructor(@InjectModel(Log.name) private logModel: Model<Log>) {
     // Set to false in production to avoid duplicate logging
     this.enableConsoleOutput = process.env.NODE_ENV !== 'production';
-    this.nestLogger.log('Logger Service initialized with reactive streams');
+    this.nestLoggerInstance.log('Logger Service initialized with reactive streams');
+
+    this.batchedNewLogEntries$ = this.newLogEntry$.pipe(
+      bufferTime(1000, undefined, 100), // Buffer for 1000ms or 100 entries
+      rxFilter(batch => batch.length > 0), // Don't emit empty batches
+      shareReplay({ bufferSize: 1, refCount: true }) // Share the batched stream
+    );
   }
 
   /**
    * Clean up resources when the module is destroyed
    */
   onModuleDestroy(): void {
-    this.nestLogger.log('LoggerService cleaning up resources');
+    this.nestLoggerInstance.log('LoggerService cleaning up resources');
     this.logsSubject.complete();
     this.newLogEntry$.complete();
+    // batchedNewLogEntries$ will complete automatically when newLogEntry$ completes.
   }
 
   // Create a log entry with the specified level
@@ -78,49 +102,71 @@ export class LoggerService implements OnModuleDestroy {
       context
     };
 
+    // Output to console first, using direct console calls to avoid recursion
+    // This happens regardless of meta-logging status, as console output itself shouldn't loop here.
+    if (this.enableConsoleOutput) {
+      const consoleMessage = `[${entry.source || 'app'}] ${entry.message}`;
+      // Only include meta if it has keys, to avoid logging empty objects
+      const metaDetails = Object.keys(entry.details || {}).length > 0 ? entry.details : '';
+      
+      switch (entry.level) {
+        case LogLevelEnum.TRACE: // Assuming TRACE maps to debug for console
+        case LogLevelEnum.DEBUG:
+          console.debug(consoleMessage, metaDetails);
+          break;
+        case LogLevelEnum.INFO:
+          console.log(consoleMessage, metaDetails);
+          break;
+        case LogLevelEnum.WARN:
+          console.warn(consoleMessage, metaDetails);
+          break;
+        case LogLevelEnum.ERROR:
+        case LogLevelEnum.FATAL:
+          console.error(consoleMessage, metaDetails);
+          break;
+        default: {
+          // Fallback for unknown levels, ensuring level is a string for console.
+          const levelStr = typeof entry.level === 'string' ? entry.level : String(entry.level);
+          console.log(`[${levelStr.toUpperCase()}] ${consoleMessage}`, metaDetails);
+          break;
+        }
+      }
+    }
+
+    // Loop prevention for meta-logging: Do not save or stream logs about logging itself.
+    if (this.isMetaLogging(entry.source, entry.message)) {
+      // Meta-log already printed to console (if enabled).
+      // Return an observable with the entry, but it won't be processed further by DB/stream.
+      return of(entry);
+    }
+
     // Add to in-memory logs and notify subscribers
     const currentLogs = this.logsSubject.getValue();
     const updatedLogs = [entry, ...currentLogs].slice(0, this.maxLogs);
     this.logsSubject.next(updatedLogs);
 
-    // Output to console if enabled
-    if (this.enableConsoleOutput) {
-      switch (level) {
-        case LogLevelEnum.DEBUG:
-          this.nestLogger.debug(message, context);
-          break;
-        case LogLevelEnum.INFO:
-          this.nestLogger.log(message, context);
-          break;
-        case LogLevelEnum.WARN:
-          this.nestLogger.warn(message, context);
-          break;
-        case LogLevelEnum.ERROR:
-          this.nestLogger.error(message, context);
-          break;
-        case LogLevelEnum.FATAL:
-          this.nestLogger.error(`FATAL: ${message}`, context);
-          break;
-      }
-    }
-
     // Save to database
     const logDocument = new this.logModel({
-      level,
-      message,
-      source: context,
-      timestamp: new Date(),
-      details: meta,
-      context
+      level: entry.level,
+      message: entry.message,
+      source: entry.source,
+      timestamp: new Date(entry.timestamp), // Ensure Date object for Mongoose
+      details: entry.details,
+      context: entry.context
     });
-    logDocument.save();
+    logDocument.save().catch(dbError => {
+      // Log DB save errors directly to console to avoid loops
+      console.error(`[${LOGGER_SERVICE_NAME}] Failed to save log to DB:`, dbError, entry);
+    });
 
     // Emit the new log entry
     this.newLogEntry$.next(entry);
 
-    // Return an observable with the entry
+    // Return an observable that emits the entry and completes.
+    // This allows callers to know when the log has been emitted to the newLogEntry$ stream.
     return this.newLogEntry$.pipe(
-      rxFilter(log => log.id === entry.id)
+      rxFilter(log => log.id === entry.id),
+      take(1)
     );
   }
   
@@ -146,12 +192,15 @@ export class LoggerService implements OnModuleDestroy {
   }
 
   trace(message: string, context = 'app', meta: Record<string, unknown> = {}): Observable<LogEntry> {
-    return this.log(LogLevelEnum.DEBUG, message, context, meta);
+    return this.log(LogLevelEnum.TRACE, message, context, meta); // Changed from DEBUG to TRACE
   }
   
   /**
    * Get logs with optional filtering
-   * Returns a hot observable stream of log entries
+   * Returns a hot observable stream of log entries based on the current in-memory store.
+   * The stream is shared and replays the last emitted filtered list to new subscribers.
+   * `refCount: true` ensures the underlying mapping and filtering logic is only active
+   * when there are active subscribers.
    */
   getLogs(filter: LogFilter = { level: LogLevelEnum.INFO }): Observable<LogEntry[]> {
     return this.logsSubject.pipe(
@@ -211,7 +260,8 @@ export class LoggerService implements OnModuleDestroy {
         return filteredLogs;
       }),
       // Make it hot with replay to ensure all subscribers get the same filtered data
-      shareReplay(1)
+      // refCount: true ensures the source observable (logsSubject mapping) is torn down when no subscribers.
+      shareReplay({ bufferSize: 1, refCount: true })
     );
   }
   
@@ -386,5 +436,24 @@ export class LoggerService implements OnModuleDestroy {
     }
     
     return true;
+  }
+
+  private isMetaLogging(source: string | undefined, message: string): boolean {
+    if (!source) return false; // If no source, assume not meta-logging
+
+    const lowerSource = source.toLowerCase().trim(); // Added .trim()
+    const lowerMessage = message.toLowerCase();
+
+    // Check if the source is one of the logging services
+    if (lowerSource === LOGGER_SERVICE_NAME.toLowerCase() || lowerSource === LOGS_SERVICE_NAME.toLowerCase()) {
+      const metaKeywords = ['log', 'saved', 'sending', 'sent', 'logger', 'logging', 'stream', 'filter', 'failed to save log']; // Added 'sent'
+      if (metaKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        // This console.debug is safe as it's a direct call, not going through this.log()
+        // It's useful for knowing when a meta-log was detected and skipped.
+        console.debug(`[${LOGGER_SERVICE_NAME}] Meta-log detected. Skipping full processing for: [${source}] "${message.substring(0,100)}..."`);
+        return true;
+      }
+    }
+    return false;
   }
 }

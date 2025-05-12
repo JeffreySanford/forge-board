@@ -3,24 +3,24 @@
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Architecture:</strong> Local-First 🏠
+    <strong>Architecture:</strong> Server-Authoritative 🛡️
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Blockchain:</strong> SlimChain 🔗
+    <strong>Blockchain:</strong> SlimChain (Server-Managed) 🔗
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
     <strong>Implementation:</strong> Complete ✅
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Data Provenance:</strong> 100% 🛡️
+    <strong>Data Provenance:</strong> Server-Managed & 100% 🛡️
   </div>
 </div>
 
-> **Mission:** Provide unbroken data provenance through an immutable, storage‑efficient blockchain ledger that verifies the complete lifecycle of all data from inception through disposal.
+> **Mission:** Provide unbroken data provenance through an immutable, server-managed, storage‑efficient blockchain ledger that verifies the complete lifecycle of all data from inception through disposal.
 
-## 1️⃣ Data Provenance Architecture
+## 1️⃣ Data Provenance Architecture (Server-Centric)
 
-ForgeBoard's blockchain architecture serves as the cryptographic foundation for complete data provenance tracking across the entire data lifecycle:
+ForgeBoard's blockchain architecture, managed on the server, serves as the cryptographic foundation for complete data provenance tracking across the entire data lifecycle:
 
 ```mermaid
 flowchart TD

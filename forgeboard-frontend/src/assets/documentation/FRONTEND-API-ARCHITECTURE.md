@@ -3,13 +3,13 @@
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Architecture:</strong> Local-First ✅
+    <strong>Architecture:</strong> Server-Authoritative ✅
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
     <strong>Data Provenance:</strong> Complete Lifecycle 🔄
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Pattern:</strong> ProvenanceStore 📊
+    <strong>Pattern:</strong> ProvenanceStore (Server-Side) 📊
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
     <strong>Status:</strong> Production-Ready 🚀
@@ -18,14 +18,16 @@
 
 ## Architecture Overview
 
-ForgeBoard implements a modern, reactive architecture with comprehensive data provenance tracking:
+ForgeBoard implements a modern, reactive architecture with comprehensive data provenance tracking, where the server is the authoritative source of data.
 
 ```mermaid
 flowchart LR
-  subgraph Backend [Backend]
+  subgraph Backend [Backend - Authoritative Source]
     direction TB
     BE[Data Sources]
-    PROV[Provenance Service]
+    PROV[Provenance Service & SlimChain]
+    STORE[Primary Data Store]
+    AUTH[Auth Service]
   end
   subgraph Gateway [Gateway Layer]
     direction TB
@@ -35,16 +37,19 @@ flowchart LR
   end
   subgraph Frontend [Angular Frontend]
     direction TB
-    PRSVC[Provenance Service]
+    PRSVC[Provenance Client Service]
     AS[Angular Services]
     AC[Angular Components]
     PV[Provenance Viewer]
   end
 
-  BE -->|"Data with Origin"| PROV
-  PROV -->|"Verifiable Data"| GW
+  BE -->|"Data with Origin"| STORE
+  STORE -->|"Data for Processing"| PROV
+  PROV -->|"Verifiable Data & Provenance"| GW
   PROV -->|"Provenance API"| REST
   PROV -->|"Provenance Events"| PROVGW
+  AUTH -->|"AuthN/AuthZ"| GW
+  AUTH -->|"AuthN/AuthZ"| REST
   
   GW -->|"Data Streams"| AS
   REST -->|"REST Calls"| AS
@@ -55,7 +60,9 @@ flowchart LR
   PV -->|"Visualize"| AC
 
   style BE fill:#FFDDC1,stroke:#E67E22,stroke-width:2px
+  style STORE fill:#B22234,stroke:#7D100E,stroke-width:2px,color:#fff
   style PROV fill:#B22234,stroke:#7D100E,stroke-width:2px,color:#fff
+  style AUTH fill:#002868,stroke:#071442,stroke-width:2px,color:#fff
   style GW fill:#D1E8E4,stroke:#16A085,stroke-width:2px
   style REST fill:#D1E8E4,stroke:#16A085,stroke-width:2px
   style PROVGW fill:#B22234,stroke:#7D100E,stroke-width:2px,color:#fff
@@ -67,182 +74,198 @@ flowchart LR
 
 ## Key Components
 
-- **ProvenanceService**: Tracks complete data lifecycle, maintains provenance chains, and ensures cryptographic verification
-- **MetricsService**: Manages real-time system metrics with provenance tracking for data origin and transformations
-- **KablanService**: Handles Kanban board state via WebSockets, supports optimistic updates with full provenance history
-- **DiagnosticsService**: Tracks health data with source provenance for verification and compliance evidence
-- **LoggerService**: Collects, filters, and exports logs in real time with data provenance for each event
-- **BackendStatusService**: Monitors gateway states with provenance tracking for connection events
+- **ProvenanceService (Backend)**: Tracks complete data lifecycle, maintains provenance chains on the server, and ensures cryptographic verification. Authoritative source for provenance.
+- **MetricsService**: Manages real-time system metrics with server-side provenance tracking for data origin and transformations.
+- **KablanService**: Handles Kanban board state via WebSockets, with the server managing state and provenance history.
+- **DiagnosticsService**: Tracks health data with server-side source provenance for verification and compliance evidence.
+- **LoggerService**: Collects, filters, and exports logs in real time with server-managed data provenance for each event.
+- **BackendStatusService**: Monitors gateway states with server-side provenance tracking for connection events.
 
 ### Data Provenance Architecture
 
-ForgeBoard implements a comprehensive data provenance system that tracks the complete data lifecycle:
+ForgeBoard implements a comprehensive data provenance system, managed by the server, that tracks the complete data lifecycle:
 
 ```mermaid
 sequenceDiagram
-  participant UI as Component
-  participant PS as ProvenanceService
-  participant SVC as DataService
-  participant SRV as Backend
+  participant UI as Client Component
+  participant PS as Server ProvenanceService
+  participant SVC as Client DataService
+  participant SRV as Backend API/Gateway
   
-  Note over UI,SRV: Data Inception
-  UI->>PS: createProvenanceRecord(data, metadata)
+  Note over UI,SRV: Data Inception (Server-Side)
+  SRV->>PS: createProvenanceRecord(data, metadata, actorInfo)
   PS->>PS: signInceptionRecord()
-  PS->>UI: inceptionRecord
+  PS->>SRV: inceptionRecordId
   
-  Note over UI,SRV: Query External Source
+  Note over UI,SRV: Client Requests Data
   UI->>SVC: fetchData(params)
-  SVC->>PS: transitionStage(inceptionRecord, 'query')
+  SVC->>SRV: HTTP/Socket Request
+  
+  Note over SRV,PS: Server Processes Request & Retrieves Data
+  SRV->>PS: transitionStage(existingRecord, 'query', actorInfo)
   PS->>PS: signQueryRecord()
   PS->>PS: storeProvenance()
-  SVC->>SRV: HTTP/Socket Request
-  SRV->>SVC: Response with Provenance
-  
-  Note over UI,SRV: Receive & Verify
-  SVC->>PS: transitionStage(queryRecord, 'response')
-  PS->>PS: verifySourceSignature()
+  SRV->>SRV: Retrieve/Process Data
+  SRV->>PS: transitionStage(queryRecord, 'response', actorInfo)
   PS->>PS: signResponseRecord()
-  SVC->>UI: verified data
+  SRV->>SVC: Response with Data & Provenance Token/Ref
   
-  Note over UI,SRV: Process & Store
-  UI->>PS: transitionStage(responseRecord, 'storage')
+  Note over UI,SVC: Client Receives Data
+  SVC->>UI: data
+  UI->>SVC: (Optional) requestProvenanceDetails(provenanceToken)
+  SVC->>SRV: GET /provenance/{provenanceToken}
+  SRV->>SVC: provenanceChainDetails
+  SVC->>UI: verified provenance details
+  
+  Note over SRV,PS: Server Stores Data & Provenance
+  SRV->>PS: transitionStage(responseRecord, 'storage', actorInfo)
   PS->>PS: persistToBlockchain()
-  PS->>UI: storageRecord + receipt
+  PS->>SRV: storageRecord + receipt
 ```
 
 ### Socket Connection Management with Provenance
 
-Socket connections maintain complete data provenance for real-time streams:
+Socket connections are established with the server, which manages and provides provenance for real-time streams:
 
 ```mermaid
 sequenceDiagram
   participant C as Component
-  participant S as Service
-  participant P as ProvenanceService
-  participant G as Gateway
-  participant B as Backend
+  participant S as Client Service
+  participant P as Server ProvenanceService
+  participant G as Server Gateway
+  participant B as Backend Logic
 
-  Note over C,B: Connection with Provenance
+  Note over C,B: Connection with Server-Managed Provenance
   C->>S: initSocket()
-  S->>P: recordConnectionAttempt(context)
-  S->>G: connect(namespace, provenanceContext)
-  G-->>S: connect_ack + serverProvenance
-  P->>P: verifyServerProvenance()
-  S->>S: next(dataSubject)
-  S-->>C: Observable emits with provenance
+  S->>G: connect(namespace, clientContext)
+  G->>P: recordConnectionAttempt(clientContext, connectionId)
+  G-->>S: connect_ack + serverSessionInfo
+  S->>S: next(dataSubject) // Ready to receive data
+  S-->>C: Observable emits (data will have server-side provenance)
 
-  Note over S: on error -> fallback with provenance
+  Note over S: on error -> server handles error logging
   G-->>S: connection_error
-  S->>P: recordConnectionFailure(error)
-  S->>S: startMockDataGeneration(provenanceContext)
-  S-->>C: mock data stream with mock provenance
+  S->>S: displayErrorToUser() // Inform client
+  G->>P: recordConnectionFailure(error, connectionId) // Server logs failure
 
-  Note over S: reconnect when backend available
-  S->>B: GET /status
-  B-->>S: {status: success, provenance: serverSignature}
-  P->>P: verifyServerSignature()
-  S->>G: reconnect(forceNew, provenanceContext)
+  Note over S: reconnect when server available
+  S->>G: attemptReconnect(forceNew, clientContext)
+  G->>B: GET /status
+  B-->>G: {status: success, serverInfo}
+  G->>P: recordReconnection(serverInfo, connectionId)
+  G-->>S: reconnect_ack
 ```
 
 ## Module Structure
 
 ### Metrics Module with Data Provenance
 
-Provides real-time system performance monitoring with complete data provenance:
+Provides real-time system performance monitoring with complete data provenance, managed and verified by the server.
 
-- Live metric charts with cryptographically verifiable data origin
-- Origin attestation for all metrics data from external providers
-- Signature verification for all metric sources
-- Provenance-aware visualization with source highlighting
+- Live metric charts with data streamed from the server.
+- Server attestation for all metrics data from external providers.
+- Server-side signature verification for all metric sources.
+- Provenance-aware visualization based on server-provided provenance chains.
 
 ### Kablan Board Module with Task Provenance
 
-Implements a Kanban-style project management system with task provenance tracking:
+Implements a Kanban-style project management system with server-managed task provenance tracking.
 
-- Complete history of all task transitions with actor attribution
-- Cryptographic verification of task update authority
-- Task ownership provenance with delegation tracking
-- Immutable audit trail of all board changes
+- Complete history of all task transitions with actor attribution, stored on the server.
+- Server-side cryptographic verification of task update authority.
+- Task ownership provenance with delegation tracking, managed by the server.
+- Immutable audit trail of all board changes, maintained by the server.
 
 ### Diagnostics Module with System Provenance
 
-Offers comprehensive system monitoring tools with complete provenance tracking:
+Offers comprehensive system monitoring tools with complete server-managed provenance tracking.
 
-- Health timeline with cryptographically verifiable state transitions
-- Socket connection metrics with verified endpoint attestations
-- Event logging with tamper-evident provenance chain
-- Status indicators with verification status visualization
+- Health timeline with cryptographically verifiable state transitions, recorded by the server.
+- Socket connection metrics with server-verified endpoint attestations.
+- Event logging with tamper-evident provenance chain, managed by the server.
+- Status indicators with verification status visualization based on server data.
 
 ### Logger Module with Log Provenance
 
-Provides detailed logging functionality with complete log provenance:
+Provides detailed logging functionality with complete server-managed log provenance.
 
-- Source attribution for all log entries with cryptographic verification
-- Log chain integrity verification with tamper detection
-- Event correlation with provenance linking
-- Export capabilities with verifiable log bundles
+- Server-side source attribution for all log entries with cryptographic verification.
+- Log chain integrity verification with tamper detection, performed by the server.
+- Event correlation with server-managed provenance linking.
+- Export capabilities with verifiable log bundles generated by the server.
 
 ## Data Flow Patterns
 
-### Provenance Service Pattern
+### Provenance Service Pattern (Server-Centric)
 
 ```mermaid
 flowchart TD
-  subgraph Backend [Backend]
+  subgraph Backend [Backend - Authoritative]
     direction TB
     BE[Socket.IO Gateway]:::backend
     BH[HTTP Controller]:::backend
-    BP[Provenance Service]:::provenance
+    BP[Provenance Service & SlimChain]:::provenance
+    DS[Primary Data Store]:::datastore
   end
   subgraph ServiceLayer [Angular Service Layer]
     direction TB
-    S1[BehaviorSubject/Subject]:::service
+    S1[Data Subject/Observable]:::service
     S2[Public Observable API]:::service
-    PS[Provenance Service]:::provenance
+    PSC[Provenance Client Service]:::provenance_client
   end
   subgraph ComponentLayer [Component Layer]
     direction TB
     C1[Subscribe to Observables]:::component
     C2[Update UI State]:::component
-    PV[Provenance Viewer]:::provenance
+    PV[Provenance Viewer]:::provenance_client
   end
 
-  BE -- "Data + Provenance" --> S1
-  BH -- "Data + Provenance" --> S1
-  BP -- "Provenance Chain" --> PS
+  DS -- "Authoritative Data" --> BE
+  DS -- "Authoritative Data" --> BH
+  BP -- "Manages Provenance For" --> DS
+  
+  BE -- "Data Stream + Provenance Ref" --> S1
+  BH -- "Data + Provenance Ref" --> S1
   
   S1 -- "next()" --> S2
   S2 -- "subscribe()" --> C1
-  PS -- "Provenance Chain" --> PV
   
-  C1 --> C2
+  PSC -- "Fetch Provenance Details" --> BH
+  BH -- "Provenance Chain from BP" --> PSC
+  PSC -- "Display Provenance" --> PV
   PV --> C2
 
   classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
+  classDef datastore fill:#B22234,stroke:#7D100E,stroke-width:2px,color:#fff;
   classDef provenance fill:#002868,stroke:#071442,stroke-width:2px,color:#FFFFFF;
+  classDef provenance_client fill:#002868,stroke:#071442,stroke-width:2px,color:#FFFFFF;
   classDef service fill:#E8D1E8,stroke:#8E44AD,stroke-width:2px;
   classDef component fill:#D1F5FF,stroke:#0288D1,stroke-width:2px;
 ```
 
 **Explanation:**
-- The backend emits events with source provenance metadata
-- The Angular service layer receives data and verifies provenance
-- Components subscribe to data with verified provenance chains
-- The Provenance Viewer provides visualization of data lineage
+- The backend is the authoritative source for data and its provenance.
+- The backend emits data events (via WebSockets or REST) to the client, potentially with a reference to the full provenance chain.
+- The Angular service layer receives data. The `ProvenanceClientService` can fetch detailed provenance from the backend if needed.
+- Components subscribe to data. The `ProvenanceViewer` displays lineage information fetched from the server.
 
-### Provenance-Aware Mock Data & Reconnection Strategy
+### Server-Driven Mock Data & Reconnection Strategy
 
 ```mermaid
 flowchart TD
-  CF[Connection Failure]:::error --> ED[Error Detection]:::error --> MD[Mock Data Generation\nwith Mock Provenance]:::mock
-  MD --> SI[Status Indicator\nwith Provenance]:::status
-  SI --> RL[Reconnection Logic]:::reconnect
-  RL --> BC[Backend Connection]:::backend
-  BC -- "success + provenance" --> SVC[Service Layer]:::service
-  RL -- "fail + record failure" --> MD
+  CF[Connection Failure]:::error --> ED[Client Error Detection]:::error --> UIUpdate[Update UI: Offline/Reconnecting]:::status
+  UIUpdate --> RL[Client Reconnection Logic]:::reconnect
+  RL --> BC[Attempt Backend Connection]:::backend
+  BC -- "success + server_status" --> SVC[Service Layer Receives Data]:::service
+  BC -- "fail" --> RL
+  
+  subgraph ServerSide [Server During Client Outage]
+    direction TB
+    SS_Error[Client Disconnect Event] --> SS_Log[Log Disconnection]
+    SS_Log --> SS_Queue[Queue Outgoing Data (Optional)]
+  end
 
   classDef error fill:#FFCDD2,stroke:#C62828,stroke-width:2px;
-  classDef mock fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px;
   classDef status fill:#E1F5FE,stroke:#0288D1,stroke-width:2px;
   classDef reconnect fill:#E8F5E9,stroke:#43A047,stroke-width:2px;
   classDef backend fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
@@ -250,26 +273,18 @@ flowchart TD
 ```
 
 **Explanation:**
-- On connection failure, the service detects the error and starts mock data generation with mock provenance
-- Mock data is clearly identified in the provenance chain as simulated data
-- Reconnection logic periodically checks backend availability with provenance verification
-- On successful reconnection with verified server provenance, the service resumes real data
+- On connection failure, the client detects the error and updates the UI.
+- Mock data, if used, would be a client-side fallback for UI continuity, not an authoritative state.
+- Reconnection logic periodically attempts to connect to the backend.
+- The server manages data consistency and provenance centrally.
 
-## Provenance-First Development Principles
+## Server-Authoritative Development Principles
 
-1. **Complete Data Lifecycle Tracking**: Every piece of data must have a tracked lifecycle from inception to disposal
-2. **Verifiable Source Attribution**: All data must have cryptographically verifiable source information
-3. **Immutable Transition Records**: Every data state change must be recorded with attribution and purpose
-4. **Cryptographic Verification**: All data transitions must be cryptographically signed and verified
-5. **Transparent Processing**: All transformations must be recorded with justification and attribution
-6. **Purpose Binding**: Every data request must have a documented and verifiable purpose
-7. **Chain of Custody**: Complete visibility into who accessed data and when
-
----
-
-**Legend:**
-- 🔵 **Data Provenance** - Complete tracking of data from inception through disposal
-- 🔴 **Cryptographic Verification** - Tamper-evident guarantees through digital signatures
-- 🟡 **Local-First Authority** - Device maintains authoritative provenance records
-- 🟢 **Privacy-Preserving Verification** - Zero-knowledge proofs for selective disclosure
+1. **Server is the Source of Truth**: All authoritative data and its complete lifecycle are managed by the server.
+2. **Verifiable Source Attribution (Server-Side)**: All data has cryptographically verifiable source information, asserted by the server.
+3. **Immutable Transition Records (Server-Side)**: Every data state change is recorded on the server with attribution and purpose.
+4. **Cryptographic Verification (Server-Side)**: All data transitions are cryptographically signed and verified by the server.
+5. **Transparent Processing (Server-Side)**: All transformations are recorded on the server with justification and attribution.
+6. **Purpose Binding (Server-Side)**: Every data request's purpose is documented and verifiable through server logs and provenance.
+7. **Chain of Custody (Server-Managed)**: Complete visibility into who accessed data and when, tracked by the server.
 

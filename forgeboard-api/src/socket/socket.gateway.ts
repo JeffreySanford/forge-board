@@ -8,7 +8,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { LoggerService } from '../app/logger/logger.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common'; // Added OnModuleDestroy
+import { Subscription } from 'rxjs'; // Added Subscription
 
 @Injectable()
 @WebSocketGateway({
@@ -17,17 +18,30 @@ import { Injectable } from '@nestjs/common';
     credentials: false
   }
 })
-export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy { // Added OnModuleDestroy
   @WebSocketServer() server: Server;
 
   private metricsInterval: NodeJS.Timeout;
   private interval = 500;
+  private logSubscription: Subscription; // Added for log subscription management
   
   constructor(private readonly logger: LoggerService) {}
 
   afterInit(server: Server) {
     this.logger.info('Socket.IO server initialized', 'SocketGateway');
     this.startMetricsEmission();
+
+    // Subscribe to batched log entries from LoggerService
+    this.logSubscription = this.logger.batchedNewLogEntries$.subscribe(logBatch => {
+      if (logBatch && logBatch.length > 0) {
+        this.server.emit('new-log-batch', {
+          status: 'success',
+          data: logBatch,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+    this.logger.info('Subscribed to batched log entries for WebSocket emission', 'SocketGateway');
   }
 
   handleConnection(client: Socket) {
@@ -115,5 +129,17 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       action: 'restartMetricsEmission'
     });
     this.startMetricsEmission();
+  }
+
+  onModuleDestroy() { // Added OnModuleDestroy implementation
+    this.logger.info('SocketGateway shutting down. Cleaning up resources.', 'SocketGateway');
+    if (this.metricsInterval) {
+      clearInterval(this.metricsInterval);
+      this.logger.info('Cleared metrics interval.', 'SocketGateway');
+    }
+    if (this.logSubscription) {
+      this.logSubscription.unsubscribe();
+      this.logger.info('Unsubscribed from batched log entries.', 'SocketGateway');
+    }
   }
 }

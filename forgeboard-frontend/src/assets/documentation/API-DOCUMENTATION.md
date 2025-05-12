@@ -6,10 +6,10 @@
     <strong>API:</strong> REST + WebSocket ✅
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Data Provenance:</strong> Complete Lifecycle 🔄
+    <strong>Data Provenance:</strong> Server-Managed Lifecycle 🔄
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>WebRTC:</strong> P2P Mesh Ready 🌐
+    <strong>WebRTC:</strong> P2P for Ephemeral Data 🌐
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
     <strong>Status:</strong> Production-Ready 🚀
@@ -18,50 +18,50 @@
 
 ## API Philosophy
 
-ForgeBoard NX implements a Local-First architecture with complete data provenance:
+ForgeBoard NX implements a Server-Authoritative architecture with complete, server-managed data provenance:
 
-1. **Device is the Source of Authority**: Your data lives on your device with full provenance tracking
-2. **Complete Data Lifecycle**: All data includes provenance records from inception through disposal
-3. **P2P Communication First**: WebRTC connections preserve provenance during direct peer exchange
-4. **CRDT for Conflict Resolution**: Conflict-free merging while preserving provenance chains
-5. **Blockchain Immutability**: Critical provenance records stored in a tamper-proof blockchain
+1. **Server is the Source of Authority**: All data and its provenance live on the server, which controls access and modifications.
+2. **Complete Data Lifecycle (Server-Managed)**: All data includes server-managed provenance records from inception through disposal.
+3. **P2P Communication for Ephemeral Data**: WebRTC connections can be used for direct peer exchange of non-authoritative, ephemeral data, while authoritative data is server-managed.
+4. **CRDT for Conflict Resolution (Server-Side)**: Conflict-free merging, orchestrated by the server, while preserving server-managed provenance chains.
+5. **Blockchain Immutability (Server-Side)**: Critical provenance records stored in a server-managed, tamper-proof blockchain.
 
-## Data Provenance API Architecture Overview
+## Data Provenance API Architecture Overview (Server-Authoritative)
 
 ```mermaid
 flowchart LR
-  subgraph LOCAL [Local-First API]
+  subgraph SERVER [Server - Authoritative API & Data Store]
     direction TB
-    LocalStore[(Local Store)]:::local
-    Chain[(SlimChain)]:::chain
-    CRDT[CRDT Merge Engine]:::crdt
-    Prov[Provenance Engine]:::prov
+    PrimaryStore[(Primary Data Store)]:::server_store
+    Chain[(SlimChain - Server Ledger)]:::chain
+    CRDT[CRDT Merge Engine (Server)]:::crdt
+    Prov[Provenance Engine (Server)]:::prov
+    RESTAPI[REST API]:::remote
+    WSAPI[WebSockets API]:::remote
   end
   
-  subgraph P2P [WebRTC P2P Mesh]
+  subgraph P2P [Optional WebRTC P2P Mesh for Ephemeral Data]
     direction TB
-    P2P1[Peer 1]:::p2p
-    P2P2[Peer 2]:::p2p
-    P2P3[Peer 3]:::p2p
+    P2P1[Peer 1 / Client]:::p2p
+    P2P2[Peer 2 / Client]:::p2p
+    P2P3[Peer 3 / Client]:::p2p
   end
   
-  subgraph REMOTE [Optional Remote]
-    direction TB
-    REST[REST API]:::remote
-    WS[WebSockets]:::remote
-    SyncDB[(Sync Database)]:::remote
-  end
+  PrimaryStore -->|"Authoritative Data"| Prov
+  Prov -->|"Track & Verify"| CRDT
+  CRDT -->|"Persist Provenance"| Chain
   
-  LocalStore -->|"Primary"| Prov
-  Prov -->|"Track"| CRDT
-  CRDT -->|"Persist"| Chain
-  Prov <-->|"Direct P2P\nwith Provenance"| P2P
-  LocalStore -.->|"Optional Sync\nwith Provenance"| REST
-  LocalStore -.->|"Optional Live\nwith Provenance"| WS
-  REST -.-> SyncDB
-  WS -.-> SyncDB
+  P2P1 <-->|"Ephemeral Data Exchange"| P2P2
+  P2P2 <-->|"Ephemeral Data Exchange"| P2P3
+  
+  P2P1 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P1 -->|"Real-time Updates"| WSAPI
+  P2P2 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P2 -->|"Real-time Updates"| WSAPI
+  P2P3 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P3 -->|"Real-time Updates"| WSAPI
 
-  classDef local fill:#002868,stroke:#BF0A30,stroke-width:3px,color:#FFFFFF;
+  classDef server_store fill:#002868,stroke:#BF0A30,stroke-width:3px,color:#FFFFFF;
   classDef chain fill:#BF0A30,stroke:#7D100E,stroke-width:3px,color:#FFFFFF;
   classDef crdt fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
   classDef p2p fill:#90BE6D,stroke:#43A047,stroke-width:2px;
@@ -71,17 +71,17 @@ flowchart LR
 
 ## API Layers
 
-### Layer 1: Local Store with Provenance (Primary)
+### Layer 1: Server-Side Authoritative Store & Provenance Engine (Primary)
 
-All interactions in ForgeBoard NX first go through the local store with comprehensive data provenance tracking.
+All interactions in ForgeBoard NX are ultimately authorized and processed by the server, which maintains the authoritative data store and comprehensive data provenance tracking.
 
-### Layer 2: WebRTC P2P Mesh with Provenance Preservation (Synchronization)
+### Layer 2: Server-Managed APIs (REST & WebSockets)
 
-Direct peer-to-peer communication with complete provenance chains that verify data origin and transformations.
+Clients interact with the server via REST APIs for request-response operations and WebSockets for real-time data streams. The server ensures all data access is authenticated and authorized, and all changes include provenance.
 
-### Layer 3: Remote Services with Provenance Verification (Optional Fallback)
+### Layer 3: Optional WebRTC P2P Mesh (For Ephemeral/Non-Authoritative Data)
 
-Traditional REST and WebSocket endpoints that serve as optional fallbacks when P2P is unavailable, with full provenance verification.
+Direct peer-to-peer communication can be utilized for specific features involving ephemeral data exchange (e.g., cursor positions, temporary UI states) but does not handle authoritative data changes, which must go through the server.
 
 ## API Overview
 
@@ -543,4 +543,4 @@ npm install @forge-board/shared/api-interfaces
 - TileType               — Dashboard tile identifiers
 - ProvenanceMetadata     — Data provenance metadata
 - ProvenanceRecord       — Complete provenance record
-- ProvenanceStage        -
+- ProvenanceStage        —

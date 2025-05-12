@@ -4,7 +4,8 @@ import { LogEntry, LogQueryResponse } from '@forge-board/shared/api-interfaces';
 @Injectable()
 export class LogsService {
   private logs: LogEntry[] = [];
-  private readonly logger = new Logger(LogsService.name);
+  // Keep NestJS Logger for context, but be careful with its usage for logging actual messages.
+  private readonly serviceLogger = new Logger(LogsService.name); 
   
   constructor() {}
 
@@ -21,7 +22,11 @@ export class LogsService {
     
     // Store the log
     this.logs.unshift(logEntry);
-    this.logger.debug(`Log saved: ${logEntry.source} - ${logEntry.message}`);
+    
+    // Use direct console.debug for internal logging to prevent loops.
+    // Include a shortened message to avoid overly verbose console output.
+    const shortMessage = logEntry.message.length > 100 ? `${logEntry.message.substring(0, 97)}...` : logEntry.message;
+    console.debug(`[${LogsService.name}] Log saved: ${logEntry.source} - "${shortMessage}"`);
     
     // Limit array size to prevent memory issues
     if (this.logs.length > 10000) {
