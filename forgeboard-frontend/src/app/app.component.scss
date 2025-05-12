@@ -1,3 +1,7 @@
+@use './styles/variables' as *;
+@use './styles/utilities'; // To access %fieldset-label-base
+@use 'sass:color';
+
 /* ==========================================================================
    GLOBAL LAYOUT & CONTENT WRAPPER
    ========================================================================== */
@@ -20,7 +24,6 @@
    CONTENT CONTAINER
    ========================================================================== */
 
-/* Updated to ensure consistent naming with HTML */
 .content-wrapper {
   flex: 1 1 auto;
   min-height: 0;
@@ -30,27 +33,29 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: $background-light; // Use variable
   position: relative;
-  overflow: visible;
+  overflow: visible; // Default, can be overridden by blue-border
 }
 
-/* Blue border styling for content wrapper */
 .content-wrapper.blue-border {
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  height: calc(100% - 2em);
-  width: calc(100% - 2em);
+  flex: 1; // Overrides flex: 1 1 auto from .content-wrapper
+  height: calc(100% - 2em); // Specific height
+  width: calc(100% - 2em);  // Specific width
   margin: 1em;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  border: 1em solid #3498db;
+  padding: 0.25em; // Added from a later definition
+  border: 2px solid $primary-color; // Use variable, changed from 1em
   border-radius: 1.5em;
-  position: relative;
-  overflow: visible;
-  background: rgba(255,255,255,0.85) !important;
+  background: $background-content-wrapper !important; // Use variable, was `none` in a later definition, this one takes precedence
+  align-items: stretch; // Added from a later definition
+  max-height: 100vh; // Added from a later definition
+  overflow: hidden; // Overrides overflow: visible from .content-wrapper
+  // min-height: 0; // Inherited from .content-wrapper
+  // min-width: 0; // Inherited from .content-wrapper
+  // box-sizing: border-box; // Inherited from .content-wrapper
+  // display: flex; // Inherited from .content-wrapper
+  // flex-direction: column; // Inherited from .content-wrapper
+  // position: relative; // Inherited from .content-wrapper
 }
 
 /* ==========================================================================
@@ -75,9 +80,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: 2px solid #3498db;
+  border: 2px solid $primary-color; // Use variable
   border-radius: 0.5em;
-  background: #0d1b2a;
+  background: $background-dark; // Use variable
   box-sizing: border-box;
   margin: 1em 0;
   padding: 1em;
@@ -100,7 +105,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  border: 2px solid #e74c3c;
+  border: 2px solid $border-color-tile-grid; // Use variable
   border-radius: 0.75em;
   overflow: visible;
   background: none;
@@ -110,8 +115,9 @@
 }
 
 .tilegrid-label {
-  color: #e74c3c;
-  border-color: #e74c3c;
+  @extend %fieldset-label-base;
+  color: $border-color-tile-grid; // Use variable
+  border-color: $border-color-tile-grid; // Use variable
   background: none;
   left: 0.25em;
   bottom: 0.25em;
@@ -145,7 +151,7 @@
   max-width: calc(20% - 2em);
   min-height: 120px;
   max-height: 200px;
-  border: 2px solid #e74c3c; /* Contrasting red border */
+  border: 2px solid $border-color-tile-grid; // Use variable
   border-radius: 0.5em;
   margin: 1em;
   box-sizing: border-box;
@@ -190,8 +196,8 @@
 .tile-drag-handle {
   cursor: grab;
   padding: 0.25em 0.5em;
-  background: #e74c3c; /* Contrasting red */
-  color: #fff;
+  background: $border-color-tile-grid; // Use variable
+  color: $text-color-light;
   font-size: 0.9em;
   border-bottom: 1px solid #fff;
   border-radius: 0.5em 0.5em 0 0;
@@ -217,7 +223,7 @@
 
 .tile-drag.cdk-drag-preview {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border: 2px solid #4eff91 !important;
+  border: 2px solid $accent-color !important; // Use variable
   opacity: 0.8;
 }
 
@@ -234,15 +240,9 @@
 }
 
 .tile-placeholder {
-  background: #0d1b2a;
-  border: 2px dashed #4eff91;
-  border-radius: 0.5em;
-  min-height: 120px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #4eff91;
+  background: $background-dark; // Use variable
+  border: 2px dashed $accent-color; // Use variable
+  color: $accent-color; // Use variable
 }
 
 .placeholder-content {
@@ -272,7 +272,7 @@
 }
 
 .tile-visibility-toggle:hover {
-  color: #4eff91;
+  color: $accent-color; // Use variable
 }
 
 /* ==========================================================================
@@ -280,15 +280,15 @@
    ========================================================================== */
 
 .controls-row {
-  position: relative; /* Changed from absolute to relative */
+  position: relative;
   display: flex;
   flex-direction: row-reverse;
   gap: 1em;
   align-items: center;
   justify-content: flex-end;
   z-index: 100;
-  margin: 1em 1em 1em auto; /* Align to right with margin */
-  padding: 0.5em;
+  margin: 0.5em 1em; /* Consolidated margin, was 1em 1em 1em auto initially */
+  padding: 0.5em; // Added from an earlier definition of .controls-row
 }
 
 .audio-icon,
@@ -314,7 +314,7 @@
 
 .audio-icon mat-icon {
   font-size: 28px;
-  color: #27ae60; /* Vibrant green */
+  color: $success-color; // Use variable (example: vibrant green)
   margin: 0;
   line-height: 1;
   display: flex;
@@ -324,23 +324,22 @@
 }
 .layout-icon {
   font-size: 28px;
-  color: #3498db; /* Vibrant blue */
+  color: $primary-color; // Use variable (example: vibrant blue)
   margin: 0;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
-  position: relative;
-  margin-right: 1em;
+  position: relative; // Keep relative for indicator
 }
 
 .layout-icon .layout-indicator {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #222;
-  color: #ffe066;
+  background: $border-color-dark; // Use variable
+  color: $warning-color; // Use variable (example: #ffe066)
   font-size: 0.7em;
   font-weight: bold;
   border-radius: 50%;
@@ -350,8 +349,8 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  border: 1.5px solid #ffe066;
-  box-shadow: 0 0 4px #ffe066;
+  border: 1.5px solid $warning-color; // Use variable
+  box-shadow: 0 0 4px $warning-color; // Use variable
   z-index: 2;
 }
 
@@ -364,25 +363,25 @@
 .audio-icon:hover,
 .layout-icon:hover {
   background: rgba(0, 0, 0, 0.06);
-  border: 2px solid #4eff91;
-  box-shadow: 0 0 20px #4eff91, 0 0 10px #4eff91;
+  border: 2px solid $accent-color; // Use variable
+  box-shadow: 0 0 20px $accent-color, 0 0 10px $accent-color; // Use variable
   transform: scale(1.1);
 }
 .audio-icon:hover mat-icon,
 .layout-icon:hover mat-icon {
-  color: #4eff91;
+  color: $accent-color; // Use variable
 }
 
 .layout-icon.active,
 .layout-icon:hover {
   background: rgba(0, 0, 0, 0.06);
-  border: 2px solid #4eff91;
-  box-shadow: 0 0 20px #4eff91, 0 0 10px #4eff91;
+  border: 2px solid $accent-color; // Use variable
+  box-shadow: 0 0 20px $accent-color, 0 0 10px $accent-color; // Use variable
   transform: scale(1.1);
 }
 .layout-icon.active mat-icon,
 .layout-icon:hover mat-icon {
-  color: #4eff91;
+  color: $accent-color; // Use variable
 }
 
 /* ==========================================================================
@@ -407,7 +406,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  border: 4px solid #000;
+  border: 4px solid $color-black; // Use variable
   border-radius: 0.5em;
   position: relative;
   overflow: auto;
@@ -420,8 +419,8 @@
   top: -1.2em;
   left: 2em;
   font-size: 1.2em;
-  color: #3498db;
-  background: #0d1b2a;
+  color: $primary-color; // Use variable
+  background: $background-dark; // Use variable
   padding: 0 1em;
   border-radius: 1em;
   font-weight: bold;
@@ -430,7 +429,7 @@
 }
 
 fieldset.page-container {
-  border: 4px solid #3498db;
+  border: 4px solid $primary-color; // Use variable
   border-radius: 1.5em;
   margin: 0;
   padding: 0;
@@ -440,7 +439,7 @@ fieldset.page-container {
 /* ==========================================================================
    CONTENT CONTAINER BLUE BORDER, NO BACKGROUND
    ========================================================================== */
-.content-wrapper.blue-border {
+/* .content-wrapper.blue-border { // Fully consolidated above
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -451,7 +450,7 @@ fieldset.page-container {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  border: 2px solid #3498db;
+  border: 2px solid $primary-color; // Use variable
   border-radius: 1.5em;
   position: relative;
   overflow: visible;
@@ -461,7 +460,7 @@ fieldset.page-container {
   align-items: stretch;
   max-height: 100vh;
   overflow: hidden;
-}
+} */
 
 /* ==========================================================================
    LAYOUT CONTAINER (NO BACKGROUND)
@@ -470,7 +469,7 @@ fieldset.page-container {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  border: 3px solid #222;
+  border: 3px solid $border-color-dark; // Use variable
   border-radius: 1em;
   margin: 2em 1em 1em 1em; /* Added bottom margin */
   position: relative;
@@ -478,7 +477,7 @@ fieldset.page-container {
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
-  background: rgba(255,255,255,0.7) !important;
+  background: $background-layout-container !important; // Use variable
   /* Take all available vertical space except footer/callout */
 }
 
@@ -568,114 +567,95 @@ html, body {
 
 .mute-toggle mat-icon {
   font-size: 18px;
-  color: #4eff91;
+  color: $accent-color; // Use variable
 }
 
 .context-toggle {
-  background: #3498db;
+  background: $primary-color; // Use variable
 }
 .context-toggle mat-icon {
-  font-size: 18px;
-  color: #fff;
+  color: $text-color-light;
 }
 .context-toggle.active {
-  background: #217dbb;
-  border: 2px solid #4eff91;
+  background: color.adjust($primary-color, $lightness: -10%); // Use variable and SASS function
+  border: 2px solid $accent-color; // Use variable
 }
 
 /* ==========================================================================
    FIELDSET LABELS FOR CONTAINERS
    ========================================================================== */
 .fieldset-label {
-  position: absolute;
-  left: 0.25em;
-  bottom: 0.25em;
-  font-size: 0.7em;
-  font-family: 'Roboto Mono', 'Courier New', monospace;
-  color: #3498db;
-  background: none;
-  padding: 0.1em 0.7em 0.1em 0.7em;
-  border-radius: 1em;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  opacity: 0.95;
-  pointer-events: none;
-  z-index: 10;
-  border: 2px solid #3498db;
-  box-shadow: 0 2px 8px rgba(52,152,219,0.05);
-  transition: opacity 0.3s ease;
+  @extend %fieldset-label-base; // Use placeholder
+  // Specific color overrides if needed, otherwise, it inherits from %fieldset-label-base
+  // For example, if .content-label needs a different color:
+  // &.content-label { color: $some-other-color; border-color: $some-other-color; }
 }
 
 .content-label {
-  color: #3498db;
-  border-color: #3498db;
-  background: none;
+  @extend %fieldset-label-base;
+  color: $primary-color;
+  border-color: $primary-color;
 }
 
 .layout-label {
-  color: #222;
-  border-color: #222;
-  background: none;
-}
-
-.hide-indicators .fieldset-label {
-  opacity: 0;
-  visibility: hidden;
+  @extend %fieldset-label-base;
+  color: $border-color-dark;
+  border-color: $border-color-dark;
 }
 
 /* ==========================================================================
    FOOTER CONTAINER (CALLOUT + CONTROLS)
    ========================================================================== */
 
-/* Callout container: align with layout-container, not content-wrapper */
-.callout-container {
-  position: relative;
-  margin: 1em;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  max-height: 7em;
-  width: calc(100% - 2em);
-  margin: 0.5em 1em;
-}
+/* Callout container: consolidated below */
+// .callout-container {
+//   position: relative;
+//   margin: 1em;
+//   width: 100%;
+//   display: flex;
+//   flex-direction: column;
+//   align-items: stretch;
+//   justify-content: flex-start;
+//   max-height: 7em;
+//   width: calc(100% - 2em);
+//   margin: 0.5em 1em;
+// }
 
-/* Callout drawing: fill callout-container, no extra margin */
-.callout-drawing {
-  flex: 1 1 auto;
-  min-width: 320px;
-  max-width: none;
-  min-height: 3em;
-  max-height: 5em;
-  width: 100%;
-  background: #fff !important;
-  color: #3498db !important;
-  border: 2px solid #e74c3c !important;
-  border-radius: 0.75em;
-  box-shadow: 0 2px 12px rgba(52,152,219,0.08);
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  position: relative;
-  margin: 0;
-  padding: 0.5em 1.5em 0.5em 1.5em;
-  overflow: hidden;
-}
+/* Callout drawing: styles incorporated into consolidated .callout-container */
+// .callout-drawing {
+//   flex: 1 1 auto;
+//   min-width: 320px;
+//   max-width: none;
+//   min-height: 3em;
+//   max-height: 5em;
+//   width: 100%;
+//   background: $color-white !important; // Use variable
+//   color: $primary-color !important; // Use variable
+//   border: 2px solid $border-color-error !important; // Use variable
+//   border-radius: 0.75em;
+//   box-shadow: 0 2px 12px rgba($primary-color,0.08); // Use variable
+//   display: flex;
+//   align-items: flex-start;
+//   justify-content: flex-start;
+//   position: relative;
+//   margin: 0;
+//   padding: 0.5em 1.5em 0.5em 1.5em;
+//   overflow: hidden;
+// }
 
 /* ==========================================================================
    CONTENT CONTAINER FLEX COLUMN STACKING
    ========================================================================== */
-.content-wrapper.blue-border {
+/* .content-wrapper.blue-border { // Consolidated above
   display: flex;
   flex-direction: column;
   align-items: stretch;
-}
+} */
 
 /* ==========================================================================
    CALLOUT CONTAINER (STACKED BELOW LAYOUT CONTAINER)
    ========================================================================== */
-.callout-container {
+/* .callout-container { // Consolidated below
   position: relative;
   margin: 1em;
   width: calc(100% - 2em);
@@ -683,30 +663,27 @@ html, body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-}
+} */
 
 .callout-label {
-  color: #e74c3c !important;
-  border-color: #e74c3c !important;
-  background: none;
-  left: 0.25em;
-  bottom: 0.25em;
-  font-size: 0.7em;
+  @extend %fieldset-label-base;
+  color: $border-color-error !important;
+  border-color: $border-color-error !important;
 }
 
 /* Callout drawing: match layout-container width, same margin, same max/min height */
-.callout-drawing {
+/* .callout-drawing { // Incorporated into consolidated .callout-container
   flex: 1 1 auto;
   min-width: 320px;
   max-width: none;
   min-height: 3em;
   max-height: 5em;
   width: 100%;
-  background: #fff !important;
-  color: #3498db !important;
-  border: 2px solid #e74c3c !important;
+  background: $color-white !important;
+  color: $primary-color !important;
+  border: 2px solid $border-color-error !important;
   border-radius: 0.75em;
-  box-shadow: 0 2px 12px rgba(52,152,219,0.08);
+  box-shadow: 0 2px 12px rgba($primary-color,0.08);
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
@@ -714,51 +691,49 @@ html, body {
   margin: 0;
   padding: 0.5em 1.5em 0.5em 1.5em;
   overflow: hidden;
-}
+} */
 
 /* ==========================================================================
-   CALLOUT CONTAINER (COMBINED WITH DRAWING)
+   CALLOUT CONTAINER (COMBINED WITH DRAWING) & ALIGNED
    ========================================================================== */
 .callout-container {
-  /* Combine styles from .callout-container and .callout-drawing */
-  flex: 1 1 auto;
-  min-width: 320px;
-  max-width: none;
+  flex: 0 0 auto; /* Was 1 1 auto, changed to prevent growing */
+  min-width: 0; // Was 320px
+  // max-width: none; // Default
   min-height: 3em;
-  max-height: 7em;
-  width: 100%;
-  margin: 1em;
-  background: #fff !important;
-  color: #3498db !important;
-  border: 2px solid #e74c3c !important;
+  max-height: 120px; /* Consolidated from 7em and 80px, choosing a fixed pixel value */
+  width: auto; /* Changed from 100% and calc(100% - 2em) */
+  margin: 0.5em 1em 0.5em 1em; /* Consolidated, was 1em, 0.5em 1em, 1em 1em 2em 1em */
+  background: $color-white !important;
+  color: $primary-color !important;
+  border: 2px solid $border-color-error !important;
   border-radius: 0.75em;
-  box-shadow: 0 2px 12px rgba(52,152,219,0.08);
+  box-shadow: 0 2px 12px rgba($primary-color,0.08);
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  // align-items: flex-start; // Kept from original
+  // justify-content: flex-start; // Kept from original
+  flex-direction: column; // Added to ensure content stacks if it overflows
   position: relative;
-  padding: 0.5em 1.5em 0.5em 1.5em;
-  overflow: hidden;
-  /* Animation border (yellow) if needed */
+  padding: 0.5em 1.5em; // Simplified padding
+  overflow-y: auto; // Changed from hidden to auto
+  box-sizing: border-box; // Added for consistency
+
   &.animating {
-    border-color: #ffe066 !important;
-    box-shadow: 0 0 0 2px #ffe066, 0 2px 12px rgba(52,152,219,0.08);
+    border-color: $warning-color !important;
+    box-shadow: 0 0 0 2px $warning-color, 0 2px 12px rgba($primary-color,0.08);
   }
 }
 
 /* ==========================================================================
    CALLOUT CONTAINER (ALIGNED, NO OVERHANG)
    ========================================================================== */
-.callout-container {
-  /* Remove width: 100% and width: calc(100% - 2em) */
-  margin: 1em 1em 2em 1em; /* left/right 1em, bottom 2em for spacing */
-  /* Instead of width: 100%, use: */
+/* .callout-container { // Consolidated above
+  margin: 1em 1em 2em 1em; 
   width: auto;
   max-width: unset;
   min-width: 0;
   box-sizing: border-box;
-  /* rest of .callout-container styles unchanged */
-}
+} */
 
 .callout-meta {
   font-size: 0.85em;
@@ -787,13 +762,13 @@ html, body {
 }
 
 .key {
-  color: #222;
+  color: $border-color-dark; // Use variable
   font-weight: bold;
   opacity: 0.85;
 }
 
 .val {
-  color: #3498db;
+  color: $primary-color; // Use variable
   font-weight: normal;
   opacity: 0.95;
   min-width: 10em;
@@ -813,7 +788,7 @@ html, body {
 .layout-border-overlay {
   position: absolute;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  border: 3px dashed #3498db;
+  border: 3px dashed $primary-color; // Use variable
   box-sizing: border-box;
   opacity: 0.3;
   pointer-events: none;
@@ -831,11 +806,11 @@ html, body {
     to right,
     transparent,
     transparent calc(100vw / 12 - 2px),
-    #ffe066 calc(100vw / 12 - 2px),
-    #ffe066 calc(100vw / 12)
+    $warning-color calc(100vw / 12 - 2px), // Use variable
+    $warning-color calc(100vw / 12)
   );
-  border-left: 2px solid #ffe066;
-  border-right: 2px solid #ffe066;
+  border-left: 2px solid $warning-color; // Use variable
+  border-right: 2px solid $warning-color; // Use variable
 }
 
 .layout-4col-overlay {
@@ -850,11 +825,11 @@ html, body {
     to right,
     transparent,
     transparent calc(100vw / 4 - 2px),
-    #e74c3c calc(100vw / 4 - 2px),
-    #e74c3c calc(100vw / 4)
+    $error-color calc(100vw / 4 - 2px), // Use variable
+    $error-color calc(100vw / 4)
   );
-  border-left: 2px solid #e74c3c;
-  border-right: 2px solid #e74c3c;
+  border-left: 2px solid $error-color; // Use variable
+  border-right: 2px solid $error-color; // Use variable
 }
 
 .layout-grid-overlay {
@@ -868,14 +843,14 @@ html, body {
   background-repeat: repeat;
   &.small {
     background-image:
-      linear-gradient(to right, #4eff91 1px, transparent 1px),
-      linear-gradient(to bottom, #4eff91 1px, transparent 1px);
+      linear-gradient(to right, $accent-color 1px, transparent 1px), // Use variable
+      linear-gradient(to bottom, $accent-color 1px, transparent 1px); // Use variable
     background-size: 32px 32px;
   }
   &.large {
     background-image:
-      linear-gradient(to right, #3498db 2px, transparent 2px),
-      linear-gradient(to bottom, #3498db 2px, transparent 2px);
+      linear-gradient(to right, $primary-color 2px, transparent 2px), // Use variable
+      linear-gradient(to bottom, $primary-color 2px, transparent 2px); // Use variable
     background-size: 96px 96px;
     opacity: 0.18;
   }
@@ -900,12 +875,12 @@ html, body {
   z-index: 100;
 }
 
-.layout-icon {
+.layout-icon { // This is for the global controls, distinct from the .controls-row .layout-icon
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(13, 27, 42, 0.7);
-  border: 1px solid rgba(78, 255, 145, 0.5);
+  background: rgba($secondary-color, 0.7); // Use variable
+  border: 1px solid rgba($accent-color, 0.5); // Use variable
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
@@ -917,54 +892,29 @@ html, body {
   
   mat-icon {
     font-size: 24px;
-    color: #3498db;
+    color: $primary-color; // Use variable
     transition: color 0.2s;
   }
   
   &:hover {
-    background: rgba(13, 27, 42, 0.9);
-    border: 2px solid #4eff91;
-    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    background: rgba($secondary-color, 0.9); // Use variable
+    border: 2px solid $accent-color; // Use variable
+    box-shadow: 0 0 15px rgba($accent-color, 0.5); // Use variable
     transform: scale(1.1);
     
     mat-icon {
-      color: #4eff91;
+      color: $accent-color; // Use variable
     }
   }
   
   &.active {
-    background: rgba(13, 27, 42, 0.9);
-    border: 2px solid #4eff91;
-    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    background: rgba($secondary-color, 0.9); // Use variable
+    border: 2px solid $accent-color; // Use variable
+    box-shadow: 0 0 15px rgba($accent-color, 0.5); // Use variable
     
     mat-icon {
-      color: #4eff91;
+      color: $accent-color; // Use variable
     }
-  }
-  
-  .layout-indicator {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: #222;
-    color: #ffe066;
-    font-size: 0.7em;
-    font-weight: bold;
-    border-radius: 50%;
-    width: 1.3em;
-    height: 1.3em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    border: 1.5px solid #ffe066;
-    box-shadow: 0 0 4px #ffe066;
-    z-index: 2;
-  }
-  
-  &.shake {
-    animation: shakeIcon 0.8s cubic-bezier(.36,.07,.19,.97) both;
-    transform-origin: center center;
   }
 }
 
@@ -973,8 +923,8 @@ html, body {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(13, 27, 42, 0.7);
-  border: 1px solid rgba(78, 255, 145, 0.5);
+  background: rgba($secondary-color, 0.7); // Use variable
+  border: 1px solid rgba($accent-color, 0.5); // Use variable
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
@@ -986,28 +936,28 @@ html, body {
   
   mat-icon {
     font-size: 24px;
-    color: #3498db;
+    color: $primary-color; // Use variable
     transition: color 0.2s;
   }
   
   &:hover {
-    background: rgba(13, 27, 42, 0.9);
-    border: 2px solid #4eff91;
-    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    background: rgba($secondary-color, 0.9); // Use variable
+    border: 2px solid $accent-color; // Use variable
+    box-shadow: 0 0 15px rgba($accent-color, 0.5); // Use variable
     transform: scale(1.1);
     
     mat-icon {
-      color: #4eff91;
+      color: $accent-color; // Use variable
     }
   }
   
   &.active {
-    background: rgba(13, 27, 42, 0.9);
-    border: 2px solid #4eff91;
-    box-shadow: 0 0 15px rgba(78, 255, 145, 0.5);
+    background: rgba($secondary-color, 0.9); // Use variable
+    border: 2px solid $accent-color; // Use variable
+    box-shadow: 0 0 15px rgba($accent-color, 0.5); // Use variable
     
     mat-icon {
-      color: #4eff91;
+      color: $accent-color; // Use variable
     }
   }
 }
@@ -1023,40 +973,37 @@ html, body {
   width: 100%;
   min-height: 80px;
   margin-top: auto; /* Push to the bottom of content-wrapper */
-  border: 2px solid #3498db;
+  border: 2px solid $primary-color; // Use variable
   border-radius: 0.75em;
   padding: 0.5em;
   box-sizing: border-box;
-  background: rgba(13, 27, 42, 0.4);
+  background: rgba($secondary-color, 0.4); // Use variable
 }
 
 .controls-label {
-  color: #3498db;
-  border-color: #3498db;
-  background: none;
-  left: 0.25em;
-  bottom: 0.25em;
-  font-size: 0.7em;
+  @extend %fieldset-label-base;
+  color: $primary-color;
+  border-color: $primary-color;
 }
 
 /* Adjust content wrapper to make room for controls wrapper */
-.content-wrapper.blue-border {
+/* .content-wrapper.blue-border { // Consolidated above
   display: flex;
   flex-direction: column;
   min-height: 0;
   max-height: 100vh;
   overflow: hidden;
-}
+} */
 
 /* Callout container: align with layout-container, inside controls wrapper */
-.callout-container {
+/* .callout-container { // Consolidated above
   width: calc(100% - 2em);
   margin: 0.5em 1em;
   max-height: 7em;
-}
+} */
 
 /* Update controls row positioning */
-.controls-row {
+/* .controls-row { // Consolidated earlier
   position: relative;
   display: flex;
   flex-direction: row-reverse;
@@ -1064,8 +1011,8 @@ html, body {
   align-items: center;
   justify-content: flex-end;
   z-index: 100;
-  padding: 0.5em;
-}
+  margin: 0.5em 1em;
+} */
 
 /* ==========================================================================
    AUDIO SYSTEM NOTE
@@ -1083,30 +1030,30 @@ html, body {
    CALLOUT CONTAINER FIXES
    ========================================================================== */
 
-/* Make sure app-footer has proper display */
 app-footer {
-  display: block;
-  width: 100%;
-  margin: 1em 0;
+  display: block; // Basic styling, can be kept or removed if handled by component
+  width: 100%;   // Basic styling
+  margin: 1em 0; // Basic styling
+  flex: 0 0 auto; /* Don't let it grow, consolidated from later definition */
 }
 
 /* Ensure content wrapper leaves space for footer and controls */
-.content-wrapper.blue-border {
+/* .content-wrapper.blue-border { // Consolidated earlier
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 4em); /* Account for margins */
+  height: calc(100vh - 4em); 
   min-height: 0;
-}
+} */
 
 /* Make router-outlet container take remaining height */
-router-outlet + * {
+router-outlet + * { // This selects the component immediately after router-outlet
   flex: 1 1 auto;
   overflow-y: auto;
-  min-height: 0;
+  min-height: 0; /* Important for proper flex behavior */
 }
 
 /* Controls row positioning fix */
-.controls-row {
+/* .controls-row { // Consolidated earlier
   position: relative;
   display: flex;
   flex-direction: row-reverse;
@@ -1115,37 +1062,37 @@ router-outlet + * {
   justify-content: flex-end;
   z-index: 100;
   margin: 0.5em 1em;
-}
+} */
 
 /* ==========================================================================
    CONTENT CONTAINER FIXES
    ========================================================================== */
 
-.content-wrapper {
+/* .content-wrapper { // Base .content-wrapper already defined, this one is too generic and might conflict
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-}
+} */
 
 /* Make the router-outlet content area take appropriate space */
-router-outlet + * {
+/* router-outlet + * { // Consolidated above
   flex: 1 1 auto;
   overflow-y: auto;
-  min-height: 0; /* Important for proper flex behavior */
-}
+  min-height: 0; 
+} */
 
 /* Limit the callout container height */
-.callout-container {
-  max-height: 120px; /* Adjust based on design needs */
+/* .callout-container { // Consolidated above
+  max-height: 120px; 
   overflow-y: auto;
-  flex: 0 0 auto; /* Don't let it grow to take extra space */
+  flex: 0 0 auto; 
   margin-bottom: 1em;
-}
+} */
 
 /* Ensure content areas have proper sizing */
 .home-container, 
-.page-container {
+.page-container { // .page-container already defined, .home-container is new here
   height: auto;
   min-height: calc(100vh - 180px); /* Account for header, footer and callout */
   display: flex;
@@ -1170,8 +1117,8 @@ router-outlet + * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  border: 2px solid #FFD700; /* Gold color */
-  box-shadow: 0 0 8px #FFD700, 0 0 15px rgba(255, 215, 0, 0.5); /* Glowing effect */
+  border: 2px solid $warning-color; // Gold color (using warning as an example for gold)
+  box-shadow: 0 0 8px $warning-color, 0 0 15px rgba($warning-color, 0.5); // Glowing effect
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1182,7 +1129,7 @@ router-outlet + * {
   position: absolute;
   bottom: 0.5em;
   left: 0.5em;
-  color: #FFD700;
+  color: $warning-color; // Gold color
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.7em;
   opacity: 0.8;
@@ -1191,36 +1138,36 @@ router-outlet + * {
 }
 
 /* Fix height issues with containers */
-.content-wrapper {
+/* .content-wrapper { // Consolidated earlier
   flex: 1 1 auto;
-  min-height: 0; /* Important for proper flex behavior */
+  min-height: 0; 
   display: flex;
   flex-direction: column;
-}
+} */
 
 /* Make router-outlet content area take appropriate space */
-router-outlet + * {
+/* router-outlet + * { // Consolidated above
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
-}
+} */
 
 /* Limit the callout container height */
-.callout-container {
-  max-height: 80px; /* Reduced height */
+/* .callout-container { // Consolidated above
+  max-height: 80px; 
   overflow-y: auto;
-  flex: 0 0 auto; /* Don't let it grow */
+  flex: 0 0 auto; 
   margin-bottom: 0.5em;
-}
+} */
 
-app-footer {
-  flex: 0 0 auto; /* Don't let it grow */
-}
+/* app-footer { // Consolidated earlier
+  flex: 0 0 auto; 
+} */
 
 /* Ensure controls stay at the bottom */
-.controls-row {
-  flex: 0 0 auto;
-  margin-top: auto; /* Push to bottom if space available */
+.controls-row { // Additional properties for specific context, merged with main .controls-row if general enough
+  // flex: 0 0 auto; // Already in main .controls-row if desired
+  margin-top: auto; /* Push to bottom if space available - this is context specific, might be better in controls-wrapper */
 }
 
 /* ==========================================================================
@@ -1230,16 +1177,16 @@ app-footer {
 .console-tooltip {
   position: absolute;
   background: rgba(0, 20, 0, 0.85);
-  border: 1px solid #4eff91;
+  border: 1px solid $accent-color; // Use variable
   border-radius: 4px;
   padding: 8px 12px;
   max-width: 250px;
   min-width: 150px;
-  color: #4eff91;
+  color: $accent-color; // Use variable
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-size: 0.8em;
   pointer-events: none;
-  box-shadow: 0 0 10px rgba(78, 255, 145, 0.5);
+  box-shadow: 0 0 10px rgba($accent-color, 0.5); // Use variable
   z-index: 1000;
   opacity: 0;
   transform: translateY(10px);
@@ -1266,7 +1213,7 @@ app-footer {
   overflow: hidden;
   display: inline-block;
   white-space: nowrap;
-  border-right: 0.15em solid #4eff91;
+  border-right: 0.15em solid $accent-color; // Use variable
   width: 0;
   animation: typing 1.5s steps(40, end) forwards, blink-caret 0.75s step-end infinite;
 }
@@ -1278,27 +1225,7 @@ app-footer {
 
 @keyframes blink-caret {
   from, to { border-color: transparent }
-  50% { border-color: #4eff91 }
-}
-
-/* Tooltip positioning variations */
-.tooltip-top-left {
-  left: 0;
-  transform: translateX(0) translateY(10px);
-}
-
-.tooltip-top-left:hover {
-  transform: translateX(0) translateY(0);
-}
-
-.tooltip-top-right {
-  left: auto;
-  right: 0;
-  transform: translateX(0) translateY(10px);
-}
-
-.tooltip-top-right:hover {
-  transform: translateX(0) translateY(0);
+  50% { border-color: $accent-color } // Use variable
 }
 
 /* ==========================================================================
@@ -1311,7 +1238,7 @@ app-footer {
   margin-left: auto;
   margin-right: 24px;
   padding: 4px 12px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba($color-black, 0.1);
   border-radius: 16px;
   
   .refresh-label {
@@ -1326,14 +1253,14 @@ app-footer {
     height: 4px;
     -webkit-appearance: none;
     appearance: none;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba($color-black, 0.2);
     border-radius: 2px;
     
     &::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 14px;
       height: 14px;
-      background: #2196f3;
+      background: $primary-color; // Use variable
       border-radius: 50%;
       cursor: pointer;
     }
@@ -1341,7 +1268,7 @@ app-footer {
     &::-moz-range-thumb {
       width: 14px;
       height: 14px;
-      background: #2196f3;
+      background: $primary-color; // Use variable
       border-radius: 50%;
       border: none;
       cursor: pointer;

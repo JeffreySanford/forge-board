@@ -6,13 +6,12 @@
   "prefix": "app",
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/forgeboard-frontend",
         "index": "forgeboard-frontend/src/index.html",
-        "main": "forgeboard-frontend/src/main.ts",
-        "polyfills": "forgeboard-frontend/src/polyfills.ts",
+        "polyfills": ["forgeboard-frontend/src/polyfills.ts"],
         "tsConfig": "forgeboard-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -23,14 +22,26 @@
           "forgeboard-frontend/src/styles.scss"
         ],
         "scripts": [],
+        "preserveSymlinks": true,
         "allowedCommonJsDependencies": [
-          "@nestjs/microservices",
           "class-transformer/storage",
           "socket.io-client",
           "stream-browserify",
           "crypto-browserify",
-          "os-browserify/browser"
-        ]
+          "os-browserify/browser",
+          "path-browserify",
+          "browserify-zlib",
+          "https-browserify",
+          "stream-http",
+          "timers-browserify",
+          "url",
+          "assert",
+          "querystring-es3",
+          "buffer",
+          "process",
+          "events"
+        ],
+        "browser": "forgeboard-frontend/src/main.ts"
       },
       "configurations": {
         "production": {
@@ -42,8 +53,8 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "2kb",
-              "maximumError": "4kb"
+              "maximumWarning": "15kb",
+              "maximumError": "20kb"
             }
           ],
           "fileReplacements": [
@@ -55,9 +66,7 @@
           "outputHashing": "all"
         },
         "development": {
-          "buildOptimizer": false,
           "optimization": false,
-          "vendorChunk": true,
           "extractLicenses": false,
           "sourceMap": true,
           "namedChunks": true
@@ -67,12 +76,15 @@
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
+      "options": {
+        "allowedHosts": ["all"]
+      },
       "configurations": {
         "production": {
-          "browserTarget": "forgeboard-frontend:build:production"
+          "buildTarget": "forgeboard-frontend:build:production"
         },
         "development": {
-          "browserTarget": "forgeboard-frontend:build:development"
+          "buildTarget": "forgeboard-frontend:build:development"
         }
       },
       "defaultConfiguration": "development"

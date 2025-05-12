@@ -21,7 +21,24 @@
       ],
       "@/*": ["./forgeboard-frontend/src/*"],
       "@shims/*": ["./forgeboard-frontend/src/app/shims/*"],
-      "@services/*": ["./forgeboard-frontend/src/app/services/*"]
+      "@services/*": ["./forgeboard-frontend/src/app/services/*"],
+      "path": ["node_modules/path-browserify"],
+      "stream": ["node_modules/stream-browserify"],
+      "crypto": ["node_modules/crypto-browserify"],
+      "os": ["node_modules/os-browserify/browser"],
+      "http": ["node_modules/stream-http"],
+      "https": ["node_modules/https-browserify"],
+      "zlib": ["node_modules/browserify-zlib/lib"],
+      "timers": ["node_modules/timers-browserify"],
+      "url": ["node_modules/url"],
+      "assert": ["node_modules/assert"],
+      "querystring": ["node_modules/querystring-es3"],
+      "events": ["node_modules/events/events.js"],
+      "fs": ["./empty-module.ts"],
+      "perf_hooks": ["./empty-module.ts"],
+      "async_hooks": ["./empty-module.ts"],
+      "repl": ["./empty-module.ts"],
+      "net": ["./empty-module.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

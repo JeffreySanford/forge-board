@@ -23,7 +23,6 @@
         "namedChunks": false,
         "extractLicenses": true,
         "vendorChunk": false,
-        "buildOptimizer": true,
         "allowedCommonJsDependencies": [
           "class-transformer/storage",
           "socket.io-client"

@@ -11,7 +11,7 @@
     <div class="health-card">
       <div class="health-status" [ngClass]="health.status.toLowerCase()">
         <span class="status-pill">{{health.status}}</span>
-        <span class="uptime">Uptime: {{formatUptime(health.uptime ?? 0)}}</span>
+        <span class="uptime">Uptime: {{formatUptime(health.uptime)}}</span>
       </div>
       <div class="health-details">
         <div class="timeline">

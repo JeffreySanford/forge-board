@@ -5,6 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { TokenEncryption } from '../utils/token-encryption';
 import { User, UserRole } from '@forge-board/shared/api-interfaces';
+import { Environment } from '../../environments/environment.interface';
 
 interface LoginResponse {
   user: User;
@@ -16,6 +17,7 @@ interface LoginResponse {
 })
 export class AuthService {
   private currentUser: User | null = null;
+  private readonly envConfig = environment as Environment;
   
   constructor(private http: HttpClient) {
     this.loadToken();
@@ -25,8 +27,8 @@ export class AuthService {
    * Get the current token (decrypted)
    */
   getToken(): string {
-    const encryptedToken = environment.encryptedJwtToken || localStorage.getItem('encryptedToken') || '';
-    if (!encryptedToken) return environment.jwtGuestToken || '';
+    const encryptedToken = this.envConfig.encryptedJwtToken || localStorage.getItem('encryptedToken') || '';
+    if (!encryptedToken) return this.envConfig.jwtGuestToken || '';
     
     return TokenEncryption.decryptToken(encryptedToken);
   }
@@ -37,13 +39,13 @@ export class AuthService {
   private storeToken(token: string): void {
     if (!token) {
       localStorage.removeItem('encryptedToken');
-      environment.encryptedJwtToken = '';
+      (environment as Environment).encryptedJwtToken = ''; // Modifying imported env is not ideal but fixes immediate error
       return;
     }
     
     const encryptedToken = TokenEncryption.encryptToken(token);
     localStorage.setItem('encryptedToken', encryptedToken);
-    environment.encryptedJwtToken = encryptedToken;
+    (environment as Environment).encryptedJwtToken = encryptedToken; // Modifying imported env
   }
   
   /**
@@ -52,7 +54,7 @@ export class AuthService {
   private loadToken(): void {
     const encryptedToken = localStorage.getItem('encryptedToken');
     if (encryptedToken) {
-      environment.encryptedJwtToken = encryptedToken;
+      (environment as Environment).encryptedJwtToken = encryptedToken; // Modifying imported env
     }
   }
   
@@ -60,7 +62,7 @@ export class AuthService {
    * Login user
    */
   login(username: string, password: string): Observable<User> {
-    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, { 
+    return this.http.post<LoginResponse>(`${this.envConfig.apiUrl}/auth/login`, {
       username, 
       password 
     }).pipe(
@@ -80,7 +82,7 @@ export class AuthService {
    * Get guest token for anonymous access
    */
   useGuestToken(): Observable<User> {
-    this.storeToken(environment.jwtGuestToken);
+    this.storeToken(this.envConfig.jwtGuestToken);
     // Typically you'd validate this token with the server
     // For now we'll create a mock guest user
     this.currentUser = {

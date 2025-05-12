@@ -7,16 +7,18 @@ import { EventEmitter } from 'events';
 console.log('[Shim] Stream module loaded');
 
 // Define interfaces to match NodeJS types without relying on @types/node
-interface Writable {
+interface NodeJSWritable {
   writable: boolean;
   write(chunk: unknown, encoding?: string, callback?: (error?: Error | null) => void): boolean;
   end(chunk?: unknown, encoding?: string, callback?: () => void): void;
   cork(): void;
   uncork(): void;
   destroy(): void;
+  // Add emit method signature as Writable streams in Node.js are EventEmitters
+  emit(event: string | symbol, ...args: any[]): boolean;
 }
 
-interface Readable {
+interface NodeJSReadable {
   readable: boolean;
   read(size?: number): unknown;
   destroy(): void;
@@ -31,7 +33,7 @@ export class Stream extends EventEmitter {
     console.log('[Shim] Stream instance created');
   }
 
-  override pipe(destination: Writable): Writable {
+  pipe(destination: NodeJSWritable): NodeJSWritable {
     console.log('[Shim] Stream.pipe called');
     this.on('data', (chunk) => destination.write(chunk));
     this.on('end', () => destination.end());
@@ -43,7 +45,7 @@ export class Stream extends EventEmitter {
 /**
  * Readable Stream implementation for browsers
  */
-export class ReadableStream extends Stream implements Readable {
+export class ReadableStream extends Stream implements NodeJSReadable {
   readable = true;
   private _buffer: unknown[] = [];
   private _encoding: string | null = null;
@@ -125,9 +127,9 @@ export class ReadableStream extends Stream implements Readable {
     }, 0);
   }
 
-  override pipe<T extends Writable>(destination: T): T {
+  override pipe<T extends NodeJSWritable>(destination: T): T {
     console.log('[Shim] ReadableStream.pipe called');
-    super.pipe(destination as unknown as Writable);
+    super.pipe(destination);
     return destination;
   }
 
@@ -141,7 +143,7 @@ export class ReadableStream extends Stream implements Readable {
 /**
  * Writable Stream implementation for browsers
  */
-export class WritableStream extends Stream implements Writable {
+export class WritableStream extends Stream implements NodeJSWritable {
   writable = true;
   private _encoding: string | null = null;
   private _buffer: unknown[] = [];
@@ -244,7 +246,7 @@ export class WritableStream extends Stream implements Writable {
 /**
  * Duplex Stream implementation for browsers
  */
-export class DuplexStream extends Stream implements Readable, Writable {
+export class DuplexStream extends Stream implements NodeJSReadable, NodeJSWritable {
   readable = true;
   writable = true;
   private readonly readableImpl: ReadableStream;
@@ -299,7 +301,7 @@ export class DuplexStream extends Stream implements Readable, Writable {
     return this.readableImpl.push(chunk);
   }
 
-  override pipe<T extends Writable>(destination: T): T {
+  override pipe<T extends NodeJSWritable>(destination: T): T {
     console.log('[Shim] DuplexStream.pipe called');
     return this.readableImpl.pipe(destination);
   }

@@ -1,0 +1,74 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+// Placeholder for fieldset-like labels on containers
+%fieldset-label-base {
+  position: absolute;
+  font-size: 0.7em;
+  font-family: $font-family-monospace;
+  background: none;
+  padding: 0.1em 0.7em;
+  border-radius: 1em;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 10;
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.05); // Example shadow, adjust as needed
+  transition: opacity 0.3s ease;
+
+  // Default positioning, can be overridden
+  left: 0.25em;
+  bottom: 0.25em;
+}
+
+.blue-border {
+  border: 1px solid $primary-color; // Use variable
+  border-radius: 4px; // Consistent border-radius
+}
+
+.container-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  background: rgba($primary-color, 0.8); // Use variable with alpha
+  color: $text-color-light;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-top-right-radius: 4px;
+  z-index: 1; // Ensure it's above the container's content if needed
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-right: $spacing-xs;
+  }
+}
+
+// Example status color mixin
+@mixin status-colors($base-color) {
+  background-color: rgba($base-color, 0.2);
+  color: color.adjust($base-color, $lightness: -15%);
+  border-left: 4px solid $base-color;
+}
+
+.status-healthy {
+  @include status-colors($success-color);
+}
+.status-warning, .status-degraded {
+  @include status-colors($warning-color);
+}
+.status-error, .status-unhealthy {
+  @include status-colors($error-color);
+}
+.status-info {
+  @include status-colors($info-color);
+}
+.status-unknown {
+  @include status-colors($text-color-muted);
+}

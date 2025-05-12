@@ -13,6 +13,15 @@ import './app/shims';
  * Extended Window interface with global property
  */
 
+// Polyfill Buffer
+import { Buffer } from 'buffer';
+(window as any).Buffer = Buffer;
+
+// Polyfill process
+import process from 'process/browser';
+(window as any).process = process;
+
+
 /**
  * Add process polyfill for Browser
  */
@@ -30,7 +39,7 @@ interface Process {
 }
 
 // First set up basic process object for browser
-if (typeof window !== 'undefined' && !window.process) {
+if (typeof window !== 'undefined' && !(window as any).process) {
   // Cast window to unknown first to avoid type errors
   (window as unknown as { process: Process }).process = {
     env: {},
@@ -57,10 +66,22 @@ if (typeof window !== 'undefined' && !window.process) {
       node: '16.0.0-polyfill'
     }
   };
+} else if (typeof window !== 'undefined' && (window as any).process) {
+  // Ensure env is an object if process already exists
+  (window as any).process.env = (window as any).process.env || {};
+  (window as any).process.nextTick = (window as any).process.nextTick || ((callback: (...args: unknown[]) => void, ...args: unknown[]) => {
+    setTimeout(() => callback(...args), 0);
+  });
+  // Add other fallbacks for process properties if necessary
+  (window as any).process.cwd = (window as any).process.cwd || (() => '/');
+  (window as any).process.platform = (window as any).process.platform || 'browser';
+  (window as any).process.arch = (window as any).process.arch || 'browser';
+  (window as any).process.versions = (window as any).process.versions || { node: '16.0.0-polyfill' };
+
 }
 
 // Ensure global is defined
-if (typeof window !== 'undefined' && !window.global) {
+if (typeof window !== 'undefined' && !(window as any).global) {
   (window as unknown as { global: typeof globalThis }).global = window;
 }
 

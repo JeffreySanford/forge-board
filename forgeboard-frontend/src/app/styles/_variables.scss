@@ -1,0 +1,51 @@
+// Base Colors
+$color-black: #000;
+$color-white: #fff;
+
+// Theme Colors (example, adjust to your actual theme)
+$primary-color: #3498db; // Blue
+$secondary-color: #0d1b2a; // Dark Blue/Black background
+$accent-color: #4eff91; // Green highlight
+$error-color: #e74c3c; // Red
+$warning-color: #f39c12; // Yellow/Orange
+$info-color: #3498db; // Blue (can be same as primary)
+$success-color: #2ecc71; // Green
+
+// Text Colors
+$text-color-light: $color-white;
+$text-color-dark: #2c3e50;
+$text-color-muted: #6B778C; // Atlassian gray
+
+// Border Colors
+$border-color-primary: $primary-color;
+$border-color-dark: #222;
+$border-color-error: $error-color;
+$border-color-tile-grid: $error-color; // As per app.component.scss for .tile-grid-container
+
+// Background Colors
+$background-dark: $secondary-color;
+$background-light: #f9f9f9;
+$background-content-wrapper: rgba(255,255,255,0.85);
+$background-layout-container: rgba(255,255,255,0.7);
+
+// Kablan Specific (from kablan-board.component.scss)
+$kablan-background: #f4f5f7;
+$kablan-column-background: #ebecf0;
+$kablan-text-primary: #172B4D;
+$kablan-text-secondary: #5E6C84;
+$kablan-priority-high: #FF5630;
+$kablan-priority-medium: #FFAB00;
+$kablan-priority-low: #36B37E;
+$kablan-atlassian-blue: #0052CC;
+
+// Spacing (example)
+$spacing-unit: 8px;
+$spacing-xs: $spacing-unit * 0.5; // 4px
+$spacing-sm: $spacing-unit;       // 8px
+$spacing-md: $spacing-unit * 2;   // 16px
+$spacing-lg: $spacing-unit * 3;   // 24px
+$spacing-xl: $spacing-unit * 4;   // 32px
+
+// Font Families (example)
+$font-family-primary: 'Roboto', sans-serif;
+$font-family-monospace: 'IBM Plex Mono', 'Courier New', monospace;

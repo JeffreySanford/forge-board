@@ -81,8 +81,7 @@
       }
     },
     "@angular-devkit/build-angular:dev-server": {
-      "cache": true,
-      "dependsOn": ["build"]
+      "cache": true
     },
     "@nx/webpack:webpack": {
       "cache": true,

@@ -105,26 +105,35 @@ export class SystemService {
           const digestPromise = hash.digest('hex');
           
           if (digestPromise instanceof Promise) {
-            digestPromise.then((result: string) => {
+            digestPromise.then((result: string | Uint8Array) => {
+              if (typeof result === 'string') {
+                observer.next({
+                  algorithm,
+                  hash: result,
+                  timestamp: new Date().toISOString(),
+                  isShimData: true
+                });
+                observer.complete();
+              } else {
+                // This case should not be hit if 'hex' encoding was requested and shim works as intended
+                observer.error(new Error('Crypto shim: Expected string for hex digest, received Uint8Array.'));
+              }
+            }).catch((err: Error | any) => { // Make catch more general or use unknown
+              observer.error(err);
+            });
+          } else {
+            // Handle case where digest returns string directly (older or different shim behavior)
+            if (typeof digestPromise === 'string') {
               observer.next({
                 algorithm,
-                hash: result,
+                hash: digestPromise,
                 timestamp: new Date().toISOString(),
                 isShimData: true
               });
               observer.complete();
-            }).catch((err: Error) => {
-              observer.error(err);
-            });
-          } else {
-            // Handle case where digest returns string directly
-            observer.next({
-              algorithm,
-              hash: digestPromise as string,
-              timestamp: new Date().toISOString(),
-              isShimData: true
-            });
-            observer.complete();
+            } else {
+               observer.error(new Error('Hash digest function did not return a Promise or a string.'));
+            }
           }
         } else {
           observer.error(new Error('Hash digest function not available'));

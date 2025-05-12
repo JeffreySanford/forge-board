@@ -12,6 +12,7 @@ import {
   logLevelEnumToString,
   stringToLogLevelEnum
 } from '@forge-board/shared/api-interfaces';
+import { Environment } from '../../environments/environment.interface';
 
 // Logger types to maintain backward compatibility
 export type LogLevelType = LogLevelString;
@@ -67,13 +68,9 @@ export class LoggerService {
   private newLogEntrySubject = new Subject<LogEntry>();
   public newLogEntry$ = this.newLogEntrySubject.asObservable();
   
-  // Cast environment to specific type to access properties
-  private readonly typedEnv = environment as unknown as {
-    apiBaseUrl: string;
-    apiUrl: string;
-  };
+  private readonly envConfig = environment as Environment;
   
-  private readonly apiUrl = `${this.typedEnv.apiBaseUrl || this.typedEnv.apiUrl}/logs`;
+  private readonly apiUrl = `${this.envConfig.apiBaseUrl || this.envConfig.apiUrl}/logs`;
 
   // Maximum number of logs to keep in memory
   private readonly maxLogSize = 1000;
@@ -92,8 +89,8 @@ export class LoggerService {
     includeTimestamp: true,
     enableConsoleColors: true,
     // Use environment configuration if available
-    enableConsoleOutput: environment.logging?.enableConsole !== undefined ? 
-      environment.logging.enableConsole : true
+    enableConsoleOutput: this.envConfig.logging?.enableConsole !== undefined ? 
+      this.envConfig.logging.enableConsole : true
   };
 
   // Add SocketRegistryService to constructor
@@ -104,8 +101,8 @@ export class LoggerService {
     // Initialize the logger without using console.log
     
     // Set log level from environment if available
-    if (environment.logging?.level) {
-      const envLevel = this.stringToLogLevel(environment.logging.level);
+    if (this.envConfig.logging?.level) {
+      const envLevel = this.stringToLogLevel(this.envConfig.logging.level);
       if (envLevel !== undefined) {
         this.config.level = envLevel;
       }

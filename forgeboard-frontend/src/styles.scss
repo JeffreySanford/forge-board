@@ -1,12 +1,32 @@
 /* You can add global styles to this file, and also import other style files */
 
+// Angular Material Theming (if you have one, it should come first or early)
+// @use '@angular/material' as mat;
+// @include mat.core();
+// $my-theme: mat.define-light-theme(( ... ));
+// @include mat.all-component-themes($my-theme);
+
+// Import shared partials
+@use 'app/styles/variables' as *; // Make variables globally available with a namespace or directly
+@use 'app/styles/utilities'; // Apply utility classes and placeholders
+
+// Reset or Base Styles (optional)
 html, body {
   height: 100%;
   margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: $font-family-primary; // Use variable
+  background-color: $background-light; // Example global background
+  color: $text-color-dark; // Example global text color
 }
+
+// Other global styles can go here
+// For example, global link styling, typography defaults, etc.
+
+// Example of using a variable
+// body {
+//   background-color: $background-dark;
+//   color: $text-color-light;
+// }
 
 // Define primary variables
 $primary: #3498db;

@@ -21,6 +21,15 @@ export class PerformanceEntry {
     
     console.log(`[Shim] PerformanceEntry created: ${name}, type: ${entryType}, duration: ${duration}ms`);
   }
+
+  toJSON(): any {
+    return {
+      name: this.name,
+      entryType: this.entryType,
+      startTime: this.startTime,
+      duration: this.duration,
+    };
+  }
 }
 
 /**

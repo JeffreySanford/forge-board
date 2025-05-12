@@ -5,21 +5,23 @@
 
 console.log('[Shims] Loading all browser shims');
 
-// Import shims
-import * as crypto from './crypto';
-import * as path from './path';
-import * as os from './os';
-import * as stream from './stream';
-import * as perfHooks from './perf-hooks';
+// Import defaults and specific named exports
+import cryptoDefault from './crypto';
+import streamDefault from './stream';
+import perfHooksDefault, { performance as performanceObject } from './perf-hooks';
 
-// Export all shims
-export { crypto, path, os, stream, perfHooks };
+// Import namespaces for modules that might not have a primary default export
+// or if the namespace itself is the intended export.
+import * as pathNamespace from './path';
+import * as osNamespace from './os';
 
-// Export individual shims for direct access
-export { default as crypto } from './crypto';
-export { default as stream } from './stream';
-export { performance } from './perf-hooks';
-export { default as perfHooks } from './perf-hooks';
+// Export them with clear names
+export const crypto = cryptoDefault;
+export const path = pathNamespace;
+export const os = osNamespace;
+export const stream = streamDefault;
+export const perfHooks = perfHooksDefault; // This is the default export of perf-hooks.ts (module object)
+export const performance = performanceObject; // This is the specific performance object
 
 // Global shim initialization
 let initialized = false;
@@ -42,12 +44,14 @@ export function initializeShims(): void {
     const g = window as any;
     
     // Only add these globals if they don't already exist
-    if (!g.crypto) g.crypto = crypto;
-    if (!g.path) g.path = path;
-    if (!g.os) g.os = os;
-    if (!g.stream) g.stream = stream;
-    if (!g.performance) g.performance = perfHooks.performance;
-    if (!g.PerformanceObserver) g.PerformanceObserver = perfHooks.PerformanceObserver;
+    if (!g.crypto) g.crypto = crypto; // Uses the exported 'crypto' (cryptoDefault)
+    if (!g.path) g.path = path;       // Uses the exported 'path' (pathNamespace)
+    if (!g.os) g.os = os;           // Uses the exported 'os' (osNamespace)
+    if (!g.stream) g.stream = stream; // Uses the exported 'stream' (streamDefault)
+    // Use the specifically exported 'performance' object for g.performance
+    if (!g.performance) g.performance = performance; 
+    // perfHooks is perfHooksDefault; perfHooks.PerformanceObserver is perfHooksDefault.PerformanceObserver
+    if (!g.PerformanceObserver) g.PerformanceObserver = perfHooks.PerformanceObserver; 
     
     // Create node process shims if needed
     if (!g.process) {
@@ -55,7 +59,8 @@ export function initializeShims(): void {
         env: {},
         nextTick: (callback: Function, ...args: any[]) => setTimeout(() => callback(...args), 0),
         hrtime: (time?: [number, number]): [number, number] => {
-          const now = perfHooks.performance.now() * 1e-3;
+          // Use the exported 'performance' object's now method
+          const now = performance.now() * 1e-3;
           const seconds = Math.floor(now);
           const nanoseconds = Math.floor((now % 1) * 1e9);
           
