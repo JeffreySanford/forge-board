@@ -44,30 +44,17 @@ export {
   LogLevelEnum, 
   stringToLogLevelEnum, 
   logLevelEnumToString,
-  __logTypes
+  // __logTypes // This specific export might be removed if individual exports are preferred
 } from './lib/log-types';
-
-// Import and re-export LogFilter interface
-import { LogLevelEnum } from './lib/log-types';
-// Define LogFilter interface to be exported
-export interface LogFilter {
-  level?: LogLevelEnum | LogLevelEnum[];
-  service?: string;
-  startDate?: string;
-  endDate?: string;
-  search?: string;
-  limit?: number;
-  skip?: number;
-  afterTimestamp?: string;
-}
 export type { 
   LogLevelString,  
   LogResponse, 
-  LogStreamUpdate, 
+  LogStreamUpdate, // Ensure LogStreamUpdate is exported
   LogStatsResult, 
   LogQueryResponse, 
   LogEntry, 
-  LogDto 
+  LogDto,
+  LogFilter // Export LogFilter from log-types
 } from './lib/log-types';
 
 export type {

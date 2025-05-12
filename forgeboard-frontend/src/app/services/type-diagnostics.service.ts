@@ -93,9 +93,9 @@ export class TypeDiagnosticsService {
   private safeLog(level: 'debug' | 'info' | 'warn' | 'error', message: string, meta?: Record<string, unknown>): void {
     if (this.logger) {
       switch (level) {
+        case 'warn': this.logger.warn(message, 'TypeDiagnosticsService', meta); break; // Changed from warning to warn
         case 'debug': this.logger.debug(message, 'TypeDiagnosticsService', meta); break;
         case 'info': this.logger.info(message, 'TypeDiagnosticsService', meta); break;
-        case 'warn': this.logger.warning(message, 'TypeDiagnosticsService', meta); break;
         case 'error': this.logger.error(message, 'TypeDiagnosticsService', meta); break;
       }
     } else {

@@ -3,27 +3,20 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subject, timer, throwError } from 'rxjs'; // Removed EMPTY, of, switchMap, tap, retryWhen, delayWhen
 import { catchError, takeUntil } from 'rxjs/operators'; // Removed switchMap, tap, retryWhen, delayWhen from here too if they were mistakenly duplicated
 import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment'; // Import environment
+import { Environment } from '../../environments/environment.interface'; // Import Environment interface
 
 import { BackendStatusService, BackendStatusSummary } from './backend-status.service'; // Added BackendStatusSummary
 import { TypeDiagnosticsService } from './type-diagnostics.service';
 
 import {
   HealthData,
-  // SocketInfo, // Removed unused import
   SocketLogEvent,
-  // SocketMetrics, // Removed unused import
   SocketStatusUpdate,
   MetricData,
-  HealthTimelinePoint // Added HealthTimelinePoint
+  HealthTimelinePoint, // Added HealthTimelinePoint
+  SocketResponse // Import SocketResponse from shared
 } from '@forge-board/shared/api-interfaces';
-
-// Define a generic SocketResponse type if createSocketResponse is used on backend
-interface SocketResponse<T> {
-  type: string;
-  payload: T;
-  timestamp: string;
-  success: boolean;
-}
 
 // Extended health data type
 export interface EnhancedHealthData extends HealthData {
@@ -36,8 +29,7 @@ export interface EnhancedHealthData extends HealthData {
 })
 export class DiagnosticsService implements OnDestroy {
   private socket!: Socket; // Added definite assignment assertion
-  // TODO: Use environment variables for API_URL and DIAGNOSTICS_NAMESPACE
-  private readonly API_URL = 'http://localhost:3333'; // Adjusted to base URL
+  private API_URL: string; // Make API_URL configurable
   private readonly DIAGNOSTICS_NAMESPACE = '/diagnostics';
 
   // Socket data subjects
@@ -56,11 +48,29 @@ export class DiagnosticsService implements OnDestroy {
   private maxReconnectAttempts = 5;
   private currentReconnectAttempt = 0;
 
+  // Environment configuration
+  private readonly envConfig = environment as Environment; // Get environment config
+
   constructor(
     private http: HttpClient,
     private backendStatusService: BackendStatusService,
     private typeDiagnostics: TypeDiagnosticsService
   ) {
+    // Determine API_URL for sockets
+    if (this.envConfig.apiBaseUrl) {
+      this.API_URL = this.envConfig.apiBaseUrl;
+    } else if (this.envConfig.apiUrl) {
+      try {
+        const parsedUrl = new URL(this.envConfig.apiUrl);
+        this.API_URL = parsedUrl.origin; // e.g., http://localhost:3000
+      } catch (e) {
+        console.error('DiagnosticsService: Invalid apiUrl in environment, defaulting.', e);
+        this.API_URL = 'http://localhost:3000'; // Default if parsing fails
+      }
+    } else {
+      this.API_URL = 'http://localhost:3000'; // Default if no relevant URL in env
+    }
+
     this.initializeSocketConnection();
 
     // Monitor backend status for reconnection
@@ -115,44 +125,80 @@ export class DiagnosticsService implements OnDestroy {
 
     // Refined handleResponse function
     const handleResponse = <T>(eventData: SocketResponse<T> | T, subject: BehaviorSubject<T | null>) => {
-      const payload = (eventData && typeof eventData === 'object' && 'payload' in eventData)
-        ? (eventData as SocketResponse<T>).payload
-        : eventData;
-      subject.next(payload as T | null); // Ensure payload can be null if T allows null
+      // Check if eventData is a SocketResponse object (from socket-types.ts)
+      if (eventData && typeof eventData === 'object' && 'data' in eventData && 'event' in eventData && 'status' in eventData) {
+        const socketResp = eventData as SocketResponse<T>;
+        if (socketResp.status === 'success') {
+          subject.next(socketResp.data);
+        } else {
+          console.error(`Received error response for event ${socketResp.event}: ${socketResp.message}`);
+          subject.next(null); // Or handle error state appropriately
+        }
+      } else {
+        // Assume eventData is of type T directly
+        subject.next(eventData as T | null);
+      }
     };
 
-    this.socket.on('health-update', (data: SocketResponse<HealthData> | HealthData) => {
-      const payload = (data && typeof data === 'object' && 'payload' in data) ? (data as SocketResponse<HealthData>).payload : data;
-      if (payload) {
+    this.socket.on('health-update', (receivedData: SocketResponse<HealthData> | HealthData) => {
+      let actualData: HealthData | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<HealthData>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Health update error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as HealthData;
+      }
+
+      if (actualData) {
         const enhancedData: EnhancedHealthData = {
-          ...(payload as HealthData),
+          ...(actualData), // No longer need to cast actualData to HealthData if types are correct
           clientProcessedTimestamp: new Date().toISOString()
         };
         this.healthUpdatesSubject.next(enhancedData);
+      } else {
+        this.healthUpdatesSubject.next(null);
       }
     });
 
     this.socket.on('socket-status', (data: SocketResponse<SocketStatusUpdate> | SocketStatusUpdate) => {
        handleResponse<SocketStatusUpdate>(data, this.socketStatusSubject);
-    });    this.socket.on('socket-logs', (data: SocketResponse<SocketLogEvent[]> | SocketLogEvent[]) => {
-      // Handle socket logs directly without using handleResponse to avoid type casting
-      const payload = (data && typeof data === 'object' && 'payload' in data)
-        ? (data as SocketResponse<SocketLogEvent[]>).payload
-        : data;
-      
-      this.socketLogsSubject.next(payload as SocketLogEvent[]);
-    });this.socket.on('live-metric-update', (data: SocketResponse<MetricData> | MetricData) => {
+    });
+    this.socket.on('socket-logs', (receivedData: SocketResponse<SocketLogEvent[]> | SocketLogEvent[]) => {
+      let actualData: SocketLogEvent[] | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<SocketLogEvent[]>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Socket logs error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as SocketLogEvent[];
+      }
+      this.socketLogsSubject.next(actualData || []); // Ensure it's an array
+    });
+    this.socket.on('live-metric-update', (data: SocketResponse<MetricData> | MetricData) => {
       handleResponse<MetricData>(data, this.liveMetricsSubject);
     });
 
     // Listen for timeline updates
-    this.socket.on('timeline-update', (data: SocketResponse<HealthTimelinePoint[]> | HealthTimelinePoint[]) => {
-      // We don't need to cast here since timelinePointsSubject is already a BehaviorSubject<HealthTimelinePoint[]>
-      const payload = (data && typeof data === 'object' && 'payload' in data)
-        ? (data as SocketResponse<HealthTimelinePoint[]>).payload
-        : data;
-      
-      this.timelinePointsSubject.next(payload as HealthTimelinePoint[]);
+    this.socket.on('timeline-update', (receivedData: SocketResponse<HealthTimelinePoint[]> | HealthTimelinePoint[]) => {
+      let actualData: HealthTimelinePoint[] | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<HealthTimelinePoint[]>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Timeline update error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as HealthTimelinePoint[];
+      }
+      this.timelinePointsSubject.next(actualData || []); // Ensure it's an array
     });
 
     // Request initial data upon connection (optional, if backend sends it)
@@ -180,7 +226,18 @@ export class DiagnosticsService implements OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     if (this.socket) {
+      // Remove event listeners
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('connect_error');
+      this.socket.off('health-update');
+      this.socket.off('socket-status');
+      this.socket.off('socket-logs');
+      this.socket.off('live-metric-update');
+      this.socket.off('timeline-update');
+      
       this.socket.disconnect();
+      console.log('DiagnosticsService: Socket disconnected on destroy.');
     }
     this.healthUpdatesSubject.complete();
     this.socketStatusSubject.complete();
@@ -218,7 +275,7 @@ export class DiagnosticsService implements OnDestroy {
   
   // HTTP methods
   public getHealth(): Observable<HealthData> {
-    return this.http.get<HealthData>(`${this.API_URL}/api/diagnostics/health`).pipe(
+    return this.http.get<HealthData>(`${this.API_URL}/api/diagnostics/health`).pipe( // Use API_URL for HTTP calls too, assuming /api is part of it or handled by interceptor
       catchError(err => {
         console.error('Error fetching health data via HTTP', err);
         return throwError(() => err);
@@ -227,7 +284,7 @@ export class DiagnosticsService implements OnDestroy {
   }
   
   public getSocketInfo(): Observable<SocketStatusUpdate> { // Assuming this maps to a real endpoint
-    return this.http.get<SocketStatusUpdate>(`${this.API_URL}/api/diagnostics/socket-info`).pipe(
+    return this.http.get<SocketStatusUpdate>(`${this.API_URL}/api/diagnostics/socket-info`).pipe( // Use API_URL
       catchError(err => {
         console.error('Error fetching socket info via HTTP', err);
         return throwError(() => err);

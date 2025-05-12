@@ -1,7 +1,7 @@
 import { Injectable, Logger as NestLogger, OnModuleDestroy } from '@nestjs/common';
 import { LogLevelEnum, LogFilter, LogEntry } from '@forge-board/shared/api-interfaces';
 import { v4 as uuid } from 'uuid';
-import { Observable, BehaviorSubject, Subject, map, filter as rxFilter, shareReplay, of, take, bufferTime } from 'rxjs'; // Added bufferTime
+import { Observable, BehaviorSubject, Subject, map, filter as rxFilter, shareReplay, of, take, bufferTime, forkJoin } from 'rxjs'; // Removed from, concatMap, toArray
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Log } from '../models/log.model';
@@ -266,19 +266,36 @@ export class LoggerService implements OnModuleDestroy {
   }
   
   // Add logs - method needed by controller
-  addLogs(logs: LogEntry[]): Observable<boolean> {
-    logs.forEach(log => {
-      this.log(
-        log.level,
-        log.message,
-        log.source || 'app',
-        log.details || {}
+  addLogs(logs: LogEntry[]): Observable<LogEntry[]> {
+    if (!logs || logs.length === 0) {
+      return of([]);
+    }
+
+    // Standardize each log entry and prepare an observable for its processing
+    const logProcessingObservables = logs.map(log => {
+      const entryToLog: LogEntry = {
+        id: log.id || uuid(),
+        level: log.level,
+        message: log.message,
+        source: log.source || 'app',
+        timestamp: log.timestamp || new Date().toISOString(),
+        details: log.details || {},
+        context: log.context || log.source || 'app'
+      };
+      // this.log returns an Observable that completes when the log is processed
+      return this.log(
+        entryToLog.level,
+        entryToLog.message,
+        entryToLog.source,
+        entryToLog.details
       );
     });
-    
-    // Create a dedicated subject for the operation result
-    const resultSubject = new BehaviorSubject<boolean>(true);
-    return resultSubject.asObservable();
+
+    // Use forkJoin to process all logs in parallel and emit an array of results when all complete.
+    // If sequential processing is strictly needed (e.g., to maintain order for some side effect not captured by the return),
+    // `from(logProcessingObservables).pipe(concatMap(obs => obs), toArray())` could be an alternative,
+    // but forkJoin is generally more performant for independent async operations.
+    return forkJoin(logProcessingObservables);
   }
   
   // Create many log entries - method needed by controller
@@ -304,17 +321,16 @@ export class LoggerService implements OnModuleDestroy {
   
   // Get log statistics - method needed by controller
   getLogStatistics(filter: Partial<LogFilter> = {}): Observable<LogStatsResult> {
-    // Use the logs observable and map it to statistics
     return this.getLogs(filter as LogFilter).pipe(
       map(logs => {
         const stats: LogStatsResult = {
           totalCount: logs.length,
-          byLevel: {} as Record<string, number>,
+          byLevel: {} as Record<LogLevelEnum, number>, // Ensure keys are LogLevelEnum
           bySource: {} as Record<string, number>
         };
         
-        // Count by level
         logs.forEach(log => {
+          // log.level is already LogLevelEnum
           stats.byLevel[log.level] = (stats.byLevel[log.level] || 0) + 1;
           
           if (log.source) {
@@ -399,7 +415,7 @@ export class LoggerService implements OnModuleDestroy {
    * Check if a log entry matches a filter
    */
   private logMatchesFilter(entry: LogEntry, filter: LogFilter): boolean {
-    // Check level
+    // Check level (entry.level and filter.level are LogLevelEnum)
     if (filter.level) {
       if (Array.isArray(filter.level)) {
         if (!filter.level.includes(entry.level)) {

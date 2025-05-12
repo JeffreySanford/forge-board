@@ -1,14 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http'; // Added HttpErrorResponse
+import { Observable, of } from 'rxjs'; // Removed throwError
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { LogEntry, LogResponse, LogLevelEnum } from '@forge-board/shared/api-interfaces'; // Ensure LogEntry and LogResponse are imported as types
+import { LogEntry, LogResponse, LogLevelEnum, ApiResponse } from '@forge-board/shared/api-interfaces'; // Ensure LogEntry and LogResponse are imported as types
 
-/**
- * Dedicated service for dispatching logs to the backend
- * Prevents circular dependency issues between logger and HTTP interceptors
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -30,39 +26,49 @@ export class LogDispatchService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Send logs to the server - now sends logs individually instead of in batch
+   * Send logs to the server - now sends logs in a batch
    */
-  sendLogs(logs: LogEntry[]): Observable<{ success: boolean }> {
+  sendLogs(logs: LogEntry[]): Observable<ApiResponse<{ count: number }>> {
     // If no logs, return success immediately
-    if (!logs.length) {
-      return of({ success: true });
+    if (!logs || logs.length === 0) {
+      return of({ success: true, data: { count: 0 }, timestamp: new Date().toISOString(), statusCode: 200 });
     }
     
     // If we've already determined real API isn't available, use mock data
     if (!this.useRealApi) {
       console.warn('API unavailable, using mock log submission (simulated success).');
-      return of({ success: true }); // Simulate success for mock
+      return of({ success: true, data: { count: logs.length }, message: 'Mock submission due to API unavailability', timestamp: new Date().toISOString(), statusCode: 200 });
     }
     
-    // Process each log individually
-    try {      logs.forEach(log => {
-        // Use the environment's logsPath if available, otherwise use default 'logs'
-        const logsPath = this.typedEnv.logsPath || 'logs';
-        const url = `${this.primaryApiUrl}/${logsPath}`;
-        
-        this.http.post(url, log).pipe(
-          catchError(() => { // Removed unused _err parameter
-            this.handleApiFailure();
-            return of(null); 
-          })
-        ).subscribe(); // Subscribe to trigger the POST
-      });
-      return of({ success: true }); // Assume success if all posts initiated
-    } catch (error) { // Renamed _error to error
-      console.error('Error processing logs for dispatch:', error);
-      this.handleApiFailure(); // Ensure API failure is handled
-      return of({ success: false });
-    }
+    // Use the environment's logsPath if available, otherwise use default 'logs'
+    // For batch, we'll use a dedicated '/batch' sub-path.
+    const logsPath = this.typedEnv.logsPath || 'logs';
+    const url = `${this.primaryApiUrl}/${logsPath}/batch`;
+    return this.http.post<ApiResponse<{ count: number }>>(url, logs).pipe(
+      tap((response) => {
+        if (response.success) {
+          this.useRealApi = true;
+          this.failedRequestCount = 0;
+          console.debug(`Successfully sent batch of ${response.data?.count || logs.length} logs.`);
+        } else {
+          // Handle cases where API returns success: false
+          console.warn(`API reported failure for log batch: ${response.message}`);
+          // Potentially call handleApiFailure here if server-side logical errors should also count towards retries
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        this.handleApiFailure();
+        const errorResponse: ApiResponse<{ count: number }> = {
+          success: false,
+          message: `Failed to send log batch: ${err.message}`,
+          timestamp: new Date().toISOString(),
+          statusCode: err.status,
+          data: { count: 0 }
+        };
+        console.error(`Error sending log batch: ${err.message}`, err);
+        return of(errorResponse); // Return a structured error response
+      })
+    );
   }
 
   /**
@@ -71,31 +77,32 @@ export class LogDispatchService {
   fetchLogs(params?: Record<string, string>): Observable<LogResponse> {
     // If we've already determined real API isn't available, use mock data immediately
     if (!this.useRealApi) {
-      // console.warn('API unavailable, using mock log data for fetchLogs.');
+      console.warn('API unavailable, fetching mock logs.');
       return of(this.getMockLogResponse());
     }
     
     // Create HttpParams instance from params object
     let httpParams = new HttpParams();
     if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key]; // Use intermediate const
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value); // Removed non-null assertion
+      for (const key in params) {
+        if (Object.prototype.hasOwnProperty.call(params, key)) { // Fixed hasOwnProperty check
+          httpParams = httpParams.set(key, params[key]);
         }
-      });
-    }    // Use the environment's logsPath if available, otherwise use default 'logs'
+      }
+    }
     const logsPath = this.typedEnv.logsPath || 'logs';
     const url = `${this.primaryApiUrl}/${logsPath}`;
 
     return this.http.get<LogResponse>(url, { params: httpParams }).pipe(
       tap(() => {
-        // Reset failed request count on successful API call
+        this.useRealApi = true;
         this.failedRequestCount = 0;
+        console.debug('Successfully fetched logs from API.');
       }),
-      catchError(() => { // Removed unused _err parameter
+      catchError((err: HttpErrorResponse) => {
+        console.error(`Error fetching logs: ${err.message}`, err);
         this.handleApiFailure();
-        return of(this.getMockLogResponse()); // Fallback to mock data
+        return of(this.getMockLogResponse());
       })
     );
   }
@@ -105,11 +112,10 @@ export class LogDispatchService {
    */
   private handleApiFailure(): void {
     this.failedRequestCount++;
+    console.warn(`API request failed. Attempt ${this.failedRequestCount} of ${this.MAX_RETRIES}.`);
     if (this.failedRequestCount >= this.MAX_RETRIES) {
-      console.warn(
-        `API failed ${this.failedRequestCount} times, switching to mock data for logs.`
-      );
       this.useRealApi = false;
+      console.error(`Max API request retries (${this.MAX_RETRIES}) reached. Switching to mock data mode.`);
     }
   }
   

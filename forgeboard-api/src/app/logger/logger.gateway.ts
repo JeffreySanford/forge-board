@@ -266,13 +266,13 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       return true;
     }
     
-    // Check log level using the stringToLogLevelEnum function
+    // Check log level (entry.level and filter.level are LogLevelEnum)
     if (filter.level && Array.isArray(filter.level) && filter.level.length) {
       if (!filter.level.includes(entry.level)) {
         return false;
       }
     } else if (filter.level && !Array.isArray(filter.level)) {
-      if (entry.level !== filter.level) {
+      if (entry.level !== filter.level) { // Direct enum comparison
         return false;
       }
     }
@@ -289,10 +289,8 @@ export class LoggerGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       const searchLower = filter.search.toLowerCase();
       const messageMatch = entry.message.toLowerCase().includes(searchLower);
       const sourceMatch = entry.source && entry.source.toLowerCase().includes(searchLower);
-      // Removed contexts check
-      const dataMatch = entry.data ? JSON.stringify(entry.data).toLowerCase().includes(searchLower) : false;
       
-      if (!(messageMatch || sourceMatch || dataMatch)) {
+      if (!(messageMatch || sourceMatch)) {
         return false;
       }
     }

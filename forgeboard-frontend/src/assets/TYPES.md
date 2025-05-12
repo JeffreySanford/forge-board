@@ -61,12 +61,13 @@ The foundational type for all logging in the system.
 export interface LogEntry {
   id: string;
   timestamp: string;
-  level: LogLevelEnum;
+  level: LogLevelEnum; // Uses shared LogLevelEnum
   message: string;
-  source?: string;
-  data?: Record<string, unknown>;
+  source?: string; // Represents the service or component originating the log
+  details?: Record<string, unknown>; // Structured data payload
+  context?: string; // Optional context string for categorization
   
-  // Extended properties for display
+  // Extended properties for display (primarily frontend)
   displayMessage?: string;
   expanded?: boolean;
   rawData?: string;
@@ -87,48 +88,46 @@ export interface LogEntry {
   
   // Correlation
   eventId?: string;
-  details?: Record<string, unknown>;
   
-  // Context information
-  context?: string;
+  // Optional stack trace and tags
   stackTrace?: string;
   tags?: string[];
 }
 ```
 
 #### `LogFilter`
-Standard filter interface for filtering log entries.
+Standard filter interface for filtering log entries. Uses `LogLevelEnum`.
 
 ```typescript
 export interface LogFilter {
-  level?: LogLevelEnum | LogLevelEnum[];
-  service?: string;
+  level?: LogLevelEnum | LogLevelEnum[]; // Can filter by single or multiple enum values
+  service?: string; // Filters by the 'source' field of LogEntry
   startDate?: string;
   endDate?: string;
   search?: string;
   limit?: number;
   skip?: number;
   afterTimestamp?: string;
+  contexts?: string[]; // Filter by the 'context' field
+  tags?: string[]; // Filter by the 'tags' array (match any tag)
 }
 ```
 
 #### `ExtendedLogFilter`
-Enhanced filter with additional properties for more advanced filtering capabilities.
+This type might be deprecated or merged into `LogFilter` if all properties are now in the base `LogFilter`.
+If `ExtendedLogFilter` still has unique properties not in the shared `LogFilter`, it should be documented.
+For now, assuming `LogFilter` from `shared/api-interfaces` is the standard.
 
 ```typescript
-export interface ExtendedLogFilter extends LogFilter {
-  contexts?: string[];
-  sources?: string[];
-  tags?: string[];
-  startTime?: string;
-  endTime?: string;
-  offset?: number;
-  loglevels?: LogLevelEnum[];
-}
+// If ExtendedLogFilter is still used and distinct:
+// export interface ExtendedLogFilter extends LogFilter {
+//   // unique properties here
+// }
+// Otherwise, this section can be removed or updated to state LogFilter is comprehensive.
 ```
 
 #### `LogLevelEnum`
-Standardized log levels across the application.
+Standardized log levels across the application, imported from `@forge-board/shared/api-interfaces`.
 
 ```typescript
 export enum LogLevelEnum {

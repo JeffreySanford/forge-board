@@ -1,13 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { LogEntry, LogQueryResponse } from '@forge-board/shared/api-interfaces';
+import { Injectable } from '@nestjs/common';
+import { LogEntry, LogQueryResponse, LogFilter } from '@forge-board/shared/api-interfaces';
 
 @Injectable()
 export class LogsService {
   private logs: LogEntry[] = [];
-  // Keep NestJS Logger for context, but be careful with its usage for logging actual messages.
-  private readonly serviceLogger = new Logger(LogsService.name); 
-  
-  constructor() {}
 
   saveLog(logEntry: LogEntry): { status: boolean, message: string, log: LogEntry } {
     // Add timestamp if not provided
@@ -40,15 +36,23 @@ export class LogsService {
     };
   }
 
-  getLogs(query: any): LogQueryResponse {
+  getLogs(query: Partial<LogFilter>): LogQueryResponse {
     let filteredLogs = [...this.logs];
     
     // Apply filters
     if (query.level) {
-      const levels = Array.isArray(query.level) 
-        ? query.level 
-        : query.level.split(',');
-      filteredLogs = filteredLogs.filter(log => levels.includes(log.level));
+      if (typeof query.level === 'string') {
+        // If it's a string representation, split and parse it
+        const levelStrings = (query.level as string).split(',');
+        const levels = levelStrings.map(l => parseInt(l, 10));
+        filteredLogs = filteredLogs.filter(log => levels.includes(log.level));
+      } else if (Array.isArray(query.level)) {
+        // If it's an array of enum values
+        filteredLogs = filteredLogs.filter(log => query.level && Array.isArray(query.level) && query.level.includes(log.level));
+      } else {
+        // If it's a single enum value
+        filteredLogs = filteredLogs.filter(log => log.level === query.level);
+      }
     }
     
     if (query.service) {
@@ -83,9 +87,9 @@ export class LogsService {
     // Get total count before pagination
     const total = filteredLogs.length;
     
-    // Apply pagination
-    const skip = parseInt(query.skip) || 0;
-    const limit = parseInt(query.limit) || 100;
+    // Apply pagination - fix parseInt on potentially numeric values
+    const skip = typeof query.skip === 'string' ? parseInt(query.skip, 10) : (query.skip || 0);
+    const limit = typeof query.limit === 'string' ? parseInt(query.limit, 10) : (query.limit || 100);
     
     filteredLogs = filteredLogs.slice(skip, skip + limit);
     

@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { LoggerService } from '../../services/logger.service';
 import { Observable } from 'rxjs';
 import { LogEntry } from '@forge-board/shared/api-interfaces';
-import { LoggerTileComponent } from '../../components/logger/logger-tile.component';
 
 @Component({
   selector: 'app-logger-view',
@@ -20,6 +19,7 @@ export class LoggerViewComponent implements OnInit {
 
   ngOnInit(): void {
     // Fetch initial logs
+    this.logs$ = this.loggerService.getLogs();
     this.loggerService.fetchLogs();
   }
 }

@@ -1,26 +1,36 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, timer, Subject, catchError, map, of } from 'rxjs';
-import { LogLevel, LogSocketResponse } from './log-types';
-import { LogDispatchService } from '../../services/log-dispatch.service';
+import { Injectable, OnDestroy } from '@angular/core'; // Removed NgZone
+import { BehaviorSubject, Observable, Subject, Subscription, map, of, timer } from 'rxjs'; // Removed filter, firstValueFrom, takeUntil, tap
+import { catchError } from 'rxjs/operators'; // Added catchError
+import { LogEntry, LogLevelEnum, LogFilter, SocketResponse, LogQueryResponse, LogStatsResult, LogStreamUpdate, stringToLogLevelEnum, logLevelEnumToString, LogLevelString } from '@forge-board/shared/api-interfaces'; // Added LogStreamUpdate, stringToLogLevelEnum, logLevelEnumToString
 import { Socket, io } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
-import { 
-  LogLevelEnum, 
-  logLevelEnumToString, 
-  LogEntry, 
-  LogFilter,
-  LogQueryResponse,
-  LogStreamUpdate,
-  LogStatsResult
-} from '@forge-board/shared/api-interfaces';
-import { SocketRegistryService } from '../../services/socket-registry.service';
-import { RefreshIntervalService } from '../../services/refresh-interval.service';
 import { HttpClient } from '@angular/common/http';
+import { LogDispatchService } from '../../services/log-dispatch.service'; // Added import
+import { SocketRegistryService } from '../../services/socket-registry.service'; // Added import
+import { RefreshIntervalService } from '../../services/refresh-interval.service'; // Added import
 
 // Define response interface for log fetch operations by extending LogQueryResponse
 export interface LogFetchResponse extends LogQueryResponse {
   total: number;
 }
+
+// Assuming DisplayLogEntry is a defined type, possibly similar to LogEntry but for UI
+export interface DisplayLogEntry extends LogEntry {
+  // ... any additional UI-specific properties ...
+  isSelected?: boolean;
+  matchesFilter?: boolean;
+  displayTimestamp?: string; // Example: for formatted time
+  // Removed 'data' if it was here, use 'details' from LogEntry
+}
+
+// Define a more specific type for the payload of 'log-stream' events
+interface LogStreamPayload {
+  logs?: DisplayLogEntry[]; // Assuming logs from stream are also DisplayLogEntry or mapped to it
+  log?: DisplayLogEntry;
+  append: boolean;
+  totalCount?: number;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -36,14 +46,13 @@ export class LoggerService implements OnDestroy {
   private socket: Socket | null = null;
   
   // Log data subjects
-  private logsSubject = new BehaviorSubject<LogEntry[]>([]);
-  private logStatsSubject = new BehaviorSubject<Record<LogLevel, number>>({
-    [LogLevel.DEBUG]: 0,
-    [LogLevel.INFO]: 0,
-    [LogLevel.WARN]: 0,
-    [LogLevel.ERROR]: 0,
-    [LogLevel.FATAL]: 0,
-    [LogLevel.TRACE]: 0  // Added missing TRACE level
+  private logStatsSubject = new BehaviorSubject<Record<LogLevelEnum, number>>({
+    [LogLevelEnum.DEBUG]: 0,
+    [LogLevelEnum.INFO]: 0,
+    [LogLevelEnum.WARN]: 0,
+    [LogLevelEnum.ERROR]: 0,
+    [LogLevelEnum.FATAL]: 0,
+    [LogLevelEnum.TRACE]: 0
   });
   
   // Filter subject
@@ -63,6 +72,14 @@ export class LoggerService implements OnDestroy {
   private subscriptions = new Subscription();
   private mockDataSubscription: Subscription | null = null;
   someBooleanProperty: boolean = false; // This tests for boolean property on an undeclared object
+
+  private _logsSubject = new BehaviorSubject<DisplayLogEntry[]>([]);
+  public logs$ = this._logsSubject.asObservable();
+
+  private _filteredLogsSubject = new BehaviorSubject<DisplayLogEntry[]>([]);
+  public filteredLogs$ = this._filteredLogsSubject.asObservable();
+  
+  private mockDataIntervalId: ReturnType<typeof setInterval> | undefined;
 
   constructor(
     private logDispatch: LogDispatchService,
@@ -93,13 +110,13 @@ export class LoggerService implements OnDestroy {
     this.cleanupSocket();
     
     // Complete subjects
-    this.logsSubject.complete();
+    this._logsSubject.complete(); // Corrected to _logsSubject
     this.logStatsSubject.complete();
     this.filterSubject.complete();
     this.connectionStatusSubject.complete();
     
     // Stop mock data generation if active
-    this.stopMockDataGeneration();
+    this.stopMockDataGeneration(); // Added call
 
     this.subscriptions.unsubscribe();
   }
@@ -170,7 +187,7 @@ export class LoggerService implements OnDestroy {
       this.connectionStatusSubject.next(true);
       
       // Stop mock data generation if it's active
-      this.stopMockDataGeneration();
+      this.stopMockDataGeneration(); // Added call
       
       // Subscribe to log stream
       this.socket?.emit('subscribe-logs', this.filterSubject.getValue());
@@ -192,30 +209,42 @@ export class LoggerService implements OnDestroy {
       this.startMockDataGeneration();
     });
     
-    this.socket.on('log-stream', (response: LogSocketResponse<LogStreamUpdate>) => {
-      if (response.status === 'success') {
+    this.socket.on('log-stream', (response: SocketResponse<LogStreamPayload>) => {
+      if (response.status === 'success' && response.data) {
         // Update logs
         if (response.data.append) {
           // Append new logs to existing logs
-          const currentLogs = this.logsSubject.getValue();
+          const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
           const updatedLogs = response.data.logs ?? (response.data.log ? [response.data.log] : []);
-          this.logsSubject.next([...currentLogs, ...updatedLogs]);
+          this._logsSubject.next([...currentLogs, ...updatedLogs]); // Corrected to _logsSubject
         } else {
           // Replace existing logs
           const newLogs = response.data.logs ?? (response.data.log ? [response.data.log] : []);
-          this.logsSubject.next(newLogs);
+          this._logsSubject.next(newLogs); // Corrected to _logsSubject
         }
         
         // Update stats if they exist in the response
-        const extendedData = response.data as LogStreamUpdate & { stats?: Record<LogLevel, number> };
+        // The stats keys might be strings; ensure they are mapped to LogLevelEnum if necessary
+        const extendedData = response.data as LogStreamUpdate & { stats?: Record<string, number> }; // LogStreamUpdate is now imported
         if (extendedData.stats) {
-          this.logStatsSubject.next(extendedData.stats);
+          const newStats = { ...this.logStatsSubject.getValue() };
+          for (const levelKey in extendedData.stats) {
+            const numericLevelKey = parseInt(levelKey, 10); // If keys are numeric strings "0", "1"
+            if (!isNaN(numericLevelKey) && LogLevelEnum[numericLevelKey] !== undefined) {
+               newStats[numericLevelKey as LogLevelEnum] = extendedData.stats[levelKey];
+            } else {
+               // If keys are string names "DEBUG", "INFO"
+               const enumKey = stringToLogLevelEnum(levelKey as LogLevelString); // stringToLogLevelEnum is now imported
+               newStats[enumKey] = extendedData.stats[levelKey];
+            }
+          }
+          this.logStatsSubject.next(newStats);
         }
       }
     });
 
     // Updated event handler for backend-log-entry with loop prevention
-    this.socket.on('backend-log-entry', (response: LogSocketResponse<LogEntry>) => {
+    this.socket.on('backend-log-entry', (response: SocketResponse<LogEntry>) => { // Changed LogSocketResponse to SocketResponse
       if (response.status === 'success') {
         const logEntry = response.data;
         
@@ -230,8 +259,8 @@ export class LoggerService implements OnDestroy {
         const processedEntry = this.processLogEntryForDisplay(logEntry);
         
         // Add to logs (at the beginning for newest-first)
-        const currentLogs = this.logsSubject.getValue();
-        this.logsSubject.next([processedEntry, ...currentLogs]);
+        const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
+        this._logsSubject.next([processedEntry, ...currentLogs]); // Corrected to _logsSubject
         
         // Update stats using a separate function that doesn't create new logs
         this.updateStatsWithoutLogging(processedEntry);
@@ -266,10 +295,9 @@ export class LoggerService implements OnDestroy {
    */
   private updateStatsWithoutLogging(logEntry: LogEntry): void {
     try {
-      // Update stats directly without logging the action
       const currentStats = this.logStatsSubject.getValue();
-      const mappedLevel = this.mapApiLevelToLocalEnum(logEntry.level);
-      currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
+      // logEntry.level is already LogLevelEnum
+      currentStats[logEntry.level] = (currentStats[logEntry.level] || 0) + 1;
       this.logStatsSubject.next({...currentStats});
     } catch (error) {
       // Silent catch - don't generate more logs about logging errors
@@ -282,11 +310,11 @@ export class LoggerService implements OnDestroy {
    * @returns The filtered logs
    */
   filterLogsByBasicFilter(basicFilter: LogFilter): LogEntry[] {
-    const currentLogs = this.logsSubject.getValue();
+    const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
     const filteredLogs = this.applyFilter(currentLogs, basicFilter);
     
     // Update the logs subject with the filtered results
-    this.logsSubject.next(filteredLogs);
+    this._logsSubject.next(filteredLogs); // Corrected to _logsSubject
     
     return filteredLogs;
   }
@@ -338,12 +366,13 @@ export class LoggerService implements OnDestroy {
       'Rate limit exceeded',
       'Session expired'
     ];
-    const levels: LogLevelEnum[] = [
+    const levels: LogLevelEnum[] = [ // Use LogLevelEnum
       LogLevelEnum.DEBUG,
       LogLevelEnum.INFO,
       LogLevelEnum.WARN,
       LogLevelEnum.ERROR,
-      LogLevelEnum.FATAL
+      LogLevelEnum.FATAL,
+      LogLevelEnum.TRACE // Added TRACE
     ];
     
     // Generate some initial logs
@@ -363,29 +392,28 @@ export class LoggerService implements OnDestroy {
     }
     
     // Update logs
-    this.logsSubject.next(initialLogs);
+    this._logsSubject.next(initialLogs); // Corrected to _logsSubject
     
     // Calculate stats
     const stats = initialLogs.reduce((acc, log) => {
-      // Map API log level to our local LogLevel enum to ensure type compatibility
-      const mappedLevel = this.mapApiLevelToLocalEnum(log.level);
-      acc[mappedLevel] = (acc[mappedLevel] || 0) + 1;
+      // log.level is already LogLevelEnum
+      acc[log.level] = (acc[log.level] || 0) + 1;
       return acc;
-    }, {} as Record<LogLevel, number>);
+    }, {} as Record<LogLevelEnum, number>); // Use LogLevelEnum as key
     
     // Update stats
     this.logStatsSubject.next({
-      [LogLevel.DEBUG]: stats[LogLevel.DEBUG] || 0,
-      [LogLevel.INFO]: stats[LogLevel.INFO] || 0,
-      [LogLevel.WARN]: stats[LogLevel.WARN] || 0,
-      [LogLevel.ERROR]: stats[LogLevel.ERROR] || 0,
-      [LogLevel.FATAL]: stats[LogLevel.FATAL] || 0,
-      [LogLevel.TRACE]: stats[LogLevel.TRACE] || 0  // Added missing TRACE level
+      [LogLevelEnum.DEBUG]: stats[LogLevelEnum.DEBUG] || 0,
+      [LogLevelEnum.INFO]: stats[LogLevelEnum.INFO] || 0,
+      [LogLevelEnum.WARN]: stats[LogLevelEnum.WARN] || 0,
+      [LogLevelEnum.ERROR]: stats[LogLevelEnum.ERROR] || 0,
+      [LogLevelEnum.FATAL]: stats[LogLevelEnum.FATAL] || 0,
+      [LogLevelEnum.TRACE]: stats[LogLevelEnum.TRACE] || 0
     });
     
     // Set up interval to add new logs occasionally
     this.mockDataSubscription = timer(5000, 8000).subscribe(() => {
-      const logs = this.logsSubject.getValue();
+      const logs = this._logsSubject.getValue();
       const level = levels[Math.floor(Math.random() * levels.length)];
       const source = sources[Math.floor(Math.random() * sources.length)];
       const message = messages[Math.floor(Math.random() * messages.length)];
@@ -400,30 +428,14 @@ export class LoggerService implements OnDestroy {
       };
       
       // Add new log
-      this.logsSubject.next([newLog, ...logs]);
+      this._logsSubject.next([newLog, ...logs]); // Corrected to _logsSubject
       
       // Update stats
       const currentStats = this.logStatsSubject.getValue();
-      const mappedLevel = this.mapApiLevelToLocalEnum(level);
-      currentStats[mappedLevel] = (currentStats[mappedLevel] || 0) + 1;
+      // newLog.level is already LogLevelEnum
+      currentStats[newLog.level] = (currentStats[newLog.level] || 0) + 1;
       this.logStatsSubject.next({...currentStats});
     });
-  }
-  
-  /**
-   * Map API log level (LogLevelEnum) to our local LogLevel enum
-   * This resolves the type incompatibility between the shared LogLevelEnum and our local enum
-   */
-  private mapApiLevelToLocalEnum(level: LogLevelEnum): LogLevel {
-    switch(level) {
-      case LogLevelEnum.DEBUG: return LogLevel.DEBUG;
-      case LogLevelEnum.INFO: return LogLevel.INFO;
-      case LogLevelEnum.WARN: return LogLevel.WARN;
-      case LogLevelEnum.ERROR: return LogLevel.ERROR;
-      case LogLevelEnum.FATAL: return LogLevel.FATAL;
-      case LogLevelEnum.TRACE: return LogLevel.TRACE;
-      default: return LogLevel.INFO; // Default fallback
-    }
   }
   
   /**
@@ -431,9 +443,14 @@ export class LoggerService implements OnDestroy {
    */
   private stopMockDataGeneration(): void {
     if (this.mockDataSubscription) {
-      console.log('LoggerService: Stopping mock data generation');
       this.mockDataSubscription.unsubscribe();
       this.mockDataSubscription = null;
+      console.log('LoggerService: Stopped mock data generation subscription.');
+    }
+    if (this.mockDataIntervalId) {
+      clearInterval(this.mockDataIntervalId);
+      this.mockDataIntervalId = undefined;
+      console.log('LoggerService: Cleared mock data interval.');
     }
   }
   
@@ -449,7 +466,7 @@ export class LoggerService implements OnDestroy {
       this.logDispatch.fetchLogs(this.buildFilterParams(filter))
         .subscribe(response => {
           if (response.status) { // Check for status instead of success
-            this.logsSubject.next(response.logs);
+            this._logsSubject.next(response.logs); // Corrected to _logsSubject
           }
         });
     }
@@ -519,7 +536,7 @@ export class LoggerService implements OnDestroy {
         // Request initial data - use the current filter
         const filter = this.filterSubject.getValue();
         if (this.socket) { // Fixed: Added null check for this.socket
-          this.socket.emit('filter-logs', filter);
+          this.socket.emit('filter-logs', filter); // This should probably be 'subscribe-logs' or 'update-filter'
         }
       });
   
@@ -529,7 +546,7 @@ export class LoggerService implements OnDestroy {
         this.startMockDataGeneration(); // Only start mock data if disconnected
       });
   
-      this.setupSocketEvents();
+      this.setupSocketEvents(); // This was already called in initSocket, ensure it's not causing issues.
     } catch (error) {
       console.error('Error connecting to socket:', error);
       this.connectionStatusSubject.next(false);
@@ -543,13 +560,11 @@ export class LoggerService implements OnDestroy {
   private buildFilterParams(filter: LogFilter): Record<string, string> {
     const params: Record<string, string> = {};
     
-    // Use level instead of levels
     if (filter.level) {
-      // Convert enum to string using the shared helper function
       if (Array.isArray(filter.level)) {
-        params['level'] = filter.level.map(l => logLevelEnumToString(l)).join(',');
+        params['level'] = filter.level.map(l => logLevelEnumToString(l)).join(','); // logLevelEnumToString is now imported
       } else {
-        params['level'] = logLevelEnumToString(filter.level);
+        params['level'] = logLevelEnumToString(filter.level); // logLevelEnumToString is now imported
       }
     }
     
@@ -592,13 +607,13 @@ export class LoggerService implements OnDestroy {
    * Get logs observable
    */
   getLogs(): Observable<LogEntry[]> {
-    return this.logsSubject.asObservable();
+    return this._logsSubject.asObservable(); // Corrected to _logsSubject
   }
   
   /**
    * Get log stats observable
    */
-  getLogStats(): Observable<Record<LogLevel, number>> {
+  getLogStats(): Observable<Record<LogLevelEnum, number>> { // Return type uses LogLevelEnum
     return this.logStatsSubject.asObservable();
   }
   
@@ -631,7 +646,7 @@ export class LoggerService implements OnDestroy {
    * Export logs to JSON file
    */
   exportLogsToJson(): void {
-    const logs = this.logsSubject.getValue();
+    const logs = this._logsSubject.getValue(); // Corrected to _logsSubject
     const dataStr = JSON.stringify(logs, null, 2);
     const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
     
@@ -647,7 +662,7 @@ export class LoggerService implements OnDestroy {
    * Export logs to CSV file
    */
   exportLogsToCsv(): void {
-    const logs = this.logsSubject.getValue();
+    const logs = this._logsSubject.getValue(); // Corrected to _logsSubject
     
     // CSV header
     const csvHeader = 'Timestamp,Level,Source,Message\n';
@@ -678,31 +693,31 @@ export class LoggerService implements OnDestroy {
    * Converts complex JSON data into a more readable format
    */
   private processLogEntryForDisplay(logEntry: LogEntry): LogEntry {
-    type DisplayLogEntry = LogEntry & {
+    type DisplayLogEntryExtended = DisplayLogEntry & { // Renamed to avoid conflict with outer DisplayLogEntry
       eventId?: string;
       displayMessage?: string;
-      rawData?: string;
-      categories?: string[];
-      expanded?: boolean;
+      // rawData?: string; // rawData is already on LogEntry
+      // categories?: string[]; // categories is already on LogEntry
+      // expanded?: boolean; // expanded is already on LogEntry
     };
 
     if (!logEntry) {
       return logEntry;
     }
 
-    const processedEntry: DisplayLogEntry = { ...logEntry };
+    const processedEntry: DisplayLogEntryExtended = { ...logEntry } as DisplayLogEntryExtended;
 
-    if (processedEntry.data && typeof processedEntry.data === 'object') {
-      const data = processedEntry.data as Record<string, unknown>;
+    if (processedEntry.details && typeof processedEntry.details === 'object') { // Changed data to details
+      const details = processedEntry.details as Record<string, unknown>;
 
-      if ('eventId' in data) {
-        processedEntry.eventId = data['eventId'] as string;
+      if ('eventId' in details) {
+        processedEntry.eventId = details['eventId'] as string;
       }
 
       processedEntry.displayMessage = processedEntry.message;
-      processedEntry.rawData = JSON.stringify(data, null, 2);
-      processedEntry.categories = [];
-      processedEntry.expanded = false;
+      // processedEntry.rawData = JSON.stringify(details, null, 2); // rawData is for original, not processed details
+      // processedEntry.categories = []; // categories should come from original log or be processed differently
+      // processedEntry.expanded = false; // expanded should be managed by UI state
     }
 
     return processedEntry;
@@ -839,8 +854,8 @@ export class LoggerService implements OnDestroy {
   toggleLogExpansion(log: LogEntry): void {
     log.expanded = !log.expanded;
     // Update the log in the subject
-    const logs = this.logsSubject.getValue();
-    this.logsSubject.next([...logs]);
+    const logs = this._logsSubject.getValue(); // Corrected to _logsSubject
+    this._logsSubject.next([...logs]); // Corrected to _logsSubject
   }
 
   /**
@@ -850,7 +865,7 @@ export class LoggerService implements OnDestroy {
   getLatestLogs(): Observable<LogEntry[]> {
     // If connected to socket, request latest logs
     if (this.socket?.connected) {
-      const currentLogs = this.logsSubject.getValue();
+      const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
       let lastTimestamp: string | undefined;
       
       if (currentLogs.length > 0) {
@@ -865,7 +880,7 @@ export class LoggerService implements OnDestroy {
     } else {
       // If not connected, use the dispatcher to fetch logs
       const filter = this.filterSubject.getValue();
-      const currentLogs = this.logsSubject.getValue();
+      const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
       
       if (currentLogs.length > 0) {
         // Only fetch logs newer than our most recent one
@@ -877,13 +892,13 @@ export class LoggerService implements OnDestroy {
           if (response.status) {
             // Append new logs to existing ones
             const updatedLogs = [...response.logs, ...currentLogs];
-            this.logsSubject.next(updatedLogs);
+            this._logsSubject.next(updatedLogs); // Corrected to _logsSubject
           }
         });
     }
     
     // Return the current value of logsSubject
-    return this.logsSubject.asObservable();
+    return this._logsSubject.asObservable(); // Corrected to _logsSubject
   }
   
   /**
@@ -895,7 +910,7 @@ export class LoggerService implements OnDestroy {
     
     // Listen for socket events to forward new log entries
     if (this.socket) {
-      this.socket.on('backend-log-entry', (response: LogSocketResponse<LogEntry>) => {
+      this.socket.on('backend-log-entry', (response: SocketResponse<LogEntry>) => { // Changed LogSocketResponse
         if (response.status === 'success') {
           const processedEntry = this.processLogEntryForDisplay(response.data);
           newLogEntrySubject.next(processedEntry);
@@ -917,17 +932,19 @@ export class LoggerService implements OnDestroy {
   /**
    * Generate a mock log entry for testing
    */
-  private generateMockLogEntry(): LogEntry {
+  private generateMockLogEntry(): DisplayLogEntry { // Removed unused 'level' parameter
     const sources = ['AppModule', 'TypeDiagnosticsService', 'ConfigService', 'ExampleService', 'SystemLoader'];
-    const levels = [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR];
+    const logLevels = [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARN, LogLevelEnum.ERROR, LogLevelEnum.TRACE, LogLevelEnum.FATAL]; // Renamed from levels to logLevels
     const actions = ['initialize', 'registerValidator', 'update', 'query', 'validate'];
+    const mockMessagesArray = ['Mock message A', 'Mock event B', 'Test log C']; // Defined mockMessagesArray
+    const mockSourcesArray = ['MockSource1', 'TestSource2', 'SampleSource3']; // Defined mockSourcesArray
     
-    const level = levels[Math.floor(Math.random() * levels.length)];
+    const randomLevel = logLevels[Math.floor(Math.random() * logLevels.length)]; // Use logLevels array
     const source = sources[Math.floor(Math.random() * sources.length)];
     const action = actions[Math.floor(Math.random() * actions.length)];
     
-    let message = '';
-    let data: Record<string, unknown> = {};
+    let messageText = ''; // Renamed from message
+    let logDetails: Record<string, unknown> = {}; // Renamed from data, and to use details
     
     // Define all possible variables outside of switch cases to avoid ESLint warnings
     const typeNames = ['MetricData', 'LogResponse', 'UserProfile', 'ConnectionSettings'];
@@ -935,8 +952,8 @@ export class LoggerService implements OnDestroy {
     
     switch (source) {
       case 'TypeDiagnosticsService':
-        message = `${action === 'registerValidator' ? 'Registered validator for type: ' : 'Validating type: '}${typeName}`;
-        data = {
+        messageText = `${action === 'registerValidator' ? 'Registered validator for type: ' : 'Validating type: '}${typeName}`;
+        logDetails = { // Changed data to logDetails
           service: 'TypeDiagnosticsService',
           action: action,
           typeName: typeName,
@@ -945,8 +962,8 @@ export class LoggerService implements OnDestroy {
         break;
         
       case 'ConfigService':
-        message = 'Running in development mode';
-        data = {
+        messageText = 'Running in development mode';
+        logDetails = { // Changed data to logDetails
           service: 'ConfigService',
           action: 'checkEnvironment',
           environment: 'development',
@@ -958,8 +975,8 @@ export class LoggerService implements OnDestroy {
         break;
         
       default:
-        message = `${source} ${action}ed successfully`;
-        data = {
+        messageText = `${source} ${action}ed successfully`;
+        logDetails = { // Changed data to logDetails
           service: source,
           action: action,
           timestamp: new Date().toISOString()
@@ -970,11 +987,12 @@ export class LoggerService implements OnDestroy {
     return {
       id: `mock-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      level,
-      source,
-      message,
-      data
-    };
+      level: randomLevel, // Use the generated randomLevel
+      message: `Mock log entry: ${mockMessagesArray[Math.floor(Math.random() * mockMessagesArray.length)]}`, // Use mockMessagesArray
+      source: mockSourcesArray[Math.floor(Math.random() * mockSourcesArray.length)], // Use mockSourcesArray
+      details: { details: 'Mock data details', value: Math.random(), ...logDetails }, // Changed additionalData to details and spread logDetails
+      // ... other properties for DisplayLogEntry
+    } as DisplayLogEntry; // Cast to DisplayLogEntry
   }
 
   /**
@@ -982,7 +1000,7 @@ export class LoggerService implements OnDestroy {
    * This provides compatibility with systems expecting to work with the basic LogFilter
    */
   filterWithBasicFilter(filter: LogFilter): LogEntry[] {
-    const currentLogs = this.logsSubject.getValue();
+    const currentLogs = this._logsSubject.getValue(); // Corrected to _logsSubject
     return this.applyFilter(currentLogs, filter);
   }
 
@@ -998,13 +1016,20 @@ export class LoggerService implements OnDestroy {
     
     return this.http.get<{ status: boolean, stats: LogStatsResult }>(url, { params }).pipe(
       map(response => response.stats),
-      catchError(error => {
+      catchError(error => { // catchError is now imported
         console.error('Error fetching log statistics', error);
         return of({
           totalCount: 0,
-          byLevel: {},
+          byLevel: {
+            [LogLevelEnum.DEBUG]: 0,
+            [LogLevelEnum.INFO]: 0,
+            [LogLevelEnum.WARN]: 0,
+            [LogLevelEnum.ERROR]: 0,
+            [LogLevelEnum.FATAL]: 0,
+            [LogLevelEnum.TRACE]: 0
+          },
           bySource: {}
-        });
+        } as LogStatsResult);
       })
     );
   }

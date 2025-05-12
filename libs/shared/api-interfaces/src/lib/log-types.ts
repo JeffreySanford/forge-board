@@ -20,21 +20,22 @@ export enum LogLevelEnum {
 /**
  * Log level as string
  */
-export type LogLevelString = 'trace' | 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal';
+export type LogLevelString = 'trace' | 'debug' | 'info' | 'warn' | 'warning' | 'error' | 'fatal';
 
 /**
  * Convert string log level to enum
  */
-export function stringToLogLevelEnum(level: LogLevelString): LogLevelEnum {
-  switch (level) {
+export function stringToLogLevelEnum(levelStr: LogLevelString | string | undefined): LogLevelEnum {
+  if (!levelStr) return LogLevelEnum.INFO; // Default level
+  switch (levelStr.toLowerCase()) {
     case 'trace': return LogLevelEnum.TRACE;
     case 'debug': return LogLevelEnum.DEBUG;
     case 'info': return LogLevelEnum.INFO;
-    case 'warning':
-    case 'warn': return LogLevelEnum.WARN;
+    case 'warn':
+    case 'warning': return LogLevelEnum.WARN;
     case 'error': return LogLevelEnum.ERROR;
     case 'fatal': return LogLevelEnum.FATAL;
-    default: return LogLevelEnum.INFO;
+    default: return LogLevelEnum.INFO; // Default for unrecognized strings
   }
 }
 
@@ -49,8 +50,52 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
     case LogLevelEnum.WARN: return 'warn';
     case LogLevelEnum.ERROR: return 'error';
     case LogLevelEnum.FATAL: return 'fatal';
-    default: return 'info';
+    default: return 'info'; // Should not happen with enum
   }
+}
+
+/**
+ * Log entry interface
+ */
+export interface LogEntry {
+  // Core fields that are always required
+  level: LogLevelEnum;
+  message: string;
+  
+  // Fields that might be auto-generated if not provided
+  id: string;
+  timestamp: string;
+  
+  // Optional fields
+  source?: string;
+  context?: string; // Optional context string
+  details?: Record<string, unknown>; // For structured data, was 'data'
+  data?: Record<string, unknown>; // Add data property for backward compatibility
+  expanded?: boolean;
+  rawData?: string;
+  categories?: string[];
+  isCategory?: boolean;
+  categoryName?: string;
+  categoryLogs?: LogEntry[];
+  categoryCount?: number;
+  duplicates?: LogEntry[];
+  duplicateCount?: number;
+  isLoggingLoop?: boolean; // Flag for loop detection
+  stackTrace?: string; // Optional stack trace
+  tags?: string[]; // Optional tags
+  eventId?: string; // Correlation ID
+}
+
+/**
+ * Data Transfer Object for creating logs
+ */
+export interface LogDto {
+  level: LogLevelEnum;
+  message: string;
+  source?: string;
+  details?: Record<string, unknown>;
+  context?: string;
+  timestamp?: string; // Optional, can be set by server
 }
 
 /**
@@ -84,8 +129,7 @@ export interface LogResponse {
   logs: LogEntry[];
   totalCount: number;
   filtered: boolean;
-  status: boolean;
-  total?: number;
+  status: boolean; // General success/failure status of the response
   timestamp: string;
 }
 
@@ -93,11 +137,11 @@ export interface LogResponse {
  * Update structure for log streams
  */
 export interface LogStreamUpdate {
-  log?: LogEntry;
-  logs?: LogEntry[];
-  totalCount: number;
-  append?: boolean;
-  stats?: Record<string, number>;
+  log?: LogEntry; // A single new log entry
+  logs?: LogEntry[]; // A batch of new or updated logs
+  totalCount?: number; // Optional: updated total count of logs matching a filter
+  append?: boolean; // True if logs should be appended, false if they replace existing
+  stats?: Record<string, number>; // Optional: updated log statistics
 }
 
 /**
@@ -105,7 +149,7 @@ export interface LogStreamUpdate {
  */
 export interface LogStatsResult {
   totalCount: number;
-  byLevel: Record<string, number>;
+  byLevel: Record<LogLevelEnum, number>; // Use LogLevelEnum as key
   bySource: Record<string, number>;
 }
 
@@ -113,56 +157,16 @@ export interface LogStatsResult {
  * Response for log query operations
  */
 export interface LogQueryResponse {
-  status: boolean;
+  status: boolean; // Success/failure of the query
   logs: LogEntry[];
-  totalCount: number;
-  filtered: boolean;
+  totalCount: number; // Total logs matching the query (pre-pagination)
+  filtered: boolean; // Indicates if the results are from a filtered query
   timestamp: string;
-  total?: number; // Total number of logs before pagination
-  page?: number; // Current page number
-  pages?: number; // Total number of pages
-}
-
-/**
- * Log entry interface
- */
-export interface LogEntry {
-  // Core fields that are always required
-  level: LogLevelEnum;
-  message: string;
-  
-  // Fields that might be auto-generated if not provided
-  id: string;
-  timestamp: string;
-  
-  // Optional fields
-  source?: string;
-  data?: Record<string, unknown>;
-  context?: string;
-  details?: Record<string, unknown>;
-  
-  // UI-specific display properties (frontend only)
-  isLoggingLoop?: boolean;
-  displayMessage?: string;
-  rawData?: string;
-  categories?: string[];
-  expanded?: boolean;
-  duplicates?: LogEntry[];
-  duplicateCount?: number;
-  isCategory?: boolean;
-  categoryName?: string;
-  categoryLogs?: LogEntry[];
-  categoryCount?: number;
-}
-
-/**
- * Data Transfer Object for creating logs
- */
-export interface LogDto {
-  level: LogLevelEnum;
-  message: string;
-  source?: string;
-  timestamp?: string;
-  data?: Record<string, unknown>;
-  context?: string;
+  total?: number; // Add total for backward compatibility
+  page?: number;
+  pages?: number;
+  stats?: {
+    byLevel: Record<string, number>;
+    bySource: Record<string, number>;
+  };
 }
