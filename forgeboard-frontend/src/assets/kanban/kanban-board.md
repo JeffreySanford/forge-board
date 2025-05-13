@@ -61,7 +61,3 @@ During our planning discussions, we identified several features for future imple
 - **Accessibility**: Ensure the board is fully accessible to all users
 
 The Kanban Board is designed to be a central feature of our application, serving as the primary interface for task management and workflow visualization.
-
----
-
-<!-- This file can be deleted as it's a duplicate of the properly named file in the kanban directory -->

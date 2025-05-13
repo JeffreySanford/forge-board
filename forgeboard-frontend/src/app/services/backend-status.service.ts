@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+
+// Use relative path for environment import
+import { environment } from '../../environments/environment';
 
 /**
  * Represents the status of a backend gateway service
@@ -39,12 +44,19 @@ export class BackendStatusService {
     anyMockData: false
   });
 
-  constructor() {
+  private statusSubject = new BehaviorSubject<boolean>(false);
+  private statusCheckInterval: NodeJS.Timeout | null = null;
+  private statusUrl = `${environment.apiBaseUrl}/status`;
+
+  constructor(private http: HttpClient) {
     // Initialize default statuses for known gateways
-    this.initGateway('kablan');
+    this.initGateway('kanban');
     this.initGateway('metrics');
     this.initGateway('diagnostics');
     this.initGateway('logger');
+
+    // Start checking backend status
+    this.startStatusChecking();
   }
 
   /**
@@ -117,6 +129,46 @@ export class BackendStatusService {
     });
   }
 
+  // Start periodic status checking
+  startStatusChecking(intervalMs: number = 10000): void {
+    // Check immediately
+    this.checkBackendStatus();
+    
+    // Clear any existing interval
+    if (this.statusCheckInterval) {
+      clearInterval(this.statusCheckInterval);
+    }
+    
+    // Set up periodic checking
+    this.statusCheckInterval = setInterval(() => {
+      this.checkBackendStatus();
+    }, intervalMs);
+  }
+
+  // Stop periodic status checking
+  stopStatusChecking(): void {
+    if (this.statusCheckInterval) {
+      clearInterval(this.statusCheckInterval);
+      this.statusCheckInterval = null;
+    }
+  }
+
+  // Check backend status
+  private checkBackendStatus(): void {
+    this.http.get<{status: string}>(this.statusUrl)
+      .pipe(
+        map(response => response?.status === 'ok'),
+        catchError(() => of(false)),
+        tap(isOnline => {
+          if (this.statusSubject.value !== isOnline) {
+            console.log(`Backend status changed: ${isOnline ? 'online' : 'offline'}`);
+            this.statusSubject.next(isOnline);
+          }
+        })
+      )
+      .subscribe();
+  }
+
   /**
    * Returns an observable of the backend status summary.
    */
@@ -125,10 +177,11 @@ export class BackendStatusService {
   }
 
   /**
-   * Get the status summary observable
+   * Get status as observable
+   * Returns boolean indicating if backend is online
    */
-  getStatus(): Observable<BackendStatusSummary> {
-    return this.statusSummarySubject.asObservable();
+  getStatus(): Observable<boolean> {
+    return this.statusSubject.asObservable();
   }
 
   /**

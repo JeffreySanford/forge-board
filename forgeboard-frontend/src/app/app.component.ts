@@ -81,7 +81,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showLogsTile = true;
   showUptimeTile = true;
   showActivityTile = true;
-  showKablanTile = true;
+  showKanbanTile = true;
 
   constructor(
     private projectConfigService: ProjectConfigService,
@@ -516,8 +516,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (tileType === 'activity') {
       this.showActivityTile = !this.showActivityTile;
     }
-    if (tileType === 'kablan') {
-      this.showKablanTile = !this.showKablanTile;
+    if (tileType === 'kanban') {
+      this.showKanbanTile = !this.showKanbanTile;
     }
 
     // Persist visibility settings
@@ -529,7 +529,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
       activity: this.showActivityTile,
-      kablan: this.showKablanTile
+      kanban: this.showKanbanTile
     };
     this.tileStateService.setTileVisibility('user1', visibility)
       .subscribe({

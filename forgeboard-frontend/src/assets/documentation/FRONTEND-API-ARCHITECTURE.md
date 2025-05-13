@@ -76,7 +76,7 @@ flowchart LR
 
 - **ProvenanceService (Backend)**: Tracks complete data lifecycle, maintains provenance chains on the server, and ensures cryptographic verification. Authoritative source for provenance.
 - **MetricsService**: Manages real-time system metrics with server-side provenance tracking for data origin and transformations.
-- **KablanService**: Handles Kanban board state via WebSockets, with the server managing state and provenance history.
+- **KanbanService**: Handles Kanban board state via WebSockets, with the server managing state and provenance history.
 - **DiagnosticsService**: Tracks health data with server-side source provenance for verification and compliance evidence.
 - **LoggerService**: Collects, filters, and exports logs in real time with server-managed data provenance for each event.
 - **BackendStatusService**: Monitors gateway states with server-side provenance tracking for connection events.
@@ -167,7 +167,7 @@ Provides real-time system performance monitoring with complete data provenance, 
 - Server-side signature verification for all metric sources.
 - Provenance-aware visualization based on server-provided provenance chains.
 
-### Kablan Board Module with Task Provenance
+### Kanban Board Module with Task Provenance
 
 Implements a Kanban-style project management system with server-managed task provenance tracking.
 

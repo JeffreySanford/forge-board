@@ -93,5 +93,3 @@ export class KanbanBoard extends Document {
 }
 
 export const KanbanBoardSchema = SchemaFactory.createForClass(KanbanBoard);
-
-// This file can be deleted as it's a duplicate of the properly named kanban.model.ts

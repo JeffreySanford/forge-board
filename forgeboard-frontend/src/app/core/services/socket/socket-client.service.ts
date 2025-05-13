@@ -26,6 +26,8 @@ export class SocketClientService implements OnDestroy {
    */
   private destroy$ = new Subject<void>();
 
+  private baseUrl = environment.apiBaseUrl;
+
   constructor() {
     console.log('SocketClientService initialized');
   }
@@ -36,7 +38,7 @@ export class SocketClientService implements OnDestroy {
    * @param opts Socket.IO connection options
    * @returns The socket instance
    */
-  connect(namespace: string = '/', opts: any = {}): Socket {
+  connect(namespace: string = '/', opts: Record<string, unknown> = {}): Socket {
     // Check for existing socket
     if (this.sockets.has(namespace)) {
       return this.sockets.get(namespace)!;
@@ -93,8 +95,12 @@ export class SocketClientService implements OnDestroy {
    * @param namespace The namespace to get (default: '/')
    * @returns The socket instance or undefined if not connected
    */
-  getSocket(namespace: string = '/'): Socket | undefined {
-    return this.sockets.get(namespace);
+  getSocket(namespace: string): Socket {
+    const socket = this.sockets.get(namespace);
+    if (!socket) {
+      throw new Error(`Socket for namespace ${namespace} not found`);
+    }
+    return socket;
   }
 
   /**
@@ -144,7 +150,7 @@ export class SocketClientService implements OnDestroy {
    * @param namespace The namespace to emit to (default: '/')
    * @param callback Optional callback for acknowledgements
    */
-  emit(eventName: string, data: any, namespace: string = '/', callback?: (response: any) => void): void {
+  emit(eventName: string, data: unknown, namespace: string = '/', callback?: (response: unknown) => void): void {
     // Get or create socket for namespace
     const socket = this.sockets.get(namespace) || this.connect(namespace);
     
@@ -171,15 +177,37 @@ export class SocketClientService implements OnDestroy {
   }
 
   /**
+   * Disconnect a specific socket by namespace
+   * @param namespace The namespace to disconnect (default: '/')
+   */
+  disconnectSocket(namespace: string): void {
+    const socket = this.sockets.get(namespace);
+    if (socket) {
+      try {
+        socket.disconnect();
+        this.sockets.delete(namespace);
+        console.log(`Socket ${namespace} disconnected and removed`);
+      } catch (error) {
+        console.error(`Error disconnecting socket ${namespace}:`, error);
+      }
+    }
+  }
+
+  /**
    * Disconnect all sockets
    */
   disconnectAll(): void {
     for (const [namespace, socket] of this.sockets.entries()) {
-      socket.disconnect();
-      this.connectionStatus.get(namespace)?.next(false);
+      if (socket) {
+        try {
+          socket.disconnect();
+        } catch (error) {
+          console.error(`Error disconnecting socket ${namespace}:`, error);
+        }
+      }
     }
-    
     this.sockets.clear();
+    console.log('All sockets disconnected');
   }
 
   /**

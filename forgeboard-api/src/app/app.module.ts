@@ -32,7 +32,7 @@ import { User, UserSchema } from './models/user.model';
 import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
-import { KablanBoard, KablanBoardSchema } from './models/kablan.model';
+import { KanbanBoard, KanbanBoardSchema } from './models/kanban.model';
 import { SeedService } from './seed.service';
 import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 import { LogsModule } from './logs/logs.module';
@@ -66,7 +66,7 @@ import { Sound, SoundSchema } from './models/sound.model';
       { name: Log.name, schema: LogSchema },
       { name: Metric.name, schema: MetricSchema },
       { name: Diagnostic.name, schema: DiagnosticSchema },
-      { name: KablanBoard.name, schema: KablanBoardSchema },
+      { name: KanbanBoard.name, schema: KanbanBoardSchema },
       { name: Sound.name, schema: SoundSchema }, // Add Sound schema
     ]),
     MetricsModule,

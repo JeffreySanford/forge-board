@@ -12,7 +12,7 @@ import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
 
 // Feature modules
-import { KablanBoardModule } from './pages/kablan-board/kablan-board.module';
+import { KanbanBoardModule } from './pages/kanban-board/kanban-board.module';
 import { MetricModule } from './pages/metrics/metric.module';
 import { HomeModule } from './pages/home/home.module';
 import { NavigationModule } from './components/navigation/navigation.module';
@@ -82,7 +82,7 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     DragDropModule,
     
     // Feature modules
-    KablanBoardModule,
+    KanbanBoardModule,
     MetricModule,
     HomeModule,
     NavigationModule,

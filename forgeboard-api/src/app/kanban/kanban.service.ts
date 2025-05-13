@@ -1,23 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  KablanBoardDto, 
+  KanbanBoardDto, 
   CardDto, 
   ColumnDto, 
   CreateBoardDto, 
   CreateColumnDto, 
   CreateCardDto, 
   MoveCardDto,
-} from './dto/kablan.dto';
+} from './dto/kanban.dto';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
-export class KablanService {
+export class KanbanService {
   // Storage type - can be changed to reflect different backends
   private storageType: 'memory' | 'localStorage' | 'mongodb' | 'blockchain' = 'memory';
   
   // In-memory storage since we're not using MongoDB in the API version
-  private boards: KablanBoardDto[] = [
+  private boards: KanbanBoardDto[] = [
     {
       id: '1',
       name: 'Planning Board',
@@ -88,20 +88,20 @@ export class KablanService {
 
   // Get the current storage type
   getStorageType(): string {
-    this.logger.info(`Getting storage type: ${this.storageType}`, 'KablanService', { storageType: this.storageType });
+    this.logger.info(`Getting storage type: ${this.storageType}`, 'KanbanService', { storageType: this.storageType });
     return this.storageType;
   }
 
   // Check storage connection
   checkStorageConnection(): boolean {
     // This could be expanded to check MongoDB connection if that backend is used
-    this.logger.info(`Checking storage connection for type: ${this.storageType}`, 'KablanService', { storageType: this.storageType });
+    this.logger.info(`Checking storage connection for type: ${this.storageType}`, 'KanbanService', { storageType: this.storageType });
     return true;
   }
 
   // Get all boards
-  async getBoards(): Promise<KablanBoardDto[]> {
-    this.logger.info(`Getting boards from ${this.storageType} storage`, 'KablanService', { 
+  async getBoards(): Promise<KanbanBoardDto[]> {
+    this.logger.info(`Getting boards from ${this.storageType} storage`, 'KanbanService', { 
       storageType: this.storageType,
       boardCount: this.boards.length 
     });
@@ -109,16 +109,16 @@ export class KablanService {
   }
 
   // Get a specific board by ID
-  async getBoardById(id: string): Promise<KablanBoardDto> {
-    this.logger.debug(`Looking for board with ID: ${id}`, 'KablanService', { boardId: id });
+  async getBoardById(id: string): Promise<KanbanBoardDto> {
+    this.logger.debug(`Looking for board with ID: ${id}`, 'KanbanService', { boardId: id });
     
     const board = this.boards.find(b => b.id === id);
     if (!board) {
-      this.logger.warning(`Board with ID "${id}" not found`, 'KablanService', { boardId: id });
+      this.logger.warning(`Board with ID "${id}" not found`, 'KanbanService', { boardId: id });
       throw new NotFoundException(`Board with ID "${id}" not found`);
     }
     
-    this.logger.debug(`Found board: ${board.name}`, 'KablanService', { 
+    this.logger.debug(`Found board: ${board.name}`, 'KanbanService', { 
       boardId: id, 
       boardName: board.name 
     });
@@ -126,12 +126,12 @@ export class KablanService {
   }
 
   // Create a new board
-  async createBoard(createBoardDto: CreateBoardDto): Promise<KablanBoardDto> {
-    this.logger.info(`Creating new board: ${createBoardDto.name}`, 'KablanService', { 
+  async createBoard(createBoardDto: CreateBoardDto): Promise<KanbanBoardDto> {
+    this.logger.info(`Creating new board: ${createBoardDto.name}`, 'KanbanService', { 
       boardName: createBoardDto.name 
     });
     
-    const newBoard: KablanBoardDto = {
+    const newBoard: KanbanBoardDto = {
       id: uuidv4(),
       name: createBoardDto.name,
       columns: [],
@@ -141,7 +141,7 @@ export class KablanService {
     
     this.boards.push(newBoard);
     
-    this.logger.info(`Board created with ID: ${newBoard.id}`, 'KablanService', { 
+    this.logger.info(`Board created with ID: ${newBoard.id}`, 'KanbanService', { 
       boardId: newBoard.id, 
       boardName: newBoard.name 
     });
@@ -149,8 +149,8 @@ export class KablanService {
   }
 
   // Add a column to a board
-  async addColumn(boardId: string, createColumnDto: CreateColumnDto): Promise<KablanBoardDto> {
-    this.logger.info(`Adding column to board ${boardId}`, 'KablanService', { 
+  async addColumn(boardId: string, createColumnDto: CreateColumnDto): Promise<KanbanBoardDto> {
+    this.logger.info(`Adding column to board ${boardId}`, 'KanbanService', { 
       boardId, 
       columnName: createColumnDto.name 
     });
@@ -168,7 +168,7 @@ export class KablanService {
     board.columns.push(newColumn);
     board.updatedAt = new Date().toISOString();
     
-    this.logger.info(`Column ${newColumn.name} added with ID ${newColumn.id}`, 'KablanService', {
+    this.logger.info(`Column ${newColumn.name} added with ID ${newColumn.id}`, 'KanbanService', {
       boardId,
       columnId: newColumn.id,
       columnName: newColumn.name
@@ -178,8 +178,8 @@ export class KablanService {
   }
 
   // Add a card to a column
-  async addCard(boardId: string, columnId: string, createCardDto: CreateCardDto): Promise<KablanBoardDto> {
-    this.logger.info(`Adding card to column ${columnId} in board ${boardId}`, 'KablanService', {
+  async addCard(boardId: string, columnId: string, createCardDto: CreateCardDto): Promise<KanbanBoardDto> {
+    this.logger.info(`Adding card to column ${columnId} in board ${boardId}`, 'KanbanService', {
       boardId,
       columnId,
       cardTitle: createCardDto.title
@@ -189,7 +189,7 @@ export class KablanService {
     
     const column = board.columns.find(col => col.id === columnId);
     if (!column) {
-      this.logger.warning(`Column with ID "${columnId}" not found`, 'KablanService', { 
+      this.logger.warning(`Column with ID "${columnId}" not found`, 'KanbanService', { 
         boardId, 
         columnId 
       });
@@ -211,7 +211,7 @@ export class KablanService {
     column.cards.push(newCard);
     board.updatedAt = now;
     
-    this.logger.info(`Card "${newCard.title}" added with ID ${newCard.id}`, 'KablanService', {
+    this.logger.info(`Card "${newCard.title}" added with ID ${newCard.id}`, 'KanbanService', {
       boardId,
       columnId,
       cardId: newCard.id,
@@ -222,10 +222,10 @@ export class KablanService {
   }
 
   // Move a card within a board
-  async moveCard(boardId: string, moveCardDto: MoveCardDto): Promise<KablanBoardDto> {
+  async moveCard(boardId: string, moveCardDto: MoveCardDto): Promise<KanbanBoardDto> {
     const { cardId, sourceColumnId, targetColumnId, sourceIndex, targetIndex } = moveCardDto;
     
-    this.logger.info(`Moving card ${cardId} from column ${sourceColumnId} to ${targetColumnId}`, 'KablanService', {
+    this.logger.info(`Moving card ${cardId} from column ${sourceColumnId} to ${targetColumnId}`, 'KanbanService', {
       boardId,
       cardId,
       sourceColumnId,
@@ -237,17 +237,17 @@ export class KablanService {
     // Find the board
     const boardIndex = this.boards.findIndex(b => b.id === boardId);
     if (boardIndex === -1) {
-      this.logger.warning(`Board with ID "${boardId}" not found`, 'KablanService', { boardId });
+      this.logger.warning(`Board with ID "${boardId}" not found`, 'KanbanService', { boardId });
       throw new NotFoundException(`Board with ID "${boardId}" not found`);
     }
     
     // Create a deep copy to avoid mutating the original
-    const board = JSON.parse(JSON.stringify(this.boards[boardIndex])) as KablanBoardDto;
+    const board = JSON.parse(JSON.stringify(this.boards[boardIndex])) as KanbanBoardDto;
     
     // Find source column
     const sourceColumn = board.columns.find(col => col.id === sourceColumnId);
     if (!sourceColumn) {
-      this.logger.warning(`Column with ID "${sourceColumnId}" not found`, 'KablanService', { 
+      this.logger.warning(`Column with ID "${sourceColumnId}" not found`, 'KanbanService', { 
         boardId, 
         sourceColumnId 
       });
@@ -259,7 +259,7 @@ export class KablanService {
       sourceColumn.cards.findIndex(card => card.id === cardId);
     
     if (actualSourceIndex === -1) {
-      this.logger.warning(`Card with ID "${cardId}" not found in source column`, 'KablanService', {
+      this.logger.warning(`Card with ID "${cardId}" not found in source column`, 'KanbanService', {
         boardId,
         sourceColumnId,
         cardId
@@ -276,7 +276,7 @@ export class KablanService {
     // If moving to same column
     if (sourceColumnId === targetColumnId) {
       sourceColumn.cards.splice(targetIndex, 0, cardToMove);
-      this.logger.info(`Card ${cardId} moved within same column to position ${targetIndex}`, 'KablanService', {
+      this.logger.info(`Card ${cardId} moved within same column to position ${targetIndex}`, 'KanbanService', {
         boardId,
         columnId: sourceColumnId,
         cardId,
@@ -286,7 +286,7 @@ export class KablanService {
       // Find target column
       const targetColumn = board.columns.find(col => col.id === targetColumnId);
       if (!targetColumn) {
-        this.logger.warning(`Column with ID "${targetColumnId}" not found`, 'KablanService', { 
+        this.logger.warning(`Column with ID "${targetColumnId}" not found`, 'KanbanService', { 
           boardId, 
           targetColumnId 
         });
@@ -296,7 +296,7 @@ export class KablanService {
       // Insert card at target position
       targetColumn.cards.splice(targetIndex, 0, cardToMove);
       
-      this.logger.info(`Card ${cardId} moved from column ${sourceColumnId} to ${targetColumnId} at position ${targetIndex}`, 'KablanService', {
+      this.logger.info(`Card ${cardId} moved from column ${sourceColumnId} to ${targetColumnId} at position ${targetIndex}`, 'KanbanService', {
         boardId,
         cardId,
         sourceColumnId,

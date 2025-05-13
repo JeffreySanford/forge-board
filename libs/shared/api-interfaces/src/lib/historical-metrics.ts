@@ -6,7 +6,7 @@ export type MetricsInterval = '1m' | '5m' | '15m' | '1h' | '6h' | '1d' | '7d' | 
 /**
  * Source system for historical metrics
  */
-export type MetricsSource = 'system' | 'logs' | 'kablan' | 'security' | 'network' | 'database';
+export type MetricsSource = 'system' | 'logs' | 'kanban' | 'security' | 'network' | 'database';
 
 /**
  * Data point for historical metrics series
@@ -58,14 +58,19 @@ export interface LogActivitySummary {
 }
 
 /**
- * Kablan board activity summary
+ * Kanban board activity summary
  */
-export interface KablanActivitySummary {
+export interface KanbanActivitySummary {
+  totalCards: number;
+  completedCards: number;
+  cardsByPriority: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  cardMovements: number;
+  activeUsers: string[];
   timestamp: string;
-  activeProjects: number;
-  completedTasks: number;
-  overdueItems: number;
-  upcomingDeadlines: number;
 }
 
 /**

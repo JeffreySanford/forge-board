@@ -4,7 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MetricsModule } from './app/metrics/metrics.module';
 import { DiagnosticsModule } from './app/diagnostics/diagnostics.module';
-import { KablanModule } from './app/kablan/kablan.module';
+import { KanbanModule } from './app/kanban/kanban.module';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { KablanModule } from './app/kablan/kablan.module';
     }),
     MetricsModule,
     DiagnosticsModule,
-    KablanModule,
+    KanbanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

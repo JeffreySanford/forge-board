@@ -27,7 +27,7 @@ export class PhaseDto {
 }
 
 // Board Data Transfer Object
-export class KablanBoardDto {
+export class KanbanBoardDto {
   id: string;
   name: string;
   columns: ColumnDto[];

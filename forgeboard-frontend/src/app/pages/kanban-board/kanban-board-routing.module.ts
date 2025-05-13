@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { KablanBoardComponent } from './kablan-board.component';
+import { KanbanBoardComponent } from './kanban-board.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: KablanBoardComponent
+    component: KanbanBoardComponent
   }
 ];
 
@@ -13,4 +13,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class KablanBoardRoutingModule { }
+export class KanbanBoardRoutingModule { }

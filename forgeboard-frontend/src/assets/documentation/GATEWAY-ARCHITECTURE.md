@@ -203,7 +203,7 @@ ForgeBoard implements the following primary gateway namespaces:
 | `/diagnostics` | `DiagnosticsGateway` | System health monitoring and diagnostics | `health-update`, `get-socket-status`, `socket-status` |
 | `/auth-diagnostics` | `JwtDiagnosticsGateway` | Authentication token diagnostics | `verify-token`, `get-auth-events`, `auth-stats` |
 | `/logs` | `LogGateway` | Log event streaming and query | `subscribe-logs`, `update-filter`, `log-batch` |
-| `/kablan` | `KablanSocketGateway` | Kanban board real-time updates | `get-boards`, `move-card`, `boards-update` |
+| `/kanban` | `KanbanSocketGateway` | Kanban board real-time updates | `get-boards`, `move-card`, `boards-update` |
 | `/security-stream` | `SecurityStreamGateway` | Security event streaming | `security-event`, `toggle-mock` |
 | `/auth` | `AuthGateway` | Authentication and session management | `login`, `logout`, `auth-state` |
 | `/oscal` | `OscalGatewayService` | OSCAL document management | `oscal:documents:list`, `oscal:document:get` |

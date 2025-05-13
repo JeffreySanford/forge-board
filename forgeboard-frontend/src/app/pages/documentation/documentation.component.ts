@@ -89,7 +89,7 @@ export class DocumentationComponent implements OnInit {
     BrowserAnimationsModule,
     HttpClientModule,
     // Feature modules
-    KablanBoardModule,
+    KanbanBoardModule,
     MetricsModule,
     // ...other modules
   ],
@@ -191,14 +191,14 @@ export class AppModule { }`,
       ]
     },
     { 
-      label: 'Kablan Board', 
+      label: 'Kanban Board', 
       icon: 'view_kanban',
       content: 'Kanban-style project management with phase-based workflow visualization and drag-and-drop card management.',
       sections: [
         {
-          id: 'kablan-overview',
-          title: 'Kablan Board Overview',
-          content: 'The Kablan Board is a flexible visual task management tool that helps teams track and visualize work progress through customizable columns and cards.'
+          id: 'kanban-overview',
+          title: 'Kanban Board Overview',
+          content: 'The Kanban Board is a flexible visual task management tool that helps teams track and visualize work progress through customizable columns and cards.'
         },
         {
           id: 'board-features',
@@ -357,8 +357,8 @@ POST /api/metrics/register
               content: 'Endpoints for system health and diagnostics information.'
             },
             {
-              id: 'kablan-api',
-              title: 'Kablan API',
+              id: 'kanban-api',
+              title: 'Kanban API',
               content: 'Endpoints for managing the project board, columns, and cards.'
             },
             {
@@ -384,9 +384,9 @@ POST /api/metrics/register
               content: 'System health and socket diagnostics through `/diagnostics` namespace.'
             },
             {
-              id: 'kablan-ws',
-              title: 'Kablan Namespace',
-              content: 'Real-time board updates through `/kablan` namespace.'
+              id: 'kanban-ws',
+              title: 'Kanban Namespace',
+              content: 'Real-time board updates through `/kanban` namespace.'
             }
           ]
         }

@@ -197,7 +197,7 @@ export class TileStateService {
       logs: true,
       uptime: true,
       activity: true,
-      kablan: true
+      kanban: true
     };
   }
 }

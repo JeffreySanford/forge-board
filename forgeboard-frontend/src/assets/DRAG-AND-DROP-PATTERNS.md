@@ -7,7 +7,7 @@ This document outlines the drag and drop patterns used in ForgeBoard, including 
 ForgeBoard implements drag and drop functionality in several key areas:
 
 1. **Tile Management**: Dashboard tiles can be reordered via drag and drop
-2. **Kablan Board**: Cards can be moved between columns 
+2. **Kanban Board**: Cards can be moved between columns
 3. **Diagnostics View**: Elements can be arranged in the diagnostics dashboard
 4. **Configuration Panels**: Settings can be reordered via drag and drop
 
@@ -74,9 +74,9 @@ onDrop(event: CdkDragDrop<any[]>): void {
 
 ## Specific Component Guidelines
 
-### Kablan Board
+### Kanban Board
 
-The Kablan board should implement its own drag and drop logic internally without routing through the app component due to:
+The Kanban board should implement its own drag and drop logic internally without routing through the app component due to:
 
 1. High frequency of drag operations
 2. Complex internal state management
@@ -84,14 +84,14 @@ The Kablan board should implement its own drag and drop logic internally without
 4. Self-contained business logic
 
 ```typescript
-// Recommended approach for Kablan
-export class KablanBoardComponent {
-  onCardDrop(event: CdkDragDrop<KablanCard[]>): void {
+// Recommended approach for Kanban
+export class KanbanBoardComponent {
+  onCardDrop(event: CdkDragDrop<KanbanCard[]>): void {
     // Handle locally
     moveItemInArray(this.column.cards, event.previousIndex, event.currentIndex);
     
     // Persist directly via service
-    this.kablanService.updateCardPosition(
+    this.kanbanService.updateCardPosition(
       this.column.id,
       event.item.data.id,
       event.currentIndex
@@ -123,7 +123,7 @@ export class TileComponent {
 
 1. **Debounce Persistence**: Debounce service calls during rapid drag operations
 2. **Optimistic Updates**: Update UI immediately, then persist to backend
-3. **Virtual Scrolling**: Use virtual scrolling for large collections (especially in Kablan board)
+3. **Virtual Scrolling**: Use virtual scrolling for large collections (especially in Kanban board)
 4. **Lightweight Previews**: Use lightweight drag previews instead of full components
 5. **Throttle Events**: Throttle move events during dragging
 
@@ -139,6 +139,6 @@ All drag and drop operations must be accessible:
 ## Future Improvements
 
 1. Add drag and drop support for cross-component operations
-2. Implement drag between different lists in Kablan board
+2. Implement drag between different lists in Kanban board
 3. Add support for touch gestures and mobile optimization
 4. Create reusable drag and drop directives for common patterns

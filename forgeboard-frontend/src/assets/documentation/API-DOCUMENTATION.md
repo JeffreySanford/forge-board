@@ -143,9 +143,9 @@ This namespace provides system diagnostic information.
 | `get-socket-logs` | Request socket log history | `socket-logs` event |
 | `get-health` | Request system health data | `health-update` event |
 
-### Kablan Namespace
+### Kanban Namespace
 
-**Endpoint**: `/kablan`
+**Endpoint**: `/kanban`
 
 This namespace provides project board data and interactions.
 
@@ -155,7 +155,7 @@ This namespace provides project board data and interactions.
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
-| `boards-update` | Current state of all boards | `KablanBoard[]` |
+| `boards-update` | Current state of all boards | `KanbanBoard[]` |
 
 **Client → Server:**
 

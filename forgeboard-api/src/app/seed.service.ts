@@ -5,7 +5,7 @@ import { User } from './models/user.model';
 import { Log } from './models/log.model';
 import { Metric } from './models/metric.model';
 import { Diagnostic } from './models/diagnostic.model';
-import { KablanBoard } from './models/kablan.model';
+import { KanbanBoard } from './models/kanban.model';
 import { Sound } from './models/sound.model';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class SeedService implements OnModuleInit {
     @InjectModel(Log.name) private logModel: Model<Log>,
     @InjectModel(Metric.name) private metricModel: Model<Metric>,
     @InjectModel(Diagnostic.name) private diagnosticModel: Model<Diagnostic>,
-    @InjectModel(KablanBoard.name) private kablanBoardModel: Model<KablanBoard>,
+    @InjectModel(KanbanBoard.name) private kanbanBoardModel: Model<KanbanBoard>,
     @InjectModel(Sound.name) private soundModel: Model<Sound>,
   ) {}
 
@@ -27,7 +27,7 @@ export class SeedService implements OnModuleInit {
       await this.seedLogs();
       await this.seedMetrics();
       await this.seedDiagnostics();
-      await this.seedKablanBoards();
+      await this.seedKanbanBoards();
       await this.seedSounds();
       this.logger.log('In-memory MongoDB seeded with initial data.');
     }
@@ -68,9 +68,9 @@ export class SeedService implements OnModuleInit {
     }
   }
   
-  private async seedKablanBoards() {
+  private async seedKanbanBoards() {
     try {
-      if ((await this.kablanBoardModel.countDocuments()) === 0) {
+      if ((await this.kanbanBoardModel.countDocuments()) === 0) {
         // Mock data from the frontend
         const mockData = [
           {
@@ -220,11 +220,11 @@ export class SeedService implements OnModuleInit {
         ];
         
         // Create the boards in the database
-        await this.kablanBoardModel.create(mockData);
-        this.logger.log('Seeded Kablan boards');
+        await this.kanbanBoardModel.create(mockData);
+        this.logger.log('Seeded Kanban boards');
       }
     } catch (error) {
-      this.logger.error('Failed to seed Kablan boards:', error.message);
+      this.logger.error('Failed to seed Kanban boards:', error.message);
     }
   }
 

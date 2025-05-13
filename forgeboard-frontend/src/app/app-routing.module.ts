@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
-import { KablanBoardComponent } from './pages/kablan-board/kablan-board.component';
+import { KanbanBoardComponent } from './pages/kanban-board/kanban-board.component';
 import { MetricComponent } from './pages/metrics/metric.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { LoggerViewComponent } from './pages/logger/logger-view.component';
@@ -13,7 +13,7 @@ const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'metrics', component: MetricComponent },
   { path: 'diagnostics', component: DiagnosticsComponent },
-  { path: 'kablan', component: KablanBoardComponent },
+  { path: 'kanban', component: KanbanBoardComponent },
   { path: 'logs', component: LoggerViewComponent },
   { path: 'security', component: SecurityDashboardComponent },
   { 

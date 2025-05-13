@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { KablanBoard, KablanColumn, KablanService, ProjectPhase, KablanCard } from '../../services/kablan.service';
+import { KanbanBoard, KanbanColumn, KanbanService, ProjectPhase, KanbanCard } from '../../services/kanban.service';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -8,14 +8,14 @@ import { trigger, transition, style, animate } from '@angular/animations';
 interface CategoryGroup {
   name: string;
   displayName: string;
-  cards: KablanCard[];
+  cards: KanbanCard[];
   expanded: boolean;
 }
 
 @Component({
-  selector: 'app-kablan-board',
-  templateUrl: './kablan-board.component.html',
-  styleUrls: ['./kablan-board.component.scss'],
+  selector: 'app-kanban-board',
+  templateUrl: './kanban-board.component.html',
+  styleUrls: ['./kanban-board.component.scss'],
   // eslint-disable-next-line @angular-eslint/prefer-standalone
   standalone: false,
   animations: [
@@ -30,9 +30,9 @@ interface CategoryGroup {
     ])
   ]
 })
-export class KablanBoardComponent implements OnInit, OnDestroy {
+export class KanbanBoardComponent implements OnInit, OnDestroy {
   // Existing properties
-  board: KablanBoard | null = null;
+  board: KanbanBoard | null = null;
   isConnected = false;
   storageType = 'Unknown';
   forcingMockData = false;
@@ -42,7 +42,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   currentCardIndex = 0;
   cardsToShow = 3;
   totalCards = 8;
-  visibleColumns: KablanColumn[] = [];
+  visibleColumns: KanbanColumn[] = [];
   paginationIndicators: number[] = [];
   
   // Current workflow step
@@ -59,7 +59,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     testing: 'Testing',
     completion: 'Completion'
   };
-  phaseColumns: Map<ProjectPhase, KablanColumn[]> = new Map();
+  phaseColumns: Map<ProjectPhase, KanbanColumn[]> = new Map();
   
   // New properties for categorized view
   showCategorizedView = true;
@@ -82,21 +82,21 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
   
   constructor(
-    private kablanService: KablanService,
+    private kanbanService: KanbanService,
     private ngZone: NgZone
   ) {}
   
   ngOnInit(): void {
     // Existing subscription code
     this.subscriptions.add(
-      this.kablanService.getConnectionStatus().subscribe(status => {
+      this.kanbanService.getConnectionStatus().subscribe(status => {
         this.isConnected = status;
-        console.log('[KablanBoard] Connection status changed:', status);
+        console.log('[KanbanBoard] Connection status changed:', status);
       })
     );
     
     this.subscriptions.add(
-      this.kablanService.getBoards().subscribe(boards => {
+      this.kanbanService.getBoards().subscribe(boards => {
         if (boards.length > 0) {
           this.board = boards[0]; // Just take the first board for now
           
@@ -127,15 +127,15 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     
     // Subscribe to storage type changes
     this.subscriptions.add(
-      this.kablanService.getStorageTypeChanges().subscribe(type => {
+      this.kanbanService.getStorageTypeChanges().subscribe(type => {
         this.storageType = type || 'Unknown';
-        console.log('[KablanBoard] Storage type changed:', this.storageType);
+        console.log('[KanbanBoard] Storage type changed:', this.storageType);
       })
     );
     
     // Initialize storage type
-    this.storageType = this.kablanService.getStorageType() || 'Unknown';
-    console.log('[KablanBoard] Initial storage type:', this.storageType);
+    this.storageType = this.kanbanService.getStorageType() || 'Unknown';
+    console.log('[KanbanBoard] Initial storage type:', this.storageType);
   }
   
   // Group backlog cards by category
@@ -150,7 +150,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     this.categoryGroups = [];
     
     // Create a map to hold cards by category
-    const cardsByCategory: { [category: string]: KablanCard[] } = {};
+    const cardsByCategory: { [category: string]: KanbanCard[] } = {};
     
     // Group cards by their category
     backlogColumn.cards.forEach(card => {
@@ -176,11 +176,11 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Group cards by category for a specific column
-  groupCardsByCategoryForColumn(column: KablanColumn): CategoryGroup[] {
+  groupCardsByCategoryForColumn(column: KanbanColumn): CategoryGroup[] {
     if (!column) return [];
     
     // Create a map to hold cards by category
-    const cardsByCategory: { [category: string]: KablanCard[] } = {};
+    const cardsByCategory: { [category: string]: KanbanCard[] } = {};
     
     // Group cards by their category
     column.cards.forEach(card => {
@@ -219,7 +219,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   // Toggle categorized view
   toggleCategorizedView(): void {
     this.showCategorizedView = !this.showCategorizedView;
-    console.log('[KablanBoard] Categorized view:', this.showCategorizedView);
+    console.log('[KanbanBoard] Categorized view:', this.showCategorizedView);
   }
   
   // Toggle category expansion
@@ -228,12 +228,13 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Get category groups for a column
-  getColumnCategoryGroups(column: KablanColumn): CategoryGroup[] {
+  getColumnCategoryGroups(column: KanbanColumn): CategoryGroup[] {
     if (!column) return [];
     
     // Return cached category groups if available
     if (this.columnCategoryGroups.has(column.id)) {
-      return this.columnCategoryGroups.get(column.id)!;
+      const groups = this.columnCategoryGroups.get(column.id);
+      return groups || []; // Return empty array if groups is undefined
     }
     
     // Otherwise, create them
@@ -241,7 +242,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Toggle a category's expansion state
-  toggleColumnCategory(column: KablanColumn, categoryGroup: CategoryGroup): void {
+  toggleColumnCategory(column: KanbanColumn, categoryGroup: CategoryGroup): void {
     if (!column || !categoryGroup) return;
     categoryGroup.expanded = !categoryGroup.expanded;
   }
@@ -253,14 +254,14 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   
   toggleMockData(): void {
     this.forcingMockData = !this.forcingMockData;
-    this.kablanService.toggleMockData(this.forcingMockData);
-    console.log('[KablanBoard] Mock data toggled:', this.forcingMockData);
+    this.kanbanService.toggleMockData(this.forcingMockData);
+    console.log('[KanbanBoard] Mock data toggled:', this.forcingMockData);
   }
   
   // Change the storage type (for demonstration purposes)
   changeStorageType(type: string): void {
-    this.kablanService.setStorageType(type);
-    console.log('[KablanBoard] Storage type manually set to:', type);
+    this.kanbanService.setStorageType(type);
+    console.log('[KanbanBoard] Storage type manually set to:', type);
   }
   
   // Group columns by their phase
@@ -276,8 +277,11 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
     
     // Group columns by phase
     this.board.columns.forEach(column => {
-      const phaseColumns = this.phaseColumns.get(column.phase) || [];
+      // Cast column.phase to ProjectPhase to avoid type error
+      const phase = column.phase as ProjectPhase;
+      const phaseColumns = this.phaseColumns.get(phase) || [];
       phaseColumns.push(column);
+      this.phaseColumns.set(phase, phaseColumns);
     });
     
     // Sort columns by order within each phase
@@ -387,16 +391,16 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Track functions for better performance with *ngFor
-  trackByFn(index: number, column: KablanColumn): string {
+  trackByFn(index: number, column: KanbanColumn): string {
     return column.id;
   }
   
-  trackCardByFn(index: number, card: KablanCard): string {
+  trackCardByFn(index: number, card: KanbanCard): string {
     return card.id;
   }
   
   // Handle card drop events with improved error handling
-  onCardDropped(event: CdkDragDrop<KablanCard[]>): void {
+  onCardDropped(event: CdkDragDrop<KanbanCard[]>): void {
     if (!this.board) return;
     
     try {
@@ -426,7 +430,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
         
         // Call service to persist changes - use NgZone to ensure we're in the Angular zone
         this.ngZone.run(() => {
-          this.kablanService.moveCard(cardId, sourceColId, targetColId, event.currentIndex);
+          this.kanbanService.moveCard(cardId, sourceColId, targetColId, event.currentIndex);
         });
         
         // Update category groups for affected columns
@@ -455,7 +459,7 @@ export class KablanBoardComponent implements OnInit, OnDestroy {
   }
   
   // Helper to find column ID by its cards array reference
-  private findColumnIdByCards(cards: KablanCard[]): string | null {
+  private findColumnIdByCards(cards: KanbanCard[]): string | null {
     if (!this.board) return null;
     
     const column = this.board.columns.find(col => col.cards === cards);

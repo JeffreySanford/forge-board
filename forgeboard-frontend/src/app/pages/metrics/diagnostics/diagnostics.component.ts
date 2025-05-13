@@ -180,7 +180,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
       activity: this.showActivityTile,
-      kablan: true // Set to true or bind to a variable if you have one
+      kanban: true // Set to true or bind to a variable if you have one
     };
     this.tileStateService.setTileVisibility('user1', visibility)
       .subscribe({

@@ -12,5 +12,6 @@
     "provider": "ollama",
     "apiBase": "http://localhost:11434/",
     "model": "codellama-q4-0"
-  }
+  },
+  "nxConsole.generateAiAgentRules": true
 }

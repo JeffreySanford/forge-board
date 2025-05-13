@@ -8,9 +8,9 @@ import {
   WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { KablanService } from './kablan.service';
+import { KanbanService } from './kanban.service';
 import { createSocketResponse } from '@forge-board/shared/api-interfaces';
-import { MoveCardDto } from './dto/kablan.dto';
+import { MoveCardDto } from './dto/kanban.dto';
 import { LoggerService } from '../logger/logger.service';
 import { Injectable } from '@nestjs/common';
 
@@ -27,43 +27,43 @@ interface MoveCardPayload {
 
 @Injectable()
 @WebSocketGateway({
-  namespace: 'kablan',
+  namespace: 'kanban',
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
     credentials: true,
   }
 })
-export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class KanbanSocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   constructor(
-    private readonly kablanService: KablanService,
+    private readonly kanbanService: KanbanService,
     private readonly logger: LoggerService
   ) {}
 
   afterInit(server: Server): void {
-    this.logger.info('Kablan WebSocket Gateway Initialized', 'KablanSocketGateway');
-    this.logger.info(`Server namespace: ${server.path() || '/kablan'}`, 'KablanSocketGateway');
+    this.logger.info('Kanban WebSocket Gateway Initialized', 'KanbanSocketGateway');
+    this.logger.info(`Server namespace: ${server.path() || '/kanban'}`, 'KanbanSocketGateway');
   }
 
   handleConnection(client: Socket): void {
-    this.logger.info(`Client connected to kablan namespace: ${client.id}`, 'KablanSocketGateway', { clientId: client.id });
+    this.logger.info(`Client connected to kanban namespace: ${client.id}`, 'KanbanSocketGateway', { clientId: client.id });
     
     // Send initial data when client connects
     this.sendInitialData(client);
   }
 
   handleDisconnect(client: Socket): void {
-    this.logger.info(`Client disconnected from kablan namespace: ${client.id}`, 'KablanSocketGateway', { clientId: client.id });
+    this.logger.info(`Client disconnected from kanban namespace: ${client.id}`, 'KanbanSocketGateway', { clientId: client.id });
   }
 
   private async sendInitialData(client: Socket): Promise<void> {
     try {
-      const boards = await this.kablanService.getBoards();
-      const storageType = this.kablanService.getStorageType();
+      const boards = await this.kanbanService.getBoards();
+      const storageType = this.kanbanService.getStorageType();
       
-      this.logger.info(`Sending initial data to client ${client.id} with storage type: ${storageType}`, 'KablanSocketGateway', { 
+      this.logger.info(`Sending initial data to client ${client.id} with storage type: ${storageType}`, 'KanbanSocketGateway', { 
         clientId: client.id, 
         storageType, 
         boardCount: boards.length 
@@ -75,7 +75,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         storageType: storageType
       }));
     } catch (error) {
-      this.logger.error('Error sending initial data:', 'KablanSocketGateway', { 
+      this.logger.error('Error sending initial data:', 'KanbanSocketGateway', { 
         error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         clientId: client.id
       });
@@ -84,12 +84,12 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
 
   @SubscribeMessage('get-boards')
   async handleGetBoards(client: Socket): Promise<WsResponse<unknown>> {
-    this.logger.info(`Client ${client.id} requested boards`, 'KablanSocketGateway', { clientId: client.id });
+    this.logger.info(`Client ${client.id} requested boards`, 'KanbanSocketGateway', { clientId: client.id });
     try {
-      const boards = await this.kablanService.getBoards();
-      const storageType = this.kablanService.getStorageType();
+      const boards = await this.kanbanService.getBoards();
+      const storageType = this.kanbanService.getStorageType();
       
-      this.logger.info(`Sending boards to client ${client.id} with storage type: ${storageType}`, 'KablanSocketGateway', {
+      this.logger.info(`Sending boards to client ${client.id} with storage type: ${storageType}`, 'KanbanSocketGateway', {
         clientId: client.id,
         storageType,
         boardCount: boards.length
@@ -103,7 +103,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         })
       };
     } catch (error) {
-      this.logger.error(`Error retrieving boards:`, 'KablanSocketGateway', {
+      this.logger.error(`Error retrieving boards:`, 'KanbanSocketGateway', {
         error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         clientId: client.id
       });
@@ -120,7 +120,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
 
   @SubscribeMessage('move-card')
   async handleMoveCard(client: Socket, payload: MoveCardPayload): Promise<WsResponse<unknown>> {
-    this.logger.info(`Client ${client.id} moving card`, 'KablanSocketGateway', { 
+    this.logger.info(`Client ${client.id} moving card`, 'KanbanSocketGateway', { 
       clientId: client.id, 
       boardId: payload.boardId,
       cardId: payload.moveCard.cardId,
@@ -142,15 +142,15 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
       };
       
       // Call service method to update the board
-      const updatedBoard = await this.kablanService.moveCard(boardId, moveCardDto);
+      const updatedBoard = await this.kanbanService.moveCard(boardId, moveCardDto);
       
       // Broadcast to all clients
       this.server.emit('boards-update', createSocketResponse('boards-update', {
         boards: [updatedBoard],
-        storageType: this.kablanService.getStorageType()
+        storageType: this.kanbanService.getStorageType()
       }));
       
-      this.logger.info(`Card moved successfully`, 'KablanSocketGateway', {
+      this.logger.info(`Card moved successfully`, 'KanbanSocketGateway', {
         boardId,
         cardId,
         sourceColumnId,
@@ -164,7 +164,7 @@ export class KablanSocketGateway implements OnGatewayInit, OnGatewayConnection, 
         data: createSocketResponse('move-card-success', { success: true })
       };
     } catch (error) {
-      this.logger.error(`Error moving card:`, 'KablanSocketGateway', {
+      this.logger.error(`Error moving card:`, 'KanbanSocketGateway', {
         error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         clientId: client.id,
         payload

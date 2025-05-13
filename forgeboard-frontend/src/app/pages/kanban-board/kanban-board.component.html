@@ -1,7 +1,7 @@
-<div class="kablan-board-container">
+<div class="kanban-board-container">
   <!-- Use *ngIf="board" instead of boards.length since board is the property defined in component -->
   <ng-container *ngIf="board">
-    <div class="kablan-header">
+    <div class="kanban-header">
       <div class="board-title">
         <h2>{{ board.name || 'Planning Board' }}</h2>
       </div>
@@ -88,11 +88,11 @@
     </div>
     
     <!-- Columns and cards -->
-    <div class="kablan-columns" #columnsContainer>
+    <div class="kanban-columns" #columnsContainer>
       <!-- Check if we should show categorized view for backlog -->
       <ng-container *ngIf="showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog'">
         <!-- Render categorized backlog -->
-        <div class="kablan-column backlog-column">
+        <div class="kanban-column backlog-column">
           <div class="column-header">
             <h3>{{ visibleColumns[0].name }}</h3>
             <span class="card-count">{{ visibleColumns[0].cards.length }}</span>
@@ -113,7 +113,7 @@
                   cdkDropList 
                   [cdkDropListData]="category.cards" 
                   (cdkDropListDropped)="onCardDropped($event)">
-                <div class="kablan-card" 
+                <div class="kanban-card" 
                      *ngFor="let card of category.cards; trackBy: trackCardByFn"
                      cdkDrag
                      [cdkDragData]="card"
@@ -148,14 +148,14 @@
         </div>
         
         <!-- Render remaining columns normally -->
-        <section class="kablan-column" *ngFor="let column of visibleColumns.slice(1); trackBy: trackByFn">
+        <section class="kanban-column" *ngFor="let column of visibleColumns.slice(1); trackBy: trackByFn">
           <div class="column-header">
             <h3>{{ column.name }}</h3>
             <span class="card-count">{{ column.cards.length }}</span>
           </div>
           
           <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
-            <div class="kablan-card" 
+            <div class="kanban-card" 
                  *ngFor="let card of column.cards; trackBy: trackCardByFn"
                  cdkDrag
                  [cdkDragData]="card"
@@ -198,7 +198,7 @@
       
       <!-- Regular view (non-categorized or for other phases) -->
       <ng-container *ngIf="!(showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog')">
-        <section class="kablan-column" *ngFor="let column of visibleColumns; trackBy: trackByFn">
+        <section class="kanban-column" *ngFor="let column of visibleColumns; trackBy: trackByFn">
           <div class="column-header">
             <h3>{{ column.name }}</h3>
             <span class="card-count">{{ column.cards.length }}</span>
@@ -207,7 +207,7 @@
           <!-- Regular card view (when categorization is disabled) -->
           <ng-container *ngIf="!showCategorizedView">
             <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
-              <div class="kablan-card" 
+              <div class="kanban-card" 
                    *ngFor="let card of column.cards; trackBy: trackCardByFn"
                    cdkDrag
                    [cdkDragData]="card"
@@ -264,7 +264,7 @@
                      cdkDropList 
                      [cdkDropListData]="categoryGroup.cards" 
                      (cdkDropListDropped)="onCardDropped($event)">
-                  <div class="kablan-card" 
+                  <div class="kanban-card" 
                        *ngFor="let card of categoryGroup.cards; trackBy: trackCardByFn"
                        cdkDrag
                        [cdkDragData]="card"

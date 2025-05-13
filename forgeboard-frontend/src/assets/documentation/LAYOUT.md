@@ -70,7 +70,7 @@ The ForgeBoard NX layout system provides a flexible and powerful way to create r
 │  │  │  │                                                        ││││
 │  │  │  └────────────────────────────────────────────────────────┘│││
 │  │  │                                                            │││
-│  │  └────────────────────────────────────────────────────────────┘││
+│  │  └────────────────────────────────────────────────────────────┘│
 │  │                                                                ││
 │  └────────────────────────────────────────────────────────────────┘│
 │                                                                    │
@@ -220,15 +220,15 @@ The metrics dashboard uses a split layout:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Kablan Board
+### Kanban Board
 
-The Kablan board uses a phase-based layout:
+The Kanban board uses a phase-based layout:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ .kablan-board                                               │
+│ .kanban-board                                               │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ .kablan-toolbar                                         │ │
+│ │ .kanban-toolbar                                         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ .project-phases (Timeline visualization)                │ │
@@ -237,7 +237,7 @@ The Kablan board uses a phase-based layout:
 │ │ .board-navigation                                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ .kablan-columns (Horizontally scrollable)               │ │
+│ │ .kanban-columns (Horizontally scrollable)               │ │
 │ │                                                         │ │
 │ │ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐      │ │
 │ │ │ Column  │  │ Column  │  │ Column  │  │ Column  │      │ │

@@ -23,7 +23,7 @@ export class NavigationComponent {
   navItems: NavItem[] = [
     { name: 'Home', route: '/home', icon: 'home', description: 'Dashboard home page' },
     { name: 'Metrics', route: '/metrics', icon: 'timeline', description: 'System performance metrics' },
-    { name: 'Kablan Board', route: '/kablan', icon: 'dashboard', description: 'Task management board' },
+    { name: 'Kanban Board', route: '/kanban', icon: 'dashboard', description: 'Task management board' },
     { name: 'Logs', route: '/logs', icon: 'receipt_long', description: 'System logs viewer' },
     { name: 'Diagnostics', route: '/diagnostics', icon: 'healing', description: 'System diagnostics' },
     { name: 'Security', route: '/security', icon: 'security', description: 'Security dashboard and controls' },
