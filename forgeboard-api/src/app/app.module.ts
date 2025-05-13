@@ -32,10 +32,12 @@ import { User, UserSchema } from './models/user.model';
 import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
+import { KablanBoard, KablanBoardSchema } from './models/kablan.model';
 import { SeedService } from './seed.service';
 import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 import { LogsModule } from './logs/logs.module';
 import { SystemModule } from './system/system.module';
+import { Sound, SoundSchema } from './models/sound.model';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { SystemModule } from './system/system.module';
       { name: Log.name, schema: LogSchema },
       { name: Metric.name, schema: MetricSchema },
       { name: Diagnostic.name, schema: DiagnosticSchema },
+      { name: KablanBoard.name, schema: KablanBoardSchema },
+      { name: Sound.name, schema: SoundSchema }, // Add Sound schema
     ]),
     MetricsModule,
     SocketModule,

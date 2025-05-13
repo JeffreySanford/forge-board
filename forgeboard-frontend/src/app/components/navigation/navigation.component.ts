@@ -27,8 +27,7 @@ export class NavigationComponent {
     { name: 'Logs', route: '/logs', icon: 'receipt_long', description: 'System logs viewer' },
     { name: 'Diagnostics', route: '/diagnostics', icon: 'healing', description: 'System diagnostics' },
     { name: 'Security', route: '/security', icon: 'security', description: 'Security dashboard and controls' },
-    { name: 'Sockets', route: '/sockets', icon: 'settings_ethernet', description: 'Active Sockets Dashboard' },
-    { name: 'Socket Monitoring', route: '/socket-monitoring', icon: 'monitor_heart', description: 'Real-time socket monitoring' }, // New navigation item
+    { name: 'Socket Dashboard', route: '/sockets', icon: 'settings_ethernet', description: 'Active Sockets Dashboard' },
     { name: 'Documentation', route: '/documentation', icon: 'description', description: 'System documentation' }
   ];
 

@@ -30,6 +30,19 @@ You have two options for obtaining the necessary sound files:
 
 The application includes a fallback mechanism that will create silent audio files if the required sound files are missing. This ensures the application functions even without the sound assets.
 
+To manually check for missing sounds and create fallbacks, run:
+```bash
+node sound-system.js
+```
+
+## Sound System Architecture
+
+The sound system consists of:
+
+- `sound-system.ts` - Utility functions to verify and create sound files
+- `download-sounds.js` - Script to download sounds from Freesound.org
+- `SoundHelperService` - Angular service that manages playing sounds in the app
+
 ## Testing & Verification
 
 To verify that all required sound files are present and fallbacks are working, run the E2E test:

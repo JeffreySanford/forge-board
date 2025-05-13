@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { TileType, SocketInfo, DiagnosticEvent } from '@forge-board/shared/api-interfaces';
+import { TileType } from '@forge-board/shared/api-interfaces';
 import { TileStateService } from '../../../services/tile-state.service';
 import { Subscription } from 'rxjs';
 import { DiagnosticsService } from '../../../services/diagnostics.service';
+import { SystemStatus } from '../../../models/system-status.model';
 
 @Component({
   selector: 'app-diagnostics',
@@ -26,7 +27,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   tileOrder: TileType[] = ['health', 'memory', 'connection', 'logs', 'uptime', 'activity'];
   
   // Properties referenced in the template
-  health: any = { status: 'unknown', uptime: 0 };
+  health: { status: string; uptime: number } = { status: 'unknown', uptime: 0 };
   services: string[] = [];
   controllers: string[] = [];
   gateways: string[] = [];
@@ -201,5 +202,19 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       case 'info': return 'event-info';
       default: return 'event-default';
     }
+  }
+
+  // Fix the any type on line 29 (assuming it's for system data)
+  private processSystemStatus(data: SystemStatus): void {
+    // Update properties based on system status data
+    this.health.status = data.status;
+    this.health.uptime = data.uptime;
+    
+    // Update service lists if available
+    if (data.services) this.services = data.services;
+    if (data.controllers) this.controllers = data.controllers;
+    if (data.gateways) this.gateways = data.gateways;
+    if (data.errors) this.errors = data.errors;
+    if (data.socketStatus) this.socketStatus = data.socketStatus;
   }
 }

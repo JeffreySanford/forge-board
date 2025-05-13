@@ -73,10 +73,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   isLargeGridVisible = false;
   private subscription = new Subscription(); // Add this line to declare the subscription property
 
-  // Add references for ambient sounds
-  @ViewChild('ambientSound') ambientSound?: ElementRef<HTMLAudioElement>;
-  @ViewChild('starsAndStripesSound') starsAndStripesSound?: ElementRef<HTMLAudioElement>;
-
   refreshInterval: number = 3000; // Updated default to 3 seconds
 
   showHealthTile = true;
@@ -349,11 +345,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   preloadAudioElements() {
     const soundFiles = [
-      { ref: this.keyStrikeSound, volume: 0.2, name: 'keyStrikeSound' },
-      { ref: this.dingSound, volume: 0.5, name: 'dingSound' },
-      // Add optional ambient sounds with null checks
-      { ref: this.ambientSound, volume: 0.3, name: 'ambientSound', optional: true },
-      { ref: this.starsAndStripesSound, volume: 0.4, name: 'starsAndStripesSound', optional: true },
+      { ref: this.keyStrikeSound, volume: 0.2, name: 'keyStrikeSound', optional: false },
+      { ref: this.dingSound, volume: 0.5, name: 'dingSound', optional: false }
+      // Removed ambient sound references
+      // { ref: this.ambientSound, volume: 0.3, name: 'ambientSound', optional: true },
+      // { ref: this.starsAndStripesSound, volume: 0.4, name: 'starsAndStripesSound', optional: true }
     ];
     
     soundFiles.forEach((sound) => {

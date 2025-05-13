@@ -7,12 +7,8 @@ import { SocketRegistryService } from '../socket/socket-registry.service';
 import { SocketLoggerService } from '../socket/socket-logger.service';
 import { Subscription } from 'rxjs';
 
-@WebSocketGateway({
-  namespace: 'diagnostics',
-  cors: {
-    origin: '*',
-  },
-})
+// Update the namespace to '/diagnostics' with leading slash to match client expectation
+@WebSocketGateway({ namespace: '/diagnostics' })
 export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
   server!: Server;
@@ -30,8 +26,10 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
     this.logger.log('DiagnosticsGateway created');
   }
 
-  afterInit(): void {
-    this.logger.log('Diagnostics Socket.IO server initialized with namespace /diagnostics');
+  afterInit(server: Server): void {
+    const namespaces = Object.keys(server._nsps || {});
+    this.logger.log(`Available namespaces: ${JSON.stringify(namespaces)}`);
+    this.logger.log(`Diagnostics Socket.IO server initialized with namespace /diagnostics`);
     
     // Emit health updates at regular intervals
     this.healthInterval = setInterval(() => {
@@ -70,7 +68,7 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
   }
 
   handleConnection(client: Socket): void {
-    this.logger.log(`Client connected to diagnostics namespace: ${client.id}`);
+    this.logger.log(`Client connected to diagnostics gateway: ${client.id}`);
     this.socketRegistry.registerSocket(client);
     this.socketLogger.log(
       client.id,
@@ -89,7 +87,7 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
   }
   
   handleDisconnect(client: Socket): void {
-    this.logger.log(`Client disconnected from diagnostics namespace: ${client.id}`);
+    this.logger.log(`Client disconnected from diagnostics gateway: ${client.id}`);
     this.socketLogger.log(
       client.id,
       'diagnostics',
