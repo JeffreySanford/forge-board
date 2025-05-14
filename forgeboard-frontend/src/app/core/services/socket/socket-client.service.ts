@@ -37,11 +37,11 @@ export class SocketClientService implements OnDestroy {
    * @param namespace The namespace to connect to (default: '/')
    * @param opts Socket.IO connection options
    * @returns The socket instance
-   */
-  connect(namespace: string = '/', opts: Record<string, unknown> = {}): Socket {
+   */  connect(namespace: string = '/', opts: Record<string, unknown> = {}): Socket {
     // Check for existing socket
     if (this.sockets.has(namespace)) {
-      return this.sockets.get(namespace)!;
+      const socket = this.sockets.get(namespace);
+      if (socket) return socket;
     }
 
     // Merge default options with user options
@@ -53,7 +53,7 @@ export class SocketClientService implements OnDestroy {
     const options = { ...defaultOpts, ...opts };
 
     // Create the socket instance
-    const socketUrl = environment.apiUrl || '';
+    const socketUrl = environment.apiBaseUrl || '';
     const path = namespace === '/' ? '' : namespace;
     const socket = io(`${socketUrl}${path}`, options);
 
@@ -107,14 +107,20 @@ export class SocketClientService implements OnDestroy {
    * Get connection status as an observable
    * @param namespace The namespace to check (default: '/')
    * @returns Observable of connection status (true = connected)
-   */
-  connectionState(namespace: string = '/'): Observable<boolean> {
+   */  connectionState(namespace: string = '/'): Observable<boolean> {
     if (!this.connectionStatus.has(namespace)) {
-      const connected = this.sockets.has(namespace) && this.sockets.get(namespace)!.connected;
+      let connected = false;
+      if (this.sockets.has(namespace)) {
+        const socket = this.sockets.get(namespace);
+        if (socket) {
+          connected = socket.connected;
+        }
+      }
       this.connectionStatus.set(namespace, new BehaviorSubject<boolean>(connected));
     }
     
-    return this.connectionStatus.get(namespace)!.asObservable();
+    const connectionStatus = this.connectionStatus.get(namespace);
+    return connectionStatus ? connectionStatus.asObservable() : new BehaviorSubject<boolean>(false).asObservable();
   }
 
   /**

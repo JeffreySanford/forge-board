@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http'; // Added HttpErrorResponse
-import { Observable, of } from 'rxjs'; // Removed throwError
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { LogEntry, LogResponse, LogLevelEnum, ApiResponse } from '@forge-board/shared/api-interfaces'; // Ensure LogEntry and LogResponse are imported as types
+import { LogEntry, LogResponse, LogLevelEnum, ApiResponse } from '@forge-board/shared/api-interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -38,12 +38,8 @@ export class LogDispatchService {
     if (!this.useRealApi) {
       console.warn('API unavailable, using mock log submission (simulated success).');
       return of({ success: true, data: { count: logs.length }, message: 'Mock submission due to API unavailability', timestamp: new Date().toISOString(), statusCode: 200 });
-    }
-    
-    // Use the environment's logsPath if available, otherwise use default 'logs'
-    // For batch, we'll use a dedicated '/batch' sub-path.
-    const logsPath = this.typedEnv.logsPath || 'logs';
-    const url = `${this.primaryApiUrl}/${logsPath}/batch`;
+    }    // Use a direct path to the logs batch endpoint to avoid path construction issues
+    const url = `${this.primaryApiUrl}/logs/batch`;
     return this.http.post<ApiResponse<{ count: number }>>(url, logs).pipe(
       tap((response) => {
         if (response.success) {
@@ -79,9 +75,7 @@ export class LogDispatchService {
     if (!this.useRealApi) {
       console.warn('API unavailable, fetching mock logs.');
       return of(this.getMockLogResponse());
-    }
-    
-    // Create HttpParams instance from params object
+    }    // Create HttpParams instance from params object
     let httpParams = new HttpParams();
     if (params) {
       for (const key in params) {
@@ -89,9 +83,8 @@ export class LogDispatchService {
           httpParams = httpParams.set(key, params[key]);
         }
       }
-    }
-    const logsPath = this.typedEnv.logsPath || 'logs';
-    const url = `${this.primaryApiUrl}/${logsPath}`;
+    }    // Use a direct path to avoid path construction issues
+    const url = `${this.primaryApiUrl}/logs`;
 
     return this.http.get<LogResponse>(url, { params: httpParams }).pipe(
       tap(() => {

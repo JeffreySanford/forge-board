@@ -36,11 +36,11 @@ export class BrowserSocketClientService implements OnDestroy {
    * Connect to a socket namespace with browser-compatible options
    * @param namespace The namespace to connect to (default: '/')
    * @returns The socket instance
-   */
-  connect(namespace: string = '/'): Socket {
+   */  connect(namespace: string = '/'): Socket {
     // Check for existing socket
     if (this.sockets.has(namespace)) {
-      return this.sockets.get(namespace)!;
+      const socket = this.sockets.get(namespace);
+      if (socket) return socket;
     }
 
     // Configure transport options to avoid Node.js dependencies
@@ -103,8 +103,7 @@ export class BrowserSocketClientService implements OnDestroy {
    * @param eventName Event name to emit
    * @param data Data to send
    * @param namespace Socket namespace (default: '/')
-   */
-  emit(eventName: string, data: any, namespace: string = '/'): void {
+   */  emit(eventName: string, data: unknown, namespace: string = '/'): void {
     const socket = this.getOrCreateSocket(namespace);
     socket.emit(eventName, data);
   }
@@ -113,42 +112,46 @@ export class BrowserSocketClientService implements OnDestroy {
    * Get connection status observable for a namespace
    * @param namespace Socket namespace (default: '/')
    * @returns Observable of connection status (true = connected)
-   */
-  getStatus(namespace: string = '/'): Observable<boolean> {
+   */  getStatus(namespace: string = '/'): Observable<boolean> {
     // Get or create the connection status
     if (!this.connectionStatus.has(namespace)) {
       this.getOrCreateSocket(namespace);
     }
     
-    return this.connectionStatus.get(namespace)!.asObservable();
+    const connectionStatus = this.connectionStatus.get(namespace);
+    return connectionStatus ? connectionStatus.asObservable() : new BehaviorSubject<boolean>(false).asObservable();
   }
 
   /**
    * Check if a socket is connected
    * @param namespace Socket namespace (default: '/')
    * @returns True if connected
-   */
-  isConnected(namespace: string = '/'): boolean {
+   */  isConnected(namespace: string = '/'): boolean {
     if (!this.sockets.has(namespace)) {
       return false;
     }
     
-    return this.sockets.get(namespace)!.connected;
+    const socket = this.sockets.get(namespace);
+    return socket ? socket.connected : false;
   }
 
   /**
    * Disconnect a specific socket
    * @param namespace Socket namespace (default: '/')
-   */
-  disconnect(namespace: string = '/'): void {
+   */  disconnect(namespace: string = '/'): void {
     if (this.sockets.has(namespace)) {
-      const socket = this.sockets.get(namespace)!;
+      const socket = this.sockets.get(namespace);
       
-      socket.disconnect();
-      this.sockets.delete(namespace);
+      if (socket) {
+        socket.disconnect();
+        this.sockets.delete(namespace);
+      }
       
       if (this.connectionStatus.has(namespace)) {
-        this.connectionStatus.get(namespace)!.next(false);
+        const status = this.connectionStatus.get(namespace);
+        if (status) {
+          status.next(false);
+        }
       }
     }
   }
@@ -174,36 +177,43 @@ export class BrowserSocketClientService implements OnDestroy {
   /**
    * Build the socket URL with namespace
    */
-  private buildUrl(namespace: string): string {
-    const baseUrl = environment.apiUrl || window.location.origin;
+  private buildUrl(namespace: string): string {    const baseUrl = environment.apiBaseUrl || window.location.origin;
     
     // Ensure namespace starts with a /
     if (!namespace.startsWith('/')) {
       namespace = '/' + namespace;
     }
     
-    return baseUrl;
+    // Return the complete URL with namespace appended
+    return `${baseUrl}${namespace}`;
   }
 
   /**
    * Get an existing socket or create a new one
    * @param namespace Socket namespace
-   */
-  private getOrCreateSocket(namespace: string = '/'): Socket {
+   */  private getOrCreateSocket(namespace: string = '/'): Socket {
     if (!this.sockets.has(namespace)) {
       this.connect(namespace);
     }
     
-    return this.sockets.get(namespace)!;
+    const socket = this.sockets.get(namespace);
+    if (!socket) {
+      // Create a new socket if it doesn't exist
+      return this.connect(namespace);
+    }
+    return socket;
   }
 
   /**
    * Set up connection status handlers for a socket
    * @param socket Socket instance
    * @param namespace Socket namespace
-   */
-  private setupConnectionHandlers(socket: Socket, namespace: string): void {
-    const statusSubject = this.connectionStatus.get(namespace)!;
+   */  private setupConnectionHandlers(socket: Socket, namespace: string): void {
+    const statusSubject = this.connectionStatus.get(namespace);
+    if (!statusSubject) {
+      console.error(`No status subject found for namespace: ${namespace}`);
+      return;
+    }
     
     socket.on('connect', () => {
       console.log(`Socket connected: ${namespace}`);
@@ -215,7 +225,7 @@ export class BrowserSocketClientService implements OnDestroy {
       statusSubject.next(false);
     });
     
-    socket.on('connect_error', (error: any) => {
+    socket.on('connect_error', (error: Error | unknown) => {
       console.error(`Socket connection error (${namespace}):`, error);
       statusSubject.next(false);
     });

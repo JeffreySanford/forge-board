@@ -1,5 +1,5 @@
 import { Directive, ElementRef, HostListener, Input, OnDestroy } from '@angular/core';
-import { SoundHelperService, SoundType } from '../services/sound-helper.service';
+import { SoundService, SoundType } from '../core/sounds/sound.service';
 import { Subscription } from 'rxjs';
 
 @Directive({
@@ -15,7 +15,7 @@ export class SoundEffectDirective implements OnDestroy {
 
   constructor(
     private el: ElementRef, 
-    private soundHelper: SoundHelperService
+    private soundService: SoundService
   ) {}
 
   @HostListener('click') 
@@ -31,10 +31,9 @@ export class SoundEffectDirective implements OnDestroy {
       this.playSound();
     }
   }
-
   private playSound(): void {
     this.subscription.add(
-      this.soundHelper.playSound(this.soundType, this.soundVolume).subscribe()
+      this.soundService.playSound(this.soundType, this.soundVolume).subscribe()
     );
   }
 

@@ -46,7 +46,7 @@ export class SystemInfoService {
    * Get system information from server when possible
    */
   getSystemInfo(): Observable<SystemInfo> {
-    const url = `${environment.apiUrl}/system/info`;
+    const url = `${environment.apiBaseUrl}/system/info`;
     
     return this.http.get<SystemInfo>(url).pipe(
       tap(() => {
@@ -79,7 +79,7 @@ export class SystemInfoService {
    * Get performance metrics
    */
   getPerformanceMetrics(): Observable<PerformanceMetrics> {
-    const url = `${environment.apiUrl}/system/performance`;
+    const url = `${environment.apiBaseUrl}/system/performance`;
     
     return this.http.get<PerformanceMetrics>(url).pipe(
       catchError(error => {

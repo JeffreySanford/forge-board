@@ -75,10 +75,9 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy, Tile {
         }
       })
     );
-    
-    // Track if we're using mock data
+      // Track if we're using mock data
     this.subscriptions.add(
-      this.backendStatusService.getStatus().subscribe(status => {
+      this.backendStatusService.getStatusSummary().subscribe(status => {
         if (status.gateways) {
           const diagnosticsGateway = status.gateways.find(g => g.name === 'diagnostics');
           this.usingMockData = diagnosticsGateway?.usingMockData || false;

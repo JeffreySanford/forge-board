@@ -80,9 +80,10 @@ export class AuthService {
   
   /**
    * Get guest token for anonymous access
-   */
-  useGuestToken(): Observable<User> {
-    this.storeToken(this.envConfig.jwtGuestToken);
+   */  useGuestToken(): Observable<User> {
+    // Use guest token if available, or a default value
+    const guestToken = this.envConfig.jwtGuestToken || 'guest-token';
+    this.storeToken(guestToken);
     // Typically you'd validate this token with the server
     // For now we'll create a mock guest user
     this.currentUser = {

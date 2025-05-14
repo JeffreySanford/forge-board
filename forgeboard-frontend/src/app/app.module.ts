@@ -22,6 +22,9 @@ import { LoggerModule } from './pages/logger/logger.module'; // Fixed: was Logge
 import { DocumentationModule } from './pages/documentation/documentation.module';
 import { SecurityDashboardModule } from './pages/security-dashboard/security-dashboard.module';
 
+// Core modules
+import { SoundModule } from './core/sounds/sound.module';  // Add the SoundModule
+
 // Angular Material modules
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -91,7 +94,8 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     LoggerModule, // Fixed: was LoggerPageModule
     DocumentationModule,
     SecurityDashboardModule,
-    ConnectionStatusIndicatorModule
+    ConnectionStatusIndicatorModule,
+    SoundModule // Import SoundModule here
   ],
   providers: [
     DatePipe, // Add DatePipe to providers

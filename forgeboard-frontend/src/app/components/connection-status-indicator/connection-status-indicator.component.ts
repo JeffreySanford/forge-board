@@ -33,10 +33,9 @@ export class ConnectionStatusIndicatorComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
 
   constructor(private backendStatusService: BackendStatusService) {}
-
   ngOnInit(): void {
     this.subscription.add(
-      this.backendStatusService.getStatus().subscribe(status => {
+      this.backendStatusService.getStatusSummary().subscribe(status => {
         this.status = status;
         
         // Auto-expand when connection status changes or mock data is activated

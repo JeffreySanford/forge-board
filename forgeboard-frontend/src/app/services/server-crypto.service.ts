@@ -27,7 +27,7 @@ export class ServerCryptoService {
    * Create a hash using the server when possible
    */
   createHash(algorithm: string, data: string, encoding: 'hex' | 'base64' = 'hex'): Observable<string> {
-    const url = `${environment.apiUrl}/crypto/hash`;
+    const url = `${environment.apiBaseUrl}/crypto/hash`;
     
     return this.http.post<HashResponse>(url, { algorithm, data, encoding }).pipe(
       map(response => response.hash),
@@ -60,7 +60,7 @@ export class ServerCryptoService {
    * Generate random bytes using the server when possible
    */
   randomBytes(size: number, encoding?: 'hex' | 'base64'): Observable<string> {
-    const url = `${environment.apiUrl}/crypto/random`;
+    const url = `${environment.apiBaseUrl}/crypto/random`;
     
     return this.http.post<RandomBytesResponse>(url, { size, encoding }).pipe(
       map(response => response.bytes),

@@ -155,10 +155,9 @@ export class FooterComponent implements OnInit, OnDestroy {
     // Default database status
     this.dbStatus = 'green';
     this.dbStatusText = 'In-memory MongoDB';
-    
-    // Subscribe to backend status updates
+      // Subscribe to backend status updates    
     this.subscriptions.add(
-      this.backendStatusService.getStatus().subscribe(status => {
+      this.backendStatusService.getStatusSummary().subscribe(status => {
         this.backendStatus = status;
         this.updateSystemStatus();
       })
@@ -662,10 +661,9 @@ export class FooterComponent implements OnInit, OnDestroy {
   /**
    * Enhance backend monitoring with additional metrics and tracking
    */
-  private enhanceBackendMonitoring(): void {
-    // Subscribe to backend status service for detailed metrics
+  private enhanceBackendMonitoring(): void {    // Subscribe to backend status service for detailed metrics
     this.subscriptions.add(
-      this.backendStatusService.getStatus().subscribe(status => {
+      this.backendStatusService.getStatusSummary().subscribe(status => {
         if (!status) return;
         
         // Update metrics based on gateway status
@@ -762,11 +760,10 @@ export class FooterComponent implements OnInit, OnDestroy {
         const dbDetails = health.details['database'];
         if (!dbDetails) return;
         
-        try {
-          // Parse database details (might be a string that needs parsing)
+        try {          // Parse database details (might be a string that needs parsing)
           const dbHealth = typeof dbDetails === 'string' 
             ? JSON.parse(dbDetails)
-            : dbDetails as Record<string, any>;
+            : dbDetails as Record<string, unknown>;
           
           // Extract database metrics
           this.databaseStatus.metrics = [

@@ -55,6 +55,15 @@ export class LoggerService implements OnDestroy {
 
     this.subscriptions.unsubscribe();
   }
+  /**
+   * Log a debug message - console logging version
+   * @param message Message content
+   * @param params Optional parameters/metadata
+   */
+  private logConsole(level: LogLevelEnum, message: string, ...params: unknown[]): void {
+    // Implementation for console logging
+    console[LogLevelEnum[level].toLowerCase()](message, ...params);
+  }
 
   /**
    * Clean up socket connections

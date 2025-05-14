@@ -28,9 +28,9 @@ export interface EnhancedHealthData extends HealthData {
   providedIn: 'root'
 })
 export class DiagnosticsService implements OnDestroy {
-  private socket!: Socket; // Added definite assignment assertion
+  private socket!: Socket; // Added definite assignment assertion  
   private API_URL: string; // Make API_URL configurable
-  private readonly DIAGNOSTICS_NAMESPACE = '/diagnostics';
+  private readonly DIAGNOSTICS_NAMESPACE = 'diagnostics'; // Namespace without leading slash
 
   // Socket data subjects
   private healthUpdatesSubject = new BehaviorSubject<EnhancedHealthData | null>(null);
@@ -55,10 +55,19 @@ export class DiagnosticsService implements OnDestroy {
     private http: HttpClient,
     private backendStatusService: BackendStatusService,
     private typeDiagnostics: TypeDiagnosticsService
-  ) {
-    // Determine API_URL for sockets
-    if (this.envConfig.apiBaseUrl) {
-      this.API_URL = this.envConfig.apiBaseUrl;
+  ) {    // Determine API_URL for sockets - we need the base URL without the /api path
+    if (this.envConfig.socketBaseUrl) {
+      // Use socketBaseUrl directly if available
+      this.API_URL = this.envConfig.socketBaseUrl;
+    } else if (this.envConfig.apiBaseUrl) {
+      // If we only have apiBaseUrl, extract the origin
+      try {
+        const parsedUrl = new URL(this.envConfig.apiBaseUrl);
+        this.API_URL = parsedUrl.origin; // e.g., http://localhost:3000
+      } catch (e) {
+        console.error('DiagnosticsService: Invalid apiBaseUrl in environment, defaulting.', e);
+        this.API_URL = 'http://localhost:3000'; // Default if parsing fails
+      }
     } else if (this.envConfig.apiUrl) {
       try {
         const parsedUrl = new URL(this.envConfig.apiUrl);
@@ -81,32 +90,37 @@ export class DiagnosticsService implements OnDestroy {
         this.attemptReconnect();
       }
     });
-  }
-
-  private initializeSocketConnection(): void {
+  }  private initializeSocketConnection(): void {
     if (this.socket && this.socket.connected) {
       this.socket.disconnect();
     }
 
-    const socketUrl = `${this.API_URL}${this.DIAGNOSTICS_NAMESPACE}`;
+    // Use the proper Socket.IO namespace format - namespace should be provided as part of the URL
+    const socketUrl = `${this.API_URL}/${this.DIAGNOSTICS_NAMESPACE}`;
+    
+    console.log(`DiagnosticsService: Connecting to socket at ${socketUrl}`);
     
     this.socket = io(socketUrl, {
+      path: '/socket.io',
       transports: ['websocket'],
       reconnection: false, // Disable automatic reconnection to manage it manually
+      forceNew: true,
     });
 
-    this.connectionStatusSubject.next(false);
-
-    this.socket.on('connect', () => {
+    this.connectionStatusSubject.next(false);    this.socket.on('connect', () => {
       this.connectionStatusSubject.next(true);
       this.currentReconnectAttempt = 0; // Reset reconnect attempts on successful connection
       console.log('Connected to diagnostics socket namespace.');
+      // Update backend status service to reflect connected state
+      this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
       this.setupSocketEventHandlers();
     });
 
     this.socket.on('disconnect', (reason) => {
       this.connectionStatusSubject.next(false);
       console.log(`Disconnected from diagnostics socket: ${reason}`);
+      // Update backend status service to reflect disconnected state
+      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
       if (reason !== 'io server disconnect' && reason !== 'io client disconnect') {
         // Attempt to reconnect if not a manual disconnect
         this.attemptReconnect();
@@ -116,6 +130,8 @@ export class DiagnosticsService implements OnDestroy {
     this.socket.on('connect_error', (error) => {
       this.connectionStatusSubject.next(false);
       console.error('Diagnostics socket connection error:', error);
+      // Update backend status service to reflect error state
+      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
       this.attemptReconnect(); // Attempt to reconnect on connection error
     });
   }

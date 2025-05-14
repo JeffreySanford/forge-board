@@ -1,20 +1,12 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, from, of } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators'; 
+import { catchError, tap, map } from 'rxjs/operators';
+import { AudioValidationService } from '../core/sounds/legacy-sound-services';
+import { LoggerService } from './logger.service';
 
-/**
- * Sound types available in the system
- * These correspond to the MP3 files in assets/sounds/typewriter/
- * 
- * Note: Additional sound files can be obtained from Freesound.org
- * See: assets/sounds/README.md for instructions on downloading sounds
- */
-export enum SoundType {
-  KEYSTRIKE = 'keystrike',
-  DING = 'ding',
-  RETURN = 'return',
-  AMBIENT = 'ambient'
-}
+// Import and re-export SoundType for backward compatibility
+import { SoundType } from '../core/sounds/sound.service';
+export { SoundType };
 
 export interface SoundSettings {
   enabled: boolean;
@@ -25,10 +17,8 @@ export interface SoundSettings {
 /**
  * Service for managing sound playback throughout the application
  * 
- * Handles:
- * - Loading sound files with fallbacks
- * - Managing volume and mute settings
- * - Playing sounds in response to events
+ * DEPRECATED: This service is now a wrapper around the core SoundService.
+ * For new code, please use the SoundService directly.
  * 
  * Note: For more information on obtaining sound files, see:
  * - assets/sounds/README.md (General information)
@@ -38,6 +28,7 @@ export interface SoundSettings {
   providedIn: 'root'
 })
 export class SoundHelperService implements OnDestroy {
+  // Legacy service properties used by existing code
   private soundElements: Map<SoundType, HTMLAudioElement> = new Map();
   private settings$ = new BehaviorSubject<SoundSettings>({
     enabled: false,
@@ -46,10 +37,14 @@ export class SoundHelperService implements OnDestroy {
   });
   private fallbackBase64Map: Map<SoundType, string> = new Map();
   private initialized = false;
-  private subscriptions = new Subscription();
+  private subscriptions = new Subscription();  
   private initializationPromise: Promise<boolean> | null = null;
 
-  constructor(private ngZone: NgZone) {
+  constructor(
+    private ngZone: NgZone,
+    private audioValidationService: AudioValidationService,
+    private logger: LoggerService
+  ) {
     // Initialize fallback sounds as base64 strings
     this.initializeFallbacks();
   }
@@ -66,11 +61,10 @@ export class SoundHelperService implements OnDestroy {
     });
     this.soundElements.clear();
   }
-
   /**
    * Initialize the sound system
    * Should be called after user interaction to comply with autoplay policies
-   * Acts like AfterViewInit by ensuring all audio elements are fully loaded before allowing playback
+   * Uses AudioValidationService to ensure all audio files are available or have fallbacks
    */
   initialize(): Observable<boolean> {
     if (this.initialized) {
@@ -82,27 +76,71 @@ export class SoundHelperService implements OnDestroy {
       return from(this.initializationPromise);
     }
 
-    // Create a new initialization process
+    this.logger.info('[SoundHelper] Starting sound system initialization');
+    
+    // Create a new initialization process using the validation service
     this.initializationPromise = new Promise<boolean>((resolve) => {
-      console.log('[SoundHelper] Starting sound system initialization');
-      
-      // Create audio elements
-      for (const soundType of Object.values(SoundType)) {
-        this.createAudioElement(soundType);
-      }
+      // Initialize the audio validation service first
+      this.audioValidationService.initialize().subscribe(
+        status => {
+          // Get validated audio elements from the audio validation service
+          if (status.audioReady) {
+            // Register each sound element from the validation service
+            for (const soundType of Object.values(SoundType)) {
+              const audioElement = this.audioValidationService.getAudioElement(soundType);
+              if (audioElement) {
+                this.soundElements.set(soundType, audioElement);
+                this.logger.debug(`[SoundHelper] Registered audio element for ${soundType}`);
+              } else {
+                // If no validated element exists, create a new one
+                this.createAudioElement(soundType);
+                this.logger.debug(`[SoundHelper] Created fallback audio element for ${soundType}`);
+              }
+            }
 
-      // Wait for the next event loop to ensure elements are created
-      setTimeout(() => {
-        // Check if all audio elements are properly loaded
-        const allSoundsReady = Array.from(this.soundElements.values()).every(
-          element => element.readyState >= 2 // HAVE_CURRENT_DATA or better
-        );
+            this.initialized = true;
+            this.logger.info(`[SoundHelper] Sound system initialization successful. Playback allowed: ${status.playbackAllowed}`);
+            
+            // Update settings based on autoplay capability
+            const currentSettings = this.settings$.getValue();
+            this.settings$.next({
+              ...currentSettings,
+              enabled: status.playbackAllowed
+            });
+            
+            resolve(true);
+          } else {
+            // Fallback to original initialization logic
+            for (const soundType of Object.values(SoundType)) {
+              this.createAudioElement(soundType);
+            }
+            
+            // Wait for the next event loop to ensure elements are created
+            setTimeout(() => {
+              // Check if all audio elements are properly loaded
+              const allSoundsReady = Array.from(this.soundElements.values()).every(
+                element => element.readyState >= 2 // HAVE_CURRENT_DATA or better
+              );
 
-        console.log(`[SoundHelper] Sound system initialization ${allSoundsReady ? 'successful' : 'partial'}`);
-        this.initialized = true;
-        resolve(true);
-        this.initializationPromise = null;
-      }, 100);
+              this.logger.info(`[SoundHelper] Sound system initialization ${allSoundsReady ? 'successful' : 'partial'}`);
+              this.initialized = true;
+              resolve(true);
+            }, 100);
+          }
+          
+          this.initializationPromise = null;
+        },
+        error => {
+          this.logger.error('[SoundHelper] Sound system initialization failed', error);
+          // Fallback to default initialization
+          for (const soundType of Object.values(SoundType)) {
+            this.createAudioElement(soundType);
+          }
+          this.initialized = true;
+          resolve(false);
+          this.initializationPromise = null;
+        }
+      );
     });
 
     return from(this.initializationPromise);
@@ -269,15 +307,43 @@ export class SoundHelperService implements OnDestroy {
       })
     );
   }
-  
-  /**
+    /**
    * Register a sound element directly from the DOM
    * Useful when components use @ViewChild to access audio elements
    */
   registerExistingSoundElement(type: SoundType, element: HTMLAudioElement): void {
     if (element) {
-      console.log(`[SoundHelper] Registering existing sound element for ${type}`);
+      this.logger.debug(`[SoundHelper] Registering existing sound element for ${type}`);
       this.soundElements.set(type, element);
     }
+  }
+  
+  /**
+   * Verify audio system health and revalidate if needed
+   * @returns Observable with status of audio system
+   */
+  verifyAudioSystemHealth(): Observable<boolean> {
+    // If not initialized, initialize first
+    if (!this.initialized) {
+      return this.initialize();
+    }
+    
+    // Otherwise, revalidate through the audio validation service
+    return this.audioValidationService.revalidate().pipe(
+      map(status => {
+        this.logger.info(`[SoundHelper] Audio system health check: ${status.audioReady ? 'HEALTHY' : 'ISSUES FOUND'}`);
+        
+        if (!status.audioReady) {
+          // If issues were found, log them
+          status.fileResults.forEach(result => {
+            if (!result.exists) {
+              this.logger.warn(`[SoundHelper] Audio file missing: ${result.category}/${result.filename}, using fallback`);
+            }
+          });
+        }
+        
+        return status.audioReady;
+      })
+    );
   }
 }
