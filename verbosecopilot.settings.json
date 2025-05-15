@@ -1,19 +1,16 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "github.copilot.enable": {
-    "plaintext": true,
-    "markdown": true,
-    "scminput": true
-  },
-  "nxConsole.generateAiAgentRules": true,
   "github.copilot.advanced": {
     "gpuAcceleration": "auto",
-    "maxCompletionItems": 10,
-    "maxTokenLength": 1024,
-    "responseSpeed": "fast",
+    "maxCompletionItems": 15,
+    "maxTokenLength": 2048,
+    "responseSpeed": "thorough",
     "memoryManagement": "high",
-    "completionTimeout": 15000,
+    "completionTimeout": 20000,
     "useJetBrains": true,
+    "loggingLevel": "verbose"
+  },
+  "github.copilot.inlineSuggest.count": 8,
+  "github.copilot.enable": {
     "plaintext": true,
     "markdown": true,
     "scminput": true,
@@ -25,30 +22,30 @@
     "json": true,
     "jsonc": true
   },
-
   "github.copilot.chat": {
     "modelProvider": "github-copilot",
     "defaultModelConfiguration": {
       "model": "default",
       "parameters": {
-        "topK": 40,
-        "temperature": 0.1
+        "topK": 60,
+        "temperature": 0.2
       }
     },
     "enablePrefillOnSelection": true,
-    "previewMaxTokensToProcess": 8192,
+    "previewMaxTokensToProcess": 12288,
     "useGPU": true,
-    "autoReplyStrategy": "smart"
+    "autoReplyStrategy": "detailed"
   },
   "github.copilot.ui": {
     "showResponsesInEditor": true,
-    "showMinimalResponsesInline": true,
+    "showMinimalResponsesInline": false,
     "showCompletionHover": true,
     "showCompletionDetails": true,
-    "showInlineProgress": false
+    "showInlineProgress": true
   },
   "github.copilot.editor": {
     "enableAutoCompletions": true,
     "enableCodeEngine": true
-  }
+  },
+  "github.copilot.advanced.useExtendedGPUResources": true
 }

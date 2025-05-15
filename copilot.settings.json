@@ -1,11 +1,4 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "github.copilot.enable": {
-    "plaintext": true,
-    "markdown": true,
-    "scminput": true
-  },
-  "nxConsole.generateAiAgentRules": true,
   "github.copilot.advanced": {
     "gpuAcceleration": "auto",
     "maxCompletionItems": 10,
@@ -13,7 +6,10 @@
     "responseSpeed": "fast",
     "memoryManagement": "high",
     "completionTimeout": 15000,
-    "useJetBrains": true,
+    "useJetBrains": true
+  },
+  "github.copilot.inlineSuggest.count": 5,
+  "github.copilot.enable": {
     "plaintext": true,
     "markdown": true,
     "scminput": true,
@@ -25,7 +21,6 @@
     "json": true,
     "jsonc": true
   },
-
   "github.copilot.chat": {
     "modelProvider": "github-copilot",
     "defaultModelConfiguration": {
