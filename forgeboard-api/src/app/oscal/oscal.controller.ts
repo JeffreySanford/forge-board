@@ -1,12 +1,28 @@
 import { Controller, Get, Post, Param, Query, Req, Res, UseGuards, Headers } from '@nestjs/common';
 import { Observable, catchError, tap } from 'rxjs';
 import { Response } from 'express';
-import { OscalService } from './oscal.service';
+import type { UserRole } from '@forge-board/shared/api-interfaces';
+import { OscalService, OscalDocument, ValidationResult } from './oscal.service';
 import { LoggerService } from '../common/logger.service';
 import { AuditService } from '../security/audit.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/require-permissions.decorator';
+import { 
+  QueryParams, 
+  OscalTemplate, 
+  OscalBaseline
+} from './oscal.types';
+
+// Define RequestWithUser as a plain object (not extending Request)
+interface RequestWithUser {
+  user: {
+    id: string;
+    username: string;
+    role: UserRole | string;
+    [key: string]: unknown;
+  };
+}
 
 @Controller('api/oscal')
 export class OscalController {
@@ -60,7 +76,7 @@ export class OscalController {
     
     return this.oscalService.getDocumentById(id).pipe(
       tap(document => {
-        this.logger.debug(`OSCAL document retrieved - userId: ${user.id}, documentId: ${id}, documentType: ${document.documentType}`);
+        this.logger.debug(`OSCAL document retrieved - userId: ${user.id}, documentId: ${id}, documentType: ${document?.documentType}`);
       }),
       catchError(err => {
         this.logger.error(`Failed to retrieve OSCAL document - userId: ${user.id}, documentId: ${id}, error: ${err.message}`);
@@ -239,7 +255,7 @@ export class OscalController {
     });
     
     return this.oscalService.getTemplateByType(type).pipe(
-      tap(template => {
+      tap(() => {
         this.logger.debug(`OSCAL template retrieved - userId: ${user.id}, templateType: ${type}`);
       }),
       catchError(err => {
