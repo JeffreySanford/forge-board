@@ -1,4 +1,4 @@
-# 👨‍💻 ForgeBoard NX Coding Standards
+# 👨‍💻 ForgeBoard Coding Standards
 
 *Last Updated: May 15, 2025*
 
@@ -235,4 +235,4 @@ For more details, see our comprehensive documentation:
 - [API Documentation](./API-DOCUMENTATION.md)
 - [Frontend-API Architecture](./FRONTEND-API-ARCHITECTURE.md)
 
-*ForgeBoard NX — Secure Data, Server-Guarded. Build Legendary.* 🦅✨
+*ForgeBoard — Secure Data, Server-Guarded. Build Legendary.* 🦅✨

@@ -49,9 +49,13 @@ export class SocketClientService implements OnDestroy {
 
     // Merge default options with user options
     const defaultOpts = {
-      path: '/api/socket.io',
-      transports: ['websocket'],
+      // Change from /api/socket.io to /socket.io to match server expectations
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
       autoConnect: true,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 1000,
+      timeout: 20000
     };
     const options = { ...defaultOpts, ...opts };
 
@@ -86,6 +90,9 @@ export class SocketClientService implements OnDestroy {
         console.info(`Connection details: URL=${socketUrl}${formattedNamespace}, path=${options.path}`);
         this.connectionStatus.get(formattedNamespace)?.next(false);
       });
+
+    // Log connection details for debugging
+    console.log(`Socket connecting to namespace: ${formattedNamespace}, URL: ${socketUrl}, path: ${options.path}`);
 
     return socket;
   }

@@ -1,4 +1,4 @@
-# 🎨 ForgeBoard NX: Project Alignment Plan 🇺🇸
+# 🎨 ForgeBoard: Project Alignment Plan 🇺🇸
 *Last Updated: 12MAY25 Jeffrey*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -17,7 +17,7 @@
 </div>
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-This document outlines the necessary steps to align all ForgeBoard NX project documentation, and potentially relevant frontend assets, with the recently established <a href="../forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. Achieving this alignment is crucial for maintaining consistency, professionalism, and reinforcing our brand identity.
+This document outlines the necessary steps to align all ForgeBoard project documentation, and potentially relevant frontend assets, with the recently established <a href="../forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. Achieving this alignment is crucial for maintaining consistency, professionalism, and reinforcing our brand identity.
 </div>
 
 ## <span style="color:#B22234; font-weight:bold;">1. Comprehensive Documentation Audit & Update</span>
@@ -129,7 +129,7 @@ This document outlines the necessary steps to align all ForgeBoard NX project do
 *(Estimates are per major affected area and can be parallelized where possible)*
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Committing to Excellence in Standards and Presentation
+ForgeBoard – Committing to Excellence in Standards and Presentation
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

@@ -1,4 +1,4 @@
-# ForgeBoard NX - OSCAL Development Guide
+# ForgeBoard - OSCAL Development Guide
 *Last Updated: May 7, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -16,7 +16,7 @@
   </div>
 </div>
 
-This developer guide provides technical details for working with the OSCAL (Open Security Controls Assessment Language) integration in ForgeBoard NX.
+This developer guide provides technical details for working with the OSCAL (Open Security Controls Assessment Language) integration in ForgeBoard.
 
 ## 1. Development Environment Setup
 

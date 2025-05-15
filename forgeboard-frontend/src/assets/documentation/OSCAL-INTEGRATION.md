@@ -1,4 +1,4 @@
-# ForgeBoard NX – OSCAL Integration Guide
+# ForgeBoard – OSCAL Integration Guide
 
 *Last Updated: May 7, 2025*
 
@@ -22,7 +22,7 @@
 ![NIST Compliance](https://img.shields.io/badge/NIST%20SP%20800--53-Rev%205-0033A0?style=for-the-badge&logo=nist)
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-This guide explains how <b>ForgeBoard NX</b> integrates with <b>OSCAL (Open Security Controls Assessment Language)</b> to streamline FedRAMP documentation, assessment, and authorization processes. By leveraging OSCAL, ForgeBoard automates the creation and maintenance of security documentation, reducing the manual effort and ensuring consistency across your FedRAMP authorization package.
+This guide explains how <b>ForgeBoard</b> integrates with <b>OSCAL (Open Security Controls Assessment Language)</b> to streamline FedRAMP documentation, assessment, and authorization processes. By leveraging OSCAL, ForgeBoard automates the creation and maintenance of security documentation, reducing the manual effort and ensuring consistency across your FedRAMP authorization package.
 </div>
 
 ## Table of Contents
@@ -80,7 +80,7 @@ ForgeBoard's OSCAL implementation is based on NIST's OSCAL 1.0.4 and requires un
 
 ## 3. ForgeBoard OSCAL Integration
 
-ForgeBoard NX provides built-in OSCAL integration to automate the creation and maintenance of FedRAMP documentation based on your system configuration and security controls.
+ForgeBoard provides built-in OSCAL integration to automate the creation and maintenance of FedRAMP documentation based on your system configuration and security controls.
 
 ### Integration Components
 
@@ -495,5 +495,5 @@ For additional support:
 ---
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Automating FedRAMP compliance with OSCAL
+ForgeBoard – Automating FedRAMP compliance with OSCAL
 </div>

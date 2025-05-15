@@ -1,24 +1,29 @@
-# 🔌 ForgeBoard NX API Documentation
+# <img src="../images/logo.png" alt="ForgeBoard Logo" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> ForgeBoard API Documentation
+
+<div style="background: linear-gradient(90deg, #002868 0%, #BF0A30 100%); height: 8px; margin-bottom: 20px;"></div>
+
+*A product of True North Insights, a division of True North*
+
 *Last Updated: May 15, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>API:</strong> REST + WebSocket ✅
+    <strong>Category:</strong> Technical Reference
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Data Provenance:</strong> Server-Managed Lifecycle 🔄
+    <strong>Status:</strong> Production-Ready
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>WebRTC:</strong> P2P for Ephemeral Data 🌐
+    <strong>API:</strong> REST + WebSocket
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Status:</strong> Production-Ready 🚀
+    <strong>Data Provenance:</strong> Server-Managed
   </div>
 </div>
 
 ## API Philosophy
 
-ForgeBoard NX implements a Server-Authoritative architecture with complete, server-managed data provenance:
+ForgeBoard implements a Server-Authoritative architecture with complete, server-managed data provenance:
 
 1. **Server is the Source of Authority**: All data and its provenance live on the server, which controls access and modifications.
 2. **Complete Data Lifecycle (Server-Managed)**: All data includes server-managed provenance records from inception through disposal.
@@ -73,7 +78,7 @@ flowchart LR
 
 ### Layer 1: Server-Side Authoritative Store & Provenance Engine (Primary)
 
-All interactions in ForgeBoard NX are ultimately authorized and processed by the server, which maintains the authoritative data store and comprehensive data provenance tracking.
+All interactions in ForgeBoard are ultimately authorized and processed by the server, which maintains the authoritative data store and comprehensive data provenance tracking.
 
 ### Layer 2: Server-Managed APIs (REST & WebSockets)
 
@@ -85,12 +90,47 @@ Direct peer-to-peer communication can be utilized for specific features involvin
 
 ## API Overview
 
-ForgeBoard uses a combination of REST APIs and WebSocket connections for real-time data exchange. This document describes both API types.
+ForgeBoard uses a combination of REST APIs and WebSocket connections for real-time data exchange, with MongoDB as the database backend. This document describes both API types and their integration with MongoDB.
+
+## Data Architecture
+
+```mermaid
+flowchart TD
+    Client["Client (Browser)"]
+    RestAPI["REST API"]
+    WebSockets["WebSocket API"]
+    Mongoose["Mongoose ODM"]
+    MongoDB[(MongoDB)]
+    InMemoryMongo[(In-Memory MongoDB)]
+    
+    Client -->|"HTTP Requests"| RestAPI
+    Client -->|"Socket.IO"| WebSockets
+    RestAPI --> Mongoose
+    WebSockets --> Mongoose
+    
+    subgraph "Database Layer"
+        Mongoose
+        MongoDB
+        InMemoryMongo
+    end
+    
+    Mongoose -->|"Production"| MongoDB
+    Mongoose -->|"Development"| InMemoryMongo
+```
+
+## Database Configuration
+
+ForgeBoard can use either:
+- **In-Memory MongoDB**: For development (when `USE_IN_MEMORY_MONGO=true`)
+- **Persistent MongoDB**: For production (using `MONGODB_URI` environment variable)
+
+For more details, see the [DATABASE.md](DATABASE.md) documentation.
 
 ## Base URLs
 
 - REST API: `http://localhost:3000/api`
 - WebSocket: `http://localhost:3000`
+- MongoDB: Logged at startup with message `[MongoMemoryServer] Started in-memory MongoDB at <uri>` (when using in-memory mode)
 
 ## Authentication
 
@@ -543,4 +583,21 @@ npm install @forge-board/shared/api-interfaces
 - TileType               — Dashboard tile identifiers
 - ProvenanceMetadata     — Data provenance metadata
 - ProvenanceRecord       — Complete provenance record
-- ProvenanceStage        —
+- ProvenanceStage        — Provenance lifecycle stage
+
+---
+
+<div style="background-color: #F5F5F5; padding: 15px; border-radius: 6px; margin-top: 30px; border-top: 3px solid #BF0A30;">
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <div>
+      <strong>ForgeBoard</strong><br>
+      A product of True North Insights<br>
+      &copy; 2025 True North. All rights reserved.
+    </div>
+    <div>
+      <strong>Contact:</strong><br>
+      <a href="mailto:support@truenorthinsights.com">support@truenorthinsights.com</a><br>
+      <a href="https://www.truenorthinsights.com">www.truenorthinsights.com</a>
+    </div>
+  </div>
+</div>

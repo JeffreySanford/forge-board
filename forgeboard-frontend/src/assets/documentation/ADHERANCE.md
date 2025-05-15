@@ -1,4 +1,4 @@
-# ForgeBoard NX – FedRAMP 20X Adherence Guide
+# ForgeBoard – FedRAMP 20X Adherence Guide
 
 *Last Updated: May 7, 2025*
 
@@ -22,7 +22,7 @@
 ![Zero Trust](https://img.shields.io/badge/Zero%20Trust-Architecture-0033A0?style=for-the-badge&logo=security)
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-Welcome to the <b>ForgeBoard NX FedRAMP 20X Adherence Guide</b>! Based on the anticipated FedRAMP 20X guidelines (expected July 2025), we've created a comprehensive overview of our commitment to the latest NIST Risk Management Framework (RMF).
+Welcome to the <b>ForgeBoard FedRAMP 20X Adherence Guide</b>! Based on the anticipated FedRAMP 20X guidelines (expected July 2025), we've created a comprehensive overview of our commitment to the latest NIST Risk Management Framework (RMF).
 </div>
 
 ## Table of Contents
@@ -31,7 +31,7 @@ Welcome to the <b>ForgeBoard NX FedRAMP 20X Adherence Guide</b>! Based on the an
 2. **Present – Current FedRAMP & NIST RMF Landscape** 
 3. **Future – FedRAMP 20X & ForgeBoard's Path to Compliance**
 4. **Key Changes in FedRAMP 20X Program**
-5. **How ForgeBoard NX Meets 20X Requirements**
+5. **How ForgeBoard Meets 20X Requirements**
 6. **Implementation Roadmap & Timelines**
 7. **Visual Infographics & Diagrams**
 8. **References & Resources**
@@ -224,9 +224,9 @@ flowchart LR
   classDef future fill:#0C2677,stroke:#071442,color:#fff;
 ```  
 
-### ForgeBoard NX's FedRAMP 20X Path
+### ForgeBoard's FedRAMP 20X Path
 
-ForgeBoard NX has built a tailored roadmap to not only meet but exceed FedRAMP 20X requirements:
+ForgeBoard has built a tailored roadmap to not only meet but exceed FedRAMP 20X requirements:
 
 1. **Phase 1: Foundation** (Complete)
    - Implement core security architecture
@@ -271,11 +271,11 @@ FedRAMP 20X introduces fundamental changes to the authorization framework:
 
 ---
 
-## 5. How ForgeBoard NX Meets FedRAMP 20X
+## 5. How ForgeBoard Meets FedRAMP 20X
 
-ForgeBoard NX is built to **exceed** FedRAMP 20X requirements via comprehensive implementation of security controls across all seven RMF steps and the newly introduced Key Security Indicators:
+ForgeBoard is built to **exceed** FedRAMP 20X requirements via comprehensive implementation of security controls across all seven RMF steps and the newly introduced Key Security Indicators:
 
-| RMF Step              | FedRAMP 20X Feature              | ForgeBoard NX Implementation                                   | Benefit |
+| RMF Step              | FedRAMP 20X Feature              | ForgeBoard Implementation                                   | Benefit |
 |-----------------------|----------------------------------|----------------------------------------------------------------|---------|
 | **Categorize**        | Asset & data inventory (SBOM)    | **Syft/CycloneDX** SBOM generation, shared DTO `SbomDto`       | Complete visibility into all software components with automatic updates |
 | **Select**            | Control map & invocation         | **Shared interfaces** library maps NIST controls to modules    | Controls are directly linked to code implementations for traceability |
@@ -395,7 +395,7 @@ ForgeBoard's FedRAMP 20X implementation follows a structured, phased approach to
 
 ```mermaid
 gantt
-    title ForgeBoard NX FedRAMP 20X Implementation Roadmap
+    title ForgeBoard FedRAMP 20X Implementation Roadmap
     dateFormat  YYYY-Q[Q]
     axisFormat %Y-Q%q
     
@@ -437,7 +437,7 @@ gantt
 ### FedRAMP 20X Control Implementation Status
 
 ```mermaid
-pie title ForgeBoard NX FedRAMP 20X Control Implementation Status
+pie title ForgeBoard FedRAMP 20X Control Implementation Status
     "Implemented" : 345
     "In Progress" : 65
     "Planned" : 35
@@ -597,7 +597,7 @@ flowchart TD
 - **Implementation Guides**: Documentation for ensuring OSCAL-based deliverables comply with FedRAMP requirements
 - **Validation Rules**: Schematron-based validation with web documentation for FedRAMP OSCAL documents
 
-### ForgeBoard NX Documentation
+### ForgeBoard Documentation
 
 - [ForgeBoard Security Architecture](../security/ARCHITECTURE.md)
 - [Zero Trust Implementation Guide](../security/ZERO-TRUST.md)
@@ -611,11 +611,11 @@ flowchart TD
 - [FedRAMP Training Materials](https://www.fedramp.gov/training/)
 
 <div style="background-color: #E6EFFF; border: 3px solid #0C2677; border-radius: 5px; padding: 15px; margin: 20px 0; box-shadow: 0 3px 6px rgba(0,0,0,0.15);">
-ForgeBoard NX isn't just "FedRAMP‑ready" – it's built to propel you into the <span style="color:#B22234; font-weight:bold; font-size: 110%;">FedRAMP 20X era</span> with confidence. Our <span style="color:#0C2677; font-weight:bold;">shared DTOs</span>, <span style="color:#B22234; font-weight:bold;">real‑time gateways</span>, and <span style="color:#0C2677; font-weight:bold;">automated pipelines</span> align seamlessly with the NIST RMF, turning verbose controls into actionable dashboards. 🇺🇸✨
+ForgeBoard isn't just "FedRAMP‑ready" – it's built to propel you into the <span style="color:#B22234; font-weight:bold; font-size: 110%;">FedRAMP 20X era</span> with confidence. Our <span style="color:#0C2677; font-weight:bold;">shared DTOs</span>, <span style="color:#B22234; font-weight:bold;">real‑time gateways</span>, and <span style="color:#0C2677; font-weight:bold;">automated pipelines</span> align seamlessly with the NIST RMF, turning verbose controls into actionable dashboards. 🇺🇸✨
 </div>
 
 > <span style="color:#B22234; font-weight:bold; font-size: 110%;">Get Started Today:</span>  
-> <span style="color:#0C2677; font-weight:bold;">1. Clone the ForgeBoard NX repository</span>  
+> <span style="color:#0C2677; font-weight:bold;">1. Clone the ForgeBoard repository</span>  
 > <span style="color:#B22234; font-weight:bold;">2. Review this `ADHERANCE.md` guide for detailed mapping</span>  
 > <span style="color:#0C2677; font-weight:bold;">3. Spin up the app: `npm run start:dev`</span>  
 > <span style="color:#B22234; font-weight:bold;">4. Explore the **Security Dashboard** tile for live FedRAMP 20X insights!</span>  
@@ -626,16 +626,16 @@ Let's build a safer, faster, more auditable cloud together – one <span style="
 ---
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Ready for the newly released FedRAMP 20X (July 2025)
+ForgeBoard – Ready for the newly released FedRAMP 20X (July 2025)
 </div>
 
 ## 9. FedRAMP 20X Key Security Indicators
 
-The FedRAMP 20x Phase One introduces Key Security Indicators (KSIs) that create an abstraction layer to summarize the security capabilities required for FedRAMP Low authorization. ForgeBoard NX has been specifically designed to address all KSIs through comprehensive implementation and continuous automated validation.
+The FedRAMP 20x Phase One introduces Key Security Indicators (KSIs) that create an abstraction layer to summarize the security capabilities required for FedRAMP Low authorization. ForgeBoard has been specifically designed to address all KSIs through comprehensive implementation and continuous automated validation.
 
 ### KSI-CNA: Cloud Native Architecture
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard employs a fully cloud-native architecture that leverages containerization, immutable infrastructure, and microservices to enhance security:
 
@@ -649,7 +649,7 @@ ForgeBoard employs a fully cloud-native architecture that leverages containeriza
 
 ### KSI-SC: Service Configuration
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard enforces strong cryptography and component integrity through:
 
@@ -663,7 +663,7 @@ ForgeBoard enforces strong cryptography and component integrity through:
 
 ### KSI-IAM: Identity and Access Management
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard implements advanced identity protection with comprehensive zero trust practices:
 
@@ -676,7 +676,7 @@ ForgeBoard implements advanced identity protection with comprehensive zero trust
 
 ### KSI-MLA: Monitoring, Logging, and Auditing
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard provides comprehensive monitoring with immutable audit trails:
 
@@ -689,7 +689,7 @@ ForgeBoard provides comprehensive monitoring with immutable audit trails:
 
 ### KSI-CM: Change Management
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard enforces safe changes through automation and strict controls:
 
@@ -701,7 +701,7 @@ ForgeBoard enforces safe changes through automation and strict controls:
 
 ### KSI-PI: Policy and Inventory
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard maintains comprehensive documentation and inventory:
 
@@ -714,7 +714,7 @@ ForgeBoard maintains comprehensive documentation and inventory:
 
 ### KSI-3IR: Third Party Information Resources
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard rigorously manages supply chain risks:
 
@@ -726,7 +726,7 @@ ForgeBoard rigorously manages supply chain risks:
 
 ### KSI-CE: Cybersecurity Education
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard ensures continuous security education:
 
@@ -737,7 +737,7 @@ ForgeBoard ensures continuous security education:
 
 ### KSI-IR: Incident Response
 
-**ForgeBoard NX Implementation**: 
+**ForgeBoard Implementation**: 
 
 ForgeBoard maintains robust incident response capabilities:
 

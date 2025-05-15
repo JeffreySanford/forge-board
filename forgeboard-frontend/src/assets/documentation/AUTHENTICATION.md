@@ -1,18 +1,23 @@
-# 🔐 ForgeBoard NX: Authentication & Authorization
-*Last Updated: May 7, 2025*
+# <img src="../images/logo.png" alt="ForgeBoard Logo" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> ForgeBoard: Authentication & Authorization
+
+<div style="background: linear-gradient(90deg, #002868 0%, #BF0A30 100%); height: 8px; margin-bottom: 20px;"></div>
+
+*A product of True North Insights, a division of True North*
+
+*Last Updated: May 15, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Security:</strong> Zero Trust 🔒
+    <strong>Category:</strong> Security
   </div>
   <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>MFA:</strong> FIDO2 Required 🔑
+    <strong>Status:</strong> FedRAMP 20X
   </div>
   <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>JWT:</strong> ES256 Signed 🪙
+    <strong>Method:</strong> Zero Trust + MFA
   </div>
   <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <strong>Status:</strong> FedRAMP 20X ✅
+    <strong>JWT:</strong> ES256 Signed
   </div>
 </div>
 
@@ -33,19 +38,28 @@ ForgeBoard uses a unified authentication and authorization system for both HTTP 
 ### Prerequisites
 
 - Node.js 14+
-- MongoDB 4.4+
+- MongoDB 4.4+ (or use in-memory MongoDB for development)
 
 ### Setup
 
-1. Install MongoDB and start the service
+1. Choose your MongoDB setup:
+   - **Option 1**: Install MongoDB and start the service
+   - **Option 2**: Use in-memory MongoDB for development (no installation required)
+
 2. Install dependencies:
    ```bash
    npm install @nestjs/jwt @nestjs/mongoose mongoose
+   # For development with in-memory MongoDB
+   npm install mongodb-memory-server --save-dev
    ```
 
 3. Configure environment variables in `.env`:
    ```
+   # Standard MongoDB connection
    MONGODB_URI=mongodb://localhost:27017/forgeboard
+   # Set to true to use in-memory MongoDB (for development)
+   USE_IN_MEMORY_MONGO=true
+   # Authentication settings
    JWT_SECRET=your-secret-key
    JWT_EXPIRES_IN=7d
    ```
@@ -184,3 +198,20 @@ npm run test:auth
 # E2E tests for authentication flow
 npm run test:e2e:auth
 ```
+
+---
+
+<div style="background-color: #F5F5F5; padding: 15px; border-radius: 6px; margin-top: 30px; border-top: 3px solid #BF0A30;">
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <div>
+      <strong>ForgeBoard</strong><br>
+      A product of True North Insights<br>
+      &copy; 2025 True North. All rights reserved.
+    </div>
+    <div>
+      <strong>Contact:</strong><br>
+      <a href="mailto:support@truenorthinsights.com">support@truenorthinsights.com</a><br>
+      <a href="https://www.truenorthinsights.com">www.truenorthinsights.com</a>
+    </div>
+  </div>
+</div>

@@ -3,12 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { BehaviorSubject, Observable, Subject, from, of, concat } from 'rxjs';
 import { catchError, finalize, map, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { User } from './models/user.model';
-import { Log } from './models/log.model';
-import { Metric } from './models/metric.model';
-import { Diagnostic } from './models/diagnostic.model';
-import { KanbanBoard } from './models/kanban.model';
-import { Sound } from './models/sound.model';
+import { User } from '../models/user.model';
+import { Log } from '../models/log.model';
+import { Metric } from '../models/metric.model';
+import { Diagnostic } from '../models/diagnostic.model';
+import { KanbanBoard } from '../models/kanban.model';
+import { Sound } from '../models/sound.model';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -42,13 +42,19 @@ export interface SeedStatus {
   errors: number;
 }
 
-const SEED_DATA_DIR = path.join(__dirname, 'seed');
+// Use process.cwd() to ensure we're looking in the right place when running from dist
+const SEED_DATA_DIR = path.join(process.cwd(), 'dist/forgeboard-api/seed');
 const KANBAN_EXAMPLE_FILE = path.join(SEED_DATA_DIR, 'kanban-example-boards.json');
 const KANBAN_FORGEBOARD_FILE = path.join(SEED_DATA_DIR, 'kanban-forgeboard-stories.json');
 
 function loadSeedJson(filePath: string) {
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    // Check if file exists before trying to read it
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File does not exist: ${filePath}`);
+    }
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
   } catch (e) {
     throw new Error(`Failed to load seed file: ${filePath} - ${e.message}`);
   }

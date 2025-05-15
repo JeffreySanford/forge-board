@@ -1,10 +1,23 @@
-# ForgeBoard Socket Services Architecture
+# <img src="../images/logo.png" alt="ForgeBoard Logo" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> ForgeBoard Socket Services Architecture
 
-*Last Updated: August 15, 2025*
+<div style="background: linear-gradient(90deg, #002868 0%, #BF0A30 100%); height: 8px; margin-bottom: 20px;"></div>
+
+*A product of True North Insights, a division of True North*
+
+*Last Updated: May 15, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Category:</strong> Technical Reference
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Status:</strong> Production Ready
+  </div>
+</div>
 
 ## Overview
 
-ForgeBoard utilizes a structured Socket.IO service architecture to enable real-time communication between the client and server. This document outlines the initialization sequence, namespace configuration, and service activation patterns used throughout the application.
+ForgeBoard utilizes a structured Socket.IO service architecture to enable real-time communication between the client and server. This document outlines the initialization sequence, namespace configuration, service activation patterns, and database integration used throughout the application.
 
 ## Socket Service Initialization Types
 
@@ -187,6 +200,65 @@ All socket connections in ForgeBoard implement:
 - Rate limiting for event emissions
 - Automatic disconnection after prolonged inactivity
 
+## Database Integration
+
+ForgeBoard's socket services integrate with MongoDB for data persistence and real-time updates:
+
+### MongoDB Connection
+
+Socket gateways access MongoDB through Mongoose models, providing real-time data updates when database changes occur:
+
+```mermaid
+sequenceDiagram
+    participant Client as Socket Client
+    participant Gateway as Socket Gateway
+    participant Service as Backend Service
+    participant Database as MongoDB
+
+    Client->>Gateway: Connect to namespace
+    Gateway->>Database: Register change listeners
+    Client->>Gateway: Request data
+    Gateway->>Service: Process request
+    Service->>Database: Query data
+    Database-->>Service: Return data
+    Service-->>Gateway: Process data
+    Gateway-->>Client: Send data
+
+    Database->>Gateway: Database change notification
+    Gateway-->>Client: Real-time update
+```
+
+### In-Memory MongoDB for Development
+
+When running in development mode with `USE_IN_MEMORY_MONGO=true`:
+
+1. Socket gateways connect to the in-memory MongoDB instance
+2. The MongoDB URI is logged at startup: `[MongoMemoryServer] Started in-memory MongoDB at <uri>`
+3. All data is ephemeral and reset when the application restarts
+
+### Persistent MongoDB for Production
+
+In production:
+
+1. Socket gateways connect to a persistent MongoDB database
+2. Connection information is configured via `MONGODB_URI` environment variable
+3. Data persists across application restarts
+
+For more detailed information on database configuration, refer to the [DATABASE.md](DATABASE.md) documentation.
+
 ---
 
-*For more detailed information on socket implementation, refer to the API documentation and socket gateway source code.*
+<div style="background-color: #F5F5F5; padding: 15px; border-radius: 6px; margin-top: 30px; border-top: 3px solid #BF0A30;">
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <div>
+      <strong>ForgeBoard NX</strong><br>
+      A product of True North Insights<br>
+      &copy; 2025 True North. All rights reserved.
+    </div>
+    <div>
+      <strong>Contact:</strong><br>
+      <a href="mailto:support@truenorthinsights.com">support@truenorthinsights.com</a><br>
+      <a href="https://www.truenorthinsights.com">www.truenorthinsights.com</a>
+    </div>
+  </div>
+</div>

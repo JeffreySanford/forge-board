@@ -12,7 +12,14 @@
         "outputPath": "dist/forgeboard-api",
         "main": "forgeboard-api/src/main.ts",
         "tsConfig": "forgeboard-api/tsconfig.app.json",
-        "assets": ["forgeboard-api/src/assets"],
+        "assets": [
+          "forgeboard-api/src/assets",
+          {
+            "glob": "**/*.json",
+            "input": "forgeboard-api/src/app/seed",
+            "output": "seed"
+          }
+        ],
         "webpackConfig": "forgeboard-api/webpack.config.js",
         "target": "node"
       },

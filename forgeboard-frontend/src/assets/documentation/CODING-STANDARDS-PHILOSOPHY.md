@@ -1,4 +1,4 @@
-# ForgeBoard NX: The Philosophy Behind Our Rigorous Coding Standards
+# ForgeBoard: The Philosophy Behind Our Rigorous Coding Standards
 
 *Last Updated: May 7, 2025*
 
@@ -19,7 +19,7 @@
 
 ## Why Our Coding Standards Are Necessarily Rigorous
 
-At first glance, ForgeBoard NX's coding standards may appear unusually strict or "draconian." However, these standards aren't arbitrary restrictions—they are the essential foundation that enables us to meet our extraordinary commitments to **server-managed data integrity**, **security compliance (FedRAMP 20X)**, and **robust server-authoritative architecture**.
+At first glance, ForgeBoard's coding standards may appear unusually strict or "draconian." However, these standards aren't arbitrary restrictions—they are the essential foundation that enables us to meet our extraordinary commitments to **server-managed data integrity**, **security compliance (FedRAMP 20X)**, and **robust server-authoritative architecture**.
 
 ### 1. FedRAMP 20X Compliance Demands Precision
 
@@ -43,7 +43,7 @@ These aren't merely "best practices"—they're legal requirements with potential
 ### 2. Robust Server-Authoritative Architecture Requires Discipline
 
 <div style="border-left: 5px solid #BF0A30; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-ForgeBoard NX implements a <b>server-authoritative architecture</b> where the server is the ultimate source of truth and control for all data. This model ensures data integrity, consistent application of business rules, and centralized security enforcement, which requires rigorously consistent patterns.
+ForgeBoard implements a <b>server-authoritative architecture</b> where the server is the ultimate source of truth and control for all data. This model ensures data integrity, consistent application of business rules, and centralized security enforcement, which requires rigorously consistent patterns.
 </div>
 
 Our server-authoritative approach delivers critical benefits:
@@ -87,7 +87,7 @@ flowchart TD
   class FB1,FB2,FB3,FB4 forgeboard;
 ```
 
-In ForgeBoard NX, security isn't a layer added later—it's the fundamental architecture, centered around server control:
+In ForgeBoard, security isn't a layer added later—it's the fundamental architecture, centered around server control:
 
 - **Shared DTOs**: Our strict typing system means data validation happens consistently, with the server as the final arbiter.
 - **RxJS Patterns**: Required cleanup and error handling in client-server communication prevents issues.
@@ -96,7 +96,7 @@ In ForgeBoard NX, security isn't a layer added later—it's the fundamental arch
 
 ### 4. Maintainability at Scale Requires Consistency
 
-ForgeBoard NX is designed for large, distributed teams working on critical infrastructure. The rigid standards create an environment where:
+ForgeBoard is designed for large, distributed teams working on critical infrastructure. The rigid standards create an environment where:
 
 - New developers can quickly understand server-side code patterns regardless of which team wrote them.
 - Automated testing can rely on consistent API contracts and server behaviors.
@@ -146,7 +146,7 @@ Our patriotic color scheme isn't just aesthetic—it reflects our mission to res
 
 ## Embracing the Standards
 
-Rather than viewing these standards as restrictions, we encourage developers to see them as the framework that enables ForgeBoard NX to deliver its revolutionary capabilities. When you follow these patterns, you're not just writing code—you're:
+Rather than viewing these standards as restrictions, we encourage developers to see them as the framework that enables ForgeBoard to deliver its revolutionary capabilities. When you follow these patterns, you're not just writing code—you're:
 
 - Ensuring FedRAMP 20X compliance for critical systems
 - Protecting sensitive government data from unauthorized access
@@ -168,7 +168,7 @@ We provide comprehensive tooling to help developers meet these standards:
 
 Our coding standards aren't rigid for rigidity's sake—they're precise because the mission demands precision. When federal systems, sensitive data, and data integrity are at stake, "good enough" simply isn't good enough. 
 
-These standards are the foundation that allows ForgeBoard NX to deliver its revolutionary promise: a fully-compliant, server-authoritative, cryptographically secure platform that ensures data integrity and controlled access.
+These standards are the foundation that allows ForgeBoard to deliver its revolutionary promise: a fully-compliant, server-authoritative, cryptographically secure platform that ensures data integrity and controlled access.
 
-*ForgeBoard NX — Secure Data, Server-Guarded. Build Legendary.* 🦅✨
+*ForgeBoard — Secure Data, Server-Guarded. Build Legendary.* 🦅✨
 

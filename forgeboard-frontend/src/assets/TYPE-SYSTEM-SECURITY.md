@@ -2,13 +2,13 @@
 
 ## Overview
 
-The ForgeBoard NX type system is a foundational component that powers our security, auditing, testing, and logging infrastructure. This document explains how our comprehensive type system - consisting of TypeScript interfaces, runtime validation, and diagnostic services - contributes to meeting our security and compliance goals.
+The ForgeBoard type system is a foundational component that powers our security, auditing, testing, and logging infrastructure. This document explains how our comprehensive type system - consisting of TypeScript interfaces, runtime validation, and diagnostic services - contributes to meeting our security and compliance goals.
 
 ## 1. Security Foundations
 
 ### Type-Enforced Security Boundaries
 
-The ForgeBoard NX type system creates strong security boundaries through:
+The ForgeBoard type system creates strong security boundaries through:
 
 - **Runtime Data Validation**: Ensures all data crossing system boundaries (API responses, WebSocket messages, configuration files) conforms to expected structures.
 - **Immutable Audit Records**: Type definitions enforce immutable properties on audit and security events, preventing tampering.
@@ -240,7 +240,7 @@ To fully leverage our type system for security, auditing, testing, and logging:
 
 ## Conclusion
 
-The ForgeBoard NX type system is not just a development tool but a critical security and compliance component. By enforcing data structure, validation, and integrity through a comprehensive type system, we create multiple layers of protection and verification throughout the application. This approach ensures that our security, auditing, testing, and logging requirements are built into the foundation of the application rather than bolted on as afterthoughts.
+The ForgeBoard type system is not just a development tool but a critical security and compliance component. By enforcing data structure, validation, and integrity through a comprehensive type system, we create multiple layers of protection and verification throughout the application. This approach ensures that our security, auditing, testing, and logging requirements are built into the foundation of the application rather than bolted on as afterthoughts.
 
 --- 
 

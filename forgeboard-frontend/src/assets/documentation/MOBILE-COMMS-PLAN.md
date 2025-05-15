@@ -1,4 +1,4 @@
-# ForgeBoard NX – Mobile Communications & Reporting Plan
+# ForgeBoard – Mobile Communications & Reporting Plan
 
 *Last Updated: June 20, 2025*
 
@@ -529,5 +529,5 @@ export class ReportAnalyticsService {
 ---
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Secure, branded mobile communication for FedRAMP compliance
+ForgeBoard – Secure, branded mobile communication for FedRAMP compliance
 </div>

@@ -51,12 +51,12 @@ export interface AudioSystemStatus {
 
 // Define default sound categories and their required files
 export const DEFAULT_SOUND_CATEGORIES: Record<string, string[]> = {
-  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3', 'ambient.mp3'],
+  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3'],
 };
 
 // This export is needed by legacy code
 export const REQUIRED_SOUNDS: Record<string, string[]> = {
-  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3', 'ambient.mp3'],
+  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3'],
   ui: ['click.mp3', 'hover.mp3', 'alert.mp3']
 };
 

@@ -13,7 +13,9 @@
     "start:all": "npx nx run-many --target=serve --projects=shared-api-interfaces,forgeboard-api,forgeboard-frontend --parallel=3",
     "watch:shared": "npx nx run shared-api-interfaces:watch",
     "dev": "npm run start:all",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "build:docs": "node scripts/build-docs.mjs",
+    "watch:docs": "npx nodemon --watch forgeboard-frontend/src/assets/documentation --ext md --exec \"npm run build:docs\""
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "^19.0.1",
@@ -72,13 +74,16 @@
     "eslint-plugin-prefer-observable": "file:eslint-plugin-prefer-observable",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-require-socket-cleanup": "file:eslint-plugin-require-socket-cleanup",
+    "glob": "^10.4.5",
     "https-browserify": "^1.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-environment-node": "^29.7.0",
     "jest-preset-angular": "~14.4.0",
+    "marked": "^11.2.0",
     "mongodb-memory-server": "^10.1.4",
     "node-polyfill-webpack-plugin": "^4.1.0",
+    "nodemon": "^3.1.10",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
     "prettier": "^2.8.0",

@@ -46,15 +46,16 @@ export class ModernSocketClientService implements OnDestroy {
     // Configure browser-friendly transport options
     // This helps avoid Node.js modules like http, fs, etc.
     const defaultOpts = {
-      path: '/api/socket.io',
-      transports: ['websocket'],
+      // Change from /api/socket.io to /socket.io to match server expectations
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       forceNew: false,
       reconnectionAttempts: 5,
       timeout: 10000,
       // These options help with browser compatibility
-      upgrade: false,
-      rememberUpgrade: false
+      upgrade: true,
+      rememberUpgrade: true
     };
     
     const options = { ...defaultOpts, ...opts };

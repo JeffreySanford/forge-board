@@ -1,7 +1,7 @@
-# ForgeBoard NX – Security Dashboard 🦅🔒
+# ForgeBoard – Security Dashboard 🦅🔒
 *Last Updated: May 7, 2025*
 
-Welcome to the **Security Dashboard** for the ForgeBoard NX monorepo! This security interface provides a real-time bird's-eye view of our application's security posture. It appears in the main menu alongside Home, Metrics, Kablam Board, Logs, Diagnostics, and Documentation, offering developers and DevSecOps engineers an interactive hub for all things security.
+Welcome to the **Security Dashboard** for the ForgeBoard monorepo! This security interface provides a real-time bird's-eye view of our application's security posture. It appears in the main menu alongside Home, Metrics, Kablam Board, Logs, Diagnostics, and Documentation, offering developers and DevSecOps engineers an interactive hub for all things security.
 
 This README serves as a comprehensive guide and living documentation for the Security Dashboard feature. Here we'll cover its purpose, design, setup, and future roadmap in detail – with plenty of examples, visuals, and tips to get you started. Let's dive in! 🎉
 
@@ -139,7 +139,7 @@ Ensure you have the following security tools installed and accessible (on your d
     docker run --rm -v "$PWD:/zap/wrk" owasp/zap2docker-stable zap-baseline.py -t https://example.com -r zap_report.html
     ```
     This runs a baseline scan against example.com and outputs a report. You should see output logs in the console. (Replace the URL with a local app URL when using it for real.)
-- **Node.js/NPM** – for running the ForgeBoard NX app itself (including Angular and NestJS). Ensure you have Node.js (v16+ recommended) installed. The NX monorepo should have its dependencies installed via `npm install` or `yarn` as usual.
+- **Node.js/NPM** – for running the ForgeBoard app itself (including Angular and NestJS). Ensure you have Node.js (v16+ recommended) installed. The NX monorepo should have its dependencies installed via `npm install` or `yarn` as usual.
 
 > 💡 *Tip:* If you prefer containerized tools in CI, you might not need to install all locally. For instance, in GitHub Actions you can use pre-made actions for Syft/Grype, or run Cosign via a Docker container. However, the Scanner Service at runtime will need access to these tools (either on the PATH or via API calls), so in a deployed environment ensure the Docker image or VM for the service includes them.
 

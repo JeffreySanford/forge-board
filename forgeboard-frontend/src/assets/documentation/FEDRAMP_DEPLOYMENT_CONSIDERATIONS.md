@@ -1,4 +1,4 @@
-# 🇺🇸 ForgeBoard NX: Navigating FedRAMP & Deployment Environments
+# 🇺🇸 ForgeBoard: Navigating FedRAMP & Deployment Environments
 *Last Updated: 12MAY25 Jeffrey*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -17,7 +17,7 @@
 </div>
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-ForgeBoard NX is committed to the highest standards of quality, security, and documentation, as exemplified by our <a href="../forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. This commitment is a powerful asset when considering rigorous compliance frameworks like FedRAMP. This document clarifies how these internal standards support FedRAMP aspirations and how various deployment environments fit into this strategy.
+ForgeBoard is committed to the highest standards of quality, security, and documentation, as exemplified by our <a href="../forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. This commitment is a powerful asset when considering rigorous compliance frameworks like FedRAMP. This document clarifies how these internal standards support FedRAMP aspirations and how various deployment environments fit into this strategy.
 </div>
 
 ## <span style="color:#B22234; font-weight:bold;">1. The Power of Rigorous Internal Standards</span>
@@ -87,7 +87,7 @@ However, achieving FedRAMP authorization requires more:
 4.  **Continuous Monitoring Program**: Establishing and executing a plan for ongoing security vigilance.
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Building Securely, Documenting Meticulously, Aiming for Compliance.
+ForgeBoard – Building Securely, Documenting Meticulously, Aiming for Compliance.
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

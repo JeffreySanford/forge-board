@@ -1,4 +1,4 @@
-# <span style="color:#B22234; font-weight:bold; text-shadow: 0 0 1px rgba(0,0,0,0.2);">ForgeBoard NX</span> – <span style="color:#0C2677; font-weight:bold;">Sound System</span> 🔊
+# <span style="color:#B22234; font-weight:bold; text-shadow: 0 0 1px rgba(0,0,0,0.2);">ForgeBoard</span> – <span style="color:#0C2677; font-weight:bold;">Sound System</span> 🔊
 *Last Updated: May 13, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -264,7 +264,7 @@ This test:
 4. Updates database records of sound usage
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Enhancing user experience through immersive audio
+ForgeBoard – Enhancing user experience through immersive audio
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

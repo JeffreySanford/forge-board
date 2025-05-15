@@ -1,4 +1,4 @@
-# 🎨 ForgeBoard NX: Visual Standards & Documentation Guide
+# 🎨 ForgeBoard: Visual Standards & Documentation Guide
 *Last Updated: May 7, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -121,7 +121,7 @@ All ForgeBoard documentation should follow this consistent structure:
 ### Header Format
 
 ```markdown
-# <span style="color:#B22234; font-weight:bold; text-shadow: 0 0 1px rgba(0,0,0,0.2);">ForgeBoard NX</span> – <span style="color:#0C2677; font-weight:bold;">[Document Title]</span> [Emoji]
+# <span style="color:#B22234; font-weight:bold; text-shadow: 0 0 1px rgba(0,0,0,0.2);">ForgeBoard</span> – <span style="color:#0C2677; font-weight:bold;">[Document Title]</span> [Emoji]
 *Last Updated: [Date]*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -165,7 +165,7 @@ End each document with a centered divider:
 
 ```html
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – [Short tagline related to document]
+ForgeBoard – [Short tagline related to document]
 </div>
 ```
 
@@ -298,7 +298,7 @@ Format code blocks with syntax highlighting and always include relevant comments
 
 ```markdown
 ```typescript
-// Example of the highly structured ForgeBoard NX pattern
+// Example of the highly structured ForgeBoard pattern
 @Injectable({
   providedIn: 'root'
 })
@@ -336,7 +336,7 @@ Include relevant badges at the top of each document:
 End documents with our standard tagline:
 
 ```markdown
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨
 ```
 
 ## 7. Document Review Process
@@ -419,10 +419,10 @@ Complex topics often require visual representations to be fully understood:
 
 ## Summary
 
-Our stringent documentation standards ensure that ForgeBoard NX presents a consistent, professional, and patriotic image that reflects our commitment to data sovereignty and security. These standards aren't optional—they're an essential part of our mission to deliver secure, compliant, and visually distinctive documentation that stands out in the federal space.
+Our stringent documentation standards ensure that ForgeBoard presents a consistent, professional, and patriotic image that reflects our commitment to data sovereignty and security. These standards aren't optional—they're an essential part of our mission to deliver secure, compliant, and visually distinctive documentation that stands out in the federal space.
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Setting the standard for federal documentation excellence
+ForgeBoard – Setting the standard for federal documentation excellence
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

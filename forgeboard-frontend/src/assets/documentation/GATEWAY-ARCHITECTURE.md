@@ -1,4 +1,4 @@
-# 🔌 ForgeBoard NX: Gateway Architecture & Flow 🇺🇸
+# 🔌 ForgeBoard: Gateway Architecture & Flow 🇺🇸
 *Last Updated: 13MAY25 Jeffrey*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -17,12 +17,12 @@
 </div>
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-This document outlines the architecture, organization, and flow of WebSocket gateways within the ForgeBoard NX ecosystem. Gateways provide a vital communication layer between frontend clients and backend services, enabling real-time data exchange, event-driven interactions, and resilient state management using a consistently organized pattern.
+This document outlines the architecture, organization, and flow of WebSocket gateways within the ForgeBoard ecosystem. Gateways provide a vital communication layer between frontend clients and backend services, enabling real-time data exchange, event-driven interactions, and resilient state management using a consistently organized pattern.
 </div>
 
 ## <span style="color:#B22234; font-weight:bold;">1. Gateway Organization & Structure</span>
 
-All ForgeBoard NX gateways follow a standardized organization pattern:
+All ForgeBoard gateways follow a standardized organization pattern:
 
 1. **Location**: All gateway implementations reside in the designated `gateways` folder within the backend API structure:
    ```
@@ -246,7 +246,7 @@ The frontend tracks gateway connection status through the `BackendStatusService`
 5. Powers the `ConnectionStatusIndicator` component for user feedback
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Real-time Communication with Type-Safe Assurance
+ForgeBoard – Real-time Communication with Type-Safe Assurance
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

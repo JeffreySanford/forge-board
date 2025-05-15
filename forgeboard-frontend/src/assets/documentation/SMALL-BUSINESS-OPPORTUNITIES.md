@@ -1,4 +1,4 @@
-# 🦅 ForgeBoard NX – Enterprise Security for Small Business America 🇺🇸
+# 🦅 ForgeBoard – Enterprise Security for Small Business America 🇺🇸
 
 *Last Updated: June 15, 2025*
 
@@ -40,7 +40,7 @@ At True North, we believe security and compliance shouldn't be exclusive to Fort
 
 ## 1. Enterprise Security, Small Business Budget
 
-When we say "enterprise security for all," we mean it. Our ForgeBoard NX platform delivers the same security controls used by federal agencies to businesses of all sizes:
+When we say "enterprise security for all," we mean it. Our ForgeBoard platform delivers the same security controls used by federal agencies to businesses of all sizes:
 
 <div class="feature-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin: 20px 0;">
   <div style="background: linear-gradient(135deg, #E1F5FE, #B3E5FC); padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -222,7 +222,7 @@ xychart-beta
 
 <div style="background-color: #FFEBEE; border: 1px solid #FFCDD2; border-radius: 6px; padding: 15px; margin: 20px 0;">
 <strong style="color: #BF0A30; font-size: 110%;">🔍 KEY INSIGHT:</strong><br>
-Small businesses with FedRAMP-aligned security controls are <strong>4.9x more likely</strong> to win federal contracts compared to those with only basic security measures. ForgeBoard NX delivers this advantage at a fraction of traditional enterprise costs.
+Small businesses with FedRAMP-aligned security controls are <strong>4.9x more likely</strong> to win federal contracts compared to those with only basic security measures. ForgeBoard delivers this advantage at a fraction of traditional enterprise costs.
 </div>
 
 ---
@@ -237,7 +237,7 @@ ForgeBoard makes enterprise security affordable for small businesses without sac
 %%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#002868', 'primaryTextColor': '#fff', 'primaryBorderColor': '#071442', 'lineColor': '#BF0A30', 'secondaryColor': '#F9C74F', 'tertiaryColor': '#90BE6D' } } }%%
 xychart-beta
     title "Monthly Security & Compliance Costs (25-user Business)"
-    x-axis ["Big Cloud A", "Enterprise B", "Oracle", "ForgeBoard NX"]
+    x-axis ["Big Cloud A", "Enterprise B", "Oracle", "ForgeBoard"]
     y-axis "Monthly Cost ($)" 0 --> 8000
     bar [7500, 6300, 5200, 1250]
 ```
@@ -251,7 +251,7 @@ xychart-beta
       <th style="padding: 12px; text-align: left; border: 1px solid #071442;">Feature</th>
       <th style="padding: 12px; text-align: center; border: 1px solid #071442;">Big Cloud A</th>
       <th style="padding: 12px; text-align: center; border: 1px solid #071442;">Oracle</th>
-      <th style="padding: 12px; text-align: center; border: 1px solid #071442;">ForgeBoard NX</th>
+      <th style="padding: 12px; text-align: center; border: 1px solid #071442;">ForgeBoard</th>
     </tr>
   </thead>
   <tbody>
@@ -332,7 +332,7 @@ xychart-beta
   <div style="flex: 1; min-width: 300px;">
     <div style="background-color: #E3F2FD; border-radius: 6px; overflow: hidden;">
       <div style="background-color: #002868; color: white; padding: 10px 15px;">
-        <h4 style="margin: 0;">ForgeBoard NX Solution</h4>
+        <h4 style="margin: 0;">ForgeBoard Solution</h4>
         <p style="margin: 5px 0 0 0; opacity: 0.9;">Monthly cost for 25-user business</p>
       </div>
       <div style="padding: 15px;">
@@ -366,7 +366,7 @@ xychart-beta
 
 <div style="background-color: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 6px; padding: 15px; margin: 20px 0;">
 <strong style="color: #388E3C; font-size: 110%;">💰 VALUE PROPOSITION:</strong><br>
-ForgeBoard NX delivers <strong>85% cost savings</strong> compared to Oracle while providing the same core security capabilities needed to compete for federal contracts. Our mission is democratizing access to enterprise security for American small businesses.
+ForgeBoard delivers <strong>85% cost savings</strong> compared to Oracle while providing the same core security capabilities needed to compete for federal contracts. Our mission is democratizing access to enterprise security for American small businesses.
 </div>
 
 ---
@@ -379,7 +379,7 @@ ForgeBoard NX delivers <strong>85% cost savings</strong> compared to Oracle whil
 flowchart TD
     Start([Start Here]) --> Register["Register in SAM.gov"]
     Register --> FedBiz["FedBizOpps Monitoring"]
-    FedBiz --> Security["Security Compliance<br>ForgeBoard NX"]
+    FedBiz --> Security["Security Compliance<br>ForgeBoard"]
     Security --> GSA["Get on GSA Schedule<br>or Contract Vehicle"]
     GSA --> Proposal["Proposal Development<br>using ForgeBoard"]
     Proposal --> Win["Win Contract!"]
@@ -461,7 +461,7 @@ flowchart TD
 
 ```mermaid
 gantt
-    title Small Business Federal Journey with ForgeBoard NX
+    title Small Business Federal Journey with ForgeBoard
     dateFormat  YYYY-Q[Q]
     axisFormat  %Y-Q%q
     
@@ -490,13 +490,13 @@ Small businesses can leverage ForgeBoard's FedRAMP-aligned security capabilities
 
 ## 5. Federal Compliance Made Easy
 
-ForgeBoard NX simplifies federal compliance for small businesses:
+ForgeBoard simplifies federal compliance for small businesses:
 
 ### NIST SP 800-171 Control Coverage
 
 ```mermaid
 %%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#002868', 'primaryTextColor': '#fff', 'primaryBorderColor': '#071442', 'lineColor': '#BF0A30', 'secondaryColor': '#F9C74F', 'tertiaryColor': '#90BE6D' } } }%%
-pie title "ForgeBoard NX NIST 800-171 Control Coverage"
+pie title "ForgeBoard NIST 800-171 Control Coverage"
     "Access Control" : 22
     "Awareness & Training" : 3
     "Audit & Accountability" : 9
@@ -606,7 +606,7 @@ pie title "ForgeBoard NX NIST 800-171 Control Coverage"
 
 <div style="background-color: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 6px; padding: 15px; margin: 20px 0;">
 <strong style="color: #002868; font-size: 110%;">🔒 SECURITY ADVANTAGE:</strong><br>
-Small businesses using ForgeBoard NX achieve a <strong>SPRS score averaging 87/110</strong> for NIST 800-171 compliance, well above the industry average of 58/110 for companies their size, giving them a significant competitive advantage in DoD contract bidding.
+Small businesses using ForgeBoard achieve a <strong>SPRS score averaging 87/110</strong> for NIST 800-171 compliance, well above the industry average of 58/110 for companies their size, giving them a significant competitive advantage in DoD contract bidding.
 </div>
 
 ---
@@ -617,7 +617,7 @@ Small businesses using ForgeBoard NX achieve a <strong>SPRS score averaging 87/1
   <div style="flex: 1; min-width: 300px; background-color: #E3F2FD; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <div style="padding: 20px;">
       <div style="font-style: italic; color: #666; margin-bottom: 15px;">
-        "ForgeBoard NX gave us enterprise-grade security at a price we could actually afford. Within 8 months of implementation, we won our first $1.2M DoD contract, competing successfully against companies ten times our size."
+        "ForgeBoard gave us enterprise-grade security at a price we could actually afford. Within 8 months of implementation, we won our first $1.2M DoD contract, competing successfully against companies ten times our size."
       </div>
       <div style="display: flex; align-items: center;">
         <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #002868; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-right: 15px;">
@@ -635,7 +635,7 @@ Small businesses using ForgeBoard NX achieve a <strong>SPRS score averaging 87/1
   <div style="flex: 1; min-width: 300px; background-color: #E8F5E9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <div style="padding: 20px;">
       <div style="font-style: italic; color: #666; margin-bottom: 15px;">
-        "As an 8(a) and WOSB, we needed to demonstrate security compliance for federal contracts but couldn't afford traditional enterprise solutions. ForgeBoard NX helped us achieve CMMC compliance and now we're a trusted partner on four federal contracts."
+        "As an 8(a) and WOSB, we needed to demonstrate security compliance for federal contracts but couldn't afford traditional enterprise solutions. ForgeBoard helped us achieve CMMC compliance and now we're a trusted partner on four federal contracts."
       </div>
       <div style="display: flex; align-items: center;">
         <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #388E3C; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-right: 15px;">
@@ -655,7 +655,7 @@ Small businesses using ForgeBoard NX achieve a <strong>SPRS score averaging 87/1
   <div style="flex: 1; min-width: 300px; background-color: #FFF8E1; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <div style="padding: 20px;">
       <div style="font-style: italic; color: #666; margin-bottom: 15px;">
-        "When an agency required FedRAMP-aligned security for a contract proposal, we thought we'd have to pass on the opportunity. ForgeBoard NX made it possible for us to meet those requirements and win a $3.4M contract that transformed our business."
+        "When an agency required FedRAMP-aligned security for a contract proposal, we thought we'd have to pass on the opportunity. ForgeBoard made it possible for us to meet those requirements and win a $3.4M contract that transformed our business."
       </div>
       <div style="display: flex; align-items: center;">
         <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #F9A826; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-right: 15px;">
@@ -673,7 +673,7 @@ Small businesses using ForgeBoard NX achieve a <strong>SPRS score averaging 87/1
   <div style="flex: 1; min-width: 300px; background-color: #FFEBEE; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <div style="padding: 20px;">
       <div style="font-style: italic; color: #666; margin-bottom: 15px;">
-        "As an SDVOSB, we needed to demonstrate strong cybersecurity practices for VA contracts. ForgeBoard NX not only helped us achieve compliance but their automated documentation saved us an estimated 200 hours of consultant time."
+        "As an SDVOSB, we needed to demonstrate strong cybersecurity practices for VA contracts. ForgeBoard not only helped us achieve compliance but their automated documentation saved us an estimated 200 hours of consultant time."
       </div>
       <div style="display: flex; align-items: center;">
         <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #BF0A30; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-right: 15px;">
@@ -813,7 +813,7 @@ Ready to bring enterprise-grade security to your small business? Follow these si
 ---
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #002868; font-weight: bold; border-top: 2px solid #BF0A30; border-bottom: 2px solid #BF0A30; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Empowering American Small Businesses with Enterprise Security
+ForgeBoard – Empowering American Small Businesses with Enterprise Security
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

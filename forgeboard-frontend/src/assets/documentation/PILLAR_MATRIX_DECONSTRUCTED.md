@@ -1,4 +1,4 @@
-# 🧭 ForgeBoard NX: Pillar-to-Doc Matrix Deconstructed 🇺🇸
+# 🧭 ForgeBoard: Pillar-to-Doc Matrix Deconstructed 🇺🇸
 *Last Updated: 12MAY25 Jeffrey*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -65,7 +65,7 @@ The Pillar-to-Doc Matrix is not a static artifact. It is intrinsically linked to
 *   **Accountability:** The matrix, by clearly linking pillars to documentation, implicitly assigns responsibility for maintaining the accuracy and relevance of those documents to the teams or guilds owning those architectural areas.
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Where Strategic Vision Meets Documented Reality.
+ForgeBoard – Where Strategic Vision Meets Documented Reality.
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

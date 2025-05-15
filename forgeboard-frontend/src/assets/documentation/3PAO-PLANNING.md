@@ -1,4 +1,4 @@
-# ForgeBoard NX – 3PAO Assessment Planning & Automation 🔍🔐
+# ForgeBoard – 3PAO Assessment Planning & Automation 🔍🔐
 
 *Last Updated: May 7, 2025*
 
@@ -72,7 +72,7 @@ The 3PAO assessment process follows these key phases:
    - POA&M development
    - Final recommendation formulation
 
-ForgeBoard NX facilitates each phase with specialized access, real-time data views, and automated evidence collection.
+ForgeBoard facilitates each phase with specialized access, real-time data views, and automated evidence collection.
 
 ## 3. 3PAO Portal Configuration
 
@@ -343,5 +343,5 @@ export class AssessmentAutomationService {
 ---
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Streamlining 3PAO assessments through automation and real-time data access
+ForgeBoard – Streamlining 3PAO assessments through automation and real-time data access
 </div>

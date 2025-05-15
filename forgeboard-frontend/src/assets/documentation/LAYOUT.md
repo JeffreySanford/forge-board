@@ -1,4 +1,4 @@
-# 📐 ForgeBoard NX: Blueprint UI Dashboard Layout System
+# 📐 ForgeBoard: Blueprint UI Dashboard Layout System
 *Last Updated: May 7, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -18,7 +18,7 @@
 
 ## Introduction
 
-The ForgeBoard NX layout system provides a flexible and powerful way to create responsive, accessible, and visually appealing dashboard layouts using a tile-based approach. This document outlines the key features, components, and usage guidelines for the layout system.
+The ForgeBoard layout system provides a flexible and powerful way to create responsive, accessible, and visually appealing dashboard layouts using a tile-based approach. This document outlines the key features, components, and usage guidelines for the layout system.
 
 ## Dashboard Layout Structure
 

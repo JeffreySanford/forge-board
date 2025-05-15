@@ -1,4 +1,4 @@
-# 🧪 ForgeBoard NX: Angular Test Patterns
+# 🧪 ForgeBoard: Angular Test Patterns
 *Last Updated: May 7, 2025*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">

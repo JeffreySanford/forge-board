@@ -33,7 +33,7 @@ import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
 import { KanbanBoard, KanbanBoardSchema } from './models/kanban.model';
-import { SeedService } from './seed.service';
+import { SeedService } from './seed/seed.service';
 import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 import { LogsModule } from './logs/logs.module';
 import { SystemModule } from './system/system.module';

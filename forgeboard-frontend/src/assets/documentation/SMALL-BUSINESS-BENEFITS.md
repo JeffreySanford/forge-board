@@ -1,4 +1,4 @@
-# 🏢 ForgeBoard NX: Small Business Solution Guide 🇺🇸
+# 🏢 ForgeBoard: Small Business Solution Guide 🇺🇸
 *Last Updated: 13MAY25*
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -17,12 +17,12 @@
 </div>
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-ForgeBoard NX isn't just for government agencies and large enterprises. Our platform delivers enterprise-grade security, comprehensive federal compliance, and robust data management at prices small businesses can afford. This guide explains how small businesses can leverage ForgeBoard's federal-grade security architecture for both internal operations and federal contracting needs, while protecting critical data, meeting compliance requirements, and controlling costs.
+ForgeBoard isn't just for government agencies and large enterprises. Our platform delivers enterprise-grade security, comprehensive federal compliance, and robust data management at prices small businesses can afford. This guide explains how small businesses can leverage ForgeBoard's federal-grade security architecture for both internal operations and federal contracting needs, while protecting critical data, meeting compliance requirements, and controlling costs.
 </div>
 
 ## <span style="color:#B22234; font-weight:bold;">1. Enterprise Security at Small Business Prices</span>
 
-ForgeBoard NX brings government-grade security to small businesses without the enterprise price tag:
+ForgeBoard brings government-grade security to small businesses without the enterprise price tag:
 
 <table style="border-collapse: collapse; width: 100%; border: 2px solid #0C2677; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
   <thead>
@@ -63,7 +63,7 @@ ForgeBoard NX brings government-grade security to small businesses without the e
 
 ## <span style="color:#0C2677; font-weight:bold;">2. Small Business Use Cases</span>
 
-ForgeBoard NX adapts to the specific needs of small businesses across various industries:
+ForgeBoard adapts to the specific needs of small businesses across various industries:
 
 ### Financial Services & Accounting
 
@@ -91,7 +91,7 @@ ForgeBoard NX adapts to the specific needs of small businesses across various in
 
 ## <span style="color:#B22234; font-weight:bold;">3. Transparent & Affordable Pricing for Small Businesses</span>
 
-ForgeBoard NX offers predictable, transparent pricing designed for small business budgets, with federal-grade security that doesn't break the bank:
+ForgeBoard offers predictable, transparent pricing designed for small business budgets, with federal-grade security that doesn't break the bank:
 
 ### Licensing Options
 
@@ -145,7 +145,7 @@ ForgeBoard NX offers predictable, transparent pricing designed for small busines
 
 ## <span style="color:#0C2677; font-weight:bold;">4. Technical Benefits for Small IT Teams</span>
 
-ForgeBoard NX is designed for easy deployment and management by small IT teams:
+ForgeBoard is designed for easy deployment and management by small IT teams:
 
 ### Simplified Deployment
 
@@ -167,7 +167,7 @@ ForgeBoard NX is designed for easy deployment and management by small IT teams:
 
 ## <span style="color:#B22234; font-weight:bold;">5. Return on Investment</span>
 
-ForgeBoard NX delivers measurable ROI for small businesses:
+ForgeBoard delivers measurable ROI for small businesses:
 
 ```mermaid
 graph LR
@@ -200,7 +200,7 @@ graph LR
 
 Ready to bring enterprise-grade security and federal compliance capabilities to your small business?
 
-1. **Schedule a Demo**: See ForgeBoard NX in action with a live demonstration
+1. **Schedule a Demo**: See ForgeBoard in action with a live demonstration
 2. **Assessment**: Free system assessment to determine optimal deployment options
 3. **Pilot Program**: 30-day pilot program to validate benefits in your environment
 4. **Implementation**: Guided setup and configuration for your specific business needs
@@ -210,7 +210,7 @@ Ready to bring enterprise-grade security and federal compliance capabilities to 
 Contact our Small Business Solutions team to begin your journey to enterprise-grade security at small business prices.
 
 <div style="text-align: center; margin: 30px 0; font-size: 20px; color: #0C2677; font-weight: bold; border-top: 2px solid #B22234; border-bottom: 2px solid #B22234; padding: 15px; background-color: #F8FAFF; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-ForgeBoard NX – Enterprise Security Within Reach
+ForgeBoard – Enterprise Security Within Reach
 </div>
 
-*ForgeBoard NX — Own your data. Guard your freedom. Build Legendary.* 🦅✨
+*ForgeBoard — Own your data. Guard your freedom. Build Legendary.* 🦅✨

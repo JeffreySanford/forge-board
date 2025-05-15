@@ -45,15 +45,16 @@ export class BrowserSocketClientService implements OnDestroy {
 
     // Configure transport options to avoid Node.js dependencies
     const options = {
-      path: '/api/socket.io',
-      transports: ['websocket'],
+      // Change from /api/socket.io to /socket.io to match server expectations
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       forceNew: false,
       reconnectionAttempts: 5,
       timeout: 10000,
-      // Avoid upgrading transport which can require Node.js modules
-      upgrade: false,
-      rememberUpgrade: false
+      // Enable upgrade which is needed for proper reconnection
+      upgrade: true,
+      rememberUpgrade: true
     };
     
     // Create URL including namespace
