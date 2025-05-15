@@ -12,7 +12,7 @@ export * from './api-interfaces';
 export { 
   SocketStatus,
   SOCKET_EVENTS,
-  SocketEvent,
+  // SocketEvent is exported from socket-registry-types.ts, not socket-types.ts
   SocketResponse,
   createSocketResponse,
   createErrorResponse,
@@ -41,6 +41,8 @@ export {
 } from './metrics-types';
 
 export * from './diagnostic-types';
+export * from './health.type'; // Added export for HealthData and related types
+export * from './health-timeline'; // Added export for HealthTimelinePoint and related types
 
 // Tile UI components
 export * from './tile-types';
@@ -49,19 +51,5 @@ export * from './tile-types';
 export * from './type-validation';
 
 // User and authentication - exported explicitly to avoid conflicts
-export { 
-  User,
-  UserRole,
-  JwtPayload,
-  AuthState 
-} from './user.interface';
-
 export * from './user-types';
-
-// Health monitoring - fix the path to use health-timeline instead of health-time
-export * from './health-timeline';
-
-export * from './diagnostic-types';
-export * from './log-types';
-export * from './metrics-types';
-export * from './socket-types';
+// Remove non-existent module - user interfaces are likely already exported from user-types.ts

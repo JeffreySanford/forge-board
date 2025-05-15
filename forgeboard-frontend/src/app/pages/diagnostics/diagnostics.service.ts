@@ -17,7 +17,7 @@ export interface SocketInfo {
   events: {
     type: string;
     timestamp: string | Date;
-    data?: any;
+    data?: Record<string, unknown>;
   }[];
 }
 
@@ -41,7 +41,7 @@ export interface SocketLogEvent {
   eventType: string;
   timestamp: string | Date;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface HealthData {
@@ -54,10 +54,10 @@ export interface HealthData {
 @Injectable({
   providedIn: 'root'
 })
-export class DiagnosticsService implements OnDestroy {
-  // API URLs
+export class DiagnosticsService implements OnDestroy {  // API URLs
   private readonly apiUrl = 'http://localhost:3000/api/diagnostics';
   private readonly socketUrl = 'http://localhost:3000';
+  private readonly DIAGNOSTICS_NAMESPACE = 'diagnostics'; // Define namespace as a constant
   
   // Socket connection
   private socket: Socket | null = null;
@@ -117,16 +117,14 @@ export class DiagnosticsService implements OnDestroy {
   
   /**
    * Initialize socket connection to diagnostics namespace
-   */
-  private initSocket(): void {
+   */  private initSocket(): void {
     try {
       console.log('DiagnosticsService: Initializing socket connection');
       
       // Clean up any existing socket first to prevent duplicate connections
       this.cleanupSocket();
-      
-      // Create new socket connection with proper options
-      this.socket = io(`${this.socketUrl}/diagnostics`, {
+        // Create new socket connection with proper options
+      this.socket = io(`${this.socketUrl}/${this.DIAGNOSTICS_NAMESPACE}`, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
         timeout: 5000,

@@ -11,8 +11,8 @@ import { LogEntry, LogLevelEnum, logLevelEnumToString } from '@forge-board/share
         <span class="log-source" [ngClass]="{'testing-source': isTestSource()}">{{ log.source }}</span>
       </div>
       <div class="log-message" [innerHTML]="highlightTestingText(log.message)"></div>
-      <div class="log-details" *ngIf="log.data">
-        <pre>{{ log.data | json }}</pre>
+      <div class="log-details" *ngIf="log.details">
+        <pre>{{ log.details | json }}</pre>
       </div>
     </div>
   `,

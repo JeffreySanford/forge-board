@@ -3,6 +3,8 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TileType } from '@forge-board/shared/api-interfaces';
 import { TileStateService } from '../../../services/tile-state.service';
 import { Subscription } from 'rxjs';
+import { DiagnosticsService } from '../../../services/diagnostics.service';
+import { SystemStatus } from '../../../models/system-status.model';
 
 @Component({
   selector: 'app-diagnostics',
@@ -24,9 +26,20 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   // Default order of tiles
   tileOrder: TileType[] = ['health', 'memory', 'connection', 'logs', 'uptime', 'activity'];
   
+  // Properties referenced in the template
+  health: { status: string; uptime: number } = { status: 'unknown', uptime: 0 };
+  services: string[] = [];
+  controllers: string[] = [];
+  gateways: string[] = [];
+  errors: string[] = [];
+  socketStatus = 'disconnected';
+  
   private subscription = new Subscription();
 
-  constructor(private tileStateService: TileStateService) {}
+  constructor(
+    private tileStateService: TileStateService,
+    private diagnosticsService: DiagnosticsService
+  ) {}
 
   ngOnInit(): void {
     // Load tile order from backend
@@ -167,7 +180,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
       activity: this.showActivityTile,
-      kablan: true // Set to true or bind to a variable if you have one
+      kanban: true // Set to true or bind to a variable if you have one
     };
     this.tileStateService.setTileVisibility('user1', visibility)
       .subscribe({
@@ -180,5 +193,28 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
           console.error('Error saving tile visibility:', err);
         }
       });
+  }
+
+  getEventTypeClass(type: string): string {
+    switch (type) {
+      case 'error': return 'event-error';
+      case 'warning': return 'event-warning';
+      case 'info': return 'event-info';
+      default: return 'event-default';
+    }
+  }
+
+  // Fix the any type on line 29 (assuming it's for system data)
+  private processSystemStatus(data: SystemStatus): void {
+    // Update properties based on system status data
+    this.health.status = data.status;
+    this.health.uptime = data.uptime;
+    
+    // Update service lists if available
+    if (data.services) this.services = data.services;
+    if (data.controllers) this.controllers = data.controllers;
+    if (data.gateways) this.gateways = data.gateways;
+    if (data.errors) this.errors = data.errors;
+    if (data.socketStatus) this.socketStatus = data.socketStatus;
   }
 }

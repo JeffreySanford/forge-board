@@ -14,6 +14,8 @@ export const config = {
     // Use environment variable with fallback to development behavior (true)
     // In production environment file, this is set to false
     enableConsole: process.env.ENABLE_CONSOLE_LOGS !== 'false',
+    // Enable log deduplication by default
+    enableDeduplication: process.env.ENABLE_LOG_DEDUPLICATION !== 'false',
   },
   mongo: {
     uri: process.env.MONGO_URI || 'mongodb://localhost/forgeboard',

@@ -31,10 +31,10 @@ export class HomeComponent implements OnInit {
       revLetter: 'A'
     },
     {
-      title: 'Kablan Board',
+      title: 'Kanban Board',
       description: 'Visualize and manage project workflows using Kanban methodology',
       icon: 'dashboard',
-      route: '/kablan',
+      route: '/kanban',
       color: '#ffe066',
       showIndicator: false,
       revNumber: 3,

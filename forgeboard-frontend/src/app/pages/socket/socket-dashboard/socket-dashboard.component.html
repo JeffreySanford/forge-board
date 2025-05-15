@@ -1,0 +1,29 @@
+<div class="socket-dashboard-container">
+  <h2>Socket Dashboard</h2>
+  <nav mat-tab-nav-bar>
+    <a mat-tab-link
+       routerLink="./monitoring"
+       routerLinkActive #rla="routerLinkActive"
+       [active]="rla.isActive">
+      Monitoring
+    </a>
+    <!-- Add other tabs here if needed -->
+  </nav>
+  <router-outlet></router-outlet>
+</div>
+
+<div class="container">
+  <h2>Active Sockets Dashboard</h2>
+  <p>This page will display information about active socket connections.</p>
+  <!-- Placeholder for socket data display -->
+  <div *ngIf="activeSockets.length === 0">
+    <p>No active sockets to display or data is loading...</p>
+  </div>
+  <div *ngIf="activeSockets.length > 0">
+    <ul>
+      <li *ngFor="let socket of activeSockets">
+        ID: {{ socket.id }}, Namespace: {{ socket.namespace }}, Connected At: {{ socket.connectTime | date:'medium' }}
+      </li>
+    </ul>
+  </div>
+</div>

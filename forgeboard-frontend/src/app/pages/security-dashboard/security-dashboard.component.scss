@@ -1,0 +1,22 @@
+.security-dashboard-container {
+  padding: 2rem;
+}
+
+.dashboard-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-card {
+  flex: 1 1 300px;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.dashboard-note {
+  font-size: 1.1em;
+  color: #3498db;
+  margin-top: 1rem;
+}

@@ -6,6 +6,7 @@ import { UserDataService, UserData } from './services/user-data.service';
 import { TileType } from './models/tile.model';
 import { TileStateService } from './services/tile-state.service';
 import { SoundHelperService, SoundType } from './services/sound-helper.service';
+import { SoundService } from './core/sounds/sound.service';
 import { ProjectConfigService } from './services/project-config.service';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { environment } from '../environments/environment';
@@ -73,10 +74,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   isLargeGridVisible = false;
   private subscription = new Subscription(); // Add this line to declare the subscription property
 
-  // Add references for ambient sounds
-  @ViewChild('ambientSound') ambientSound?: ElementRef<HTMLAudioElement>;
-  @ViewChild('starsAndStripesSound') starsAndStripesSound?: ElementRef<HTMLAudioElement>;
-
   refreshInterval: number = 3000; // Updated default to 3 seconds
 
   showHealthTile = true;
@@ -85,12 +82,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showLogsTile = true;
   showUptimeTile = true;
   showActivityTile = true;
-  showKablanTile = true;
+  showKanbanTile = true;
 
   constructor(
     private projectConfigService: ProjectConfigService,
     private tileStateService: TileStateService,
     private soundHelper: SoundHelperService,
+    private soundService: SoundService,
     private userDataService: UserDataService,
     private breakpointObserver: BreakpointObserver,
     private refreshIntervalService: RefreshIntervalService
@@ -126,8 +124,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       });
       
     // Initialize database status from environment
-    this.dbStatus = environment.useInMemoryMongo ? 'green' : 'yellow';
-    this.dbStatusText = environment.mongoUri;
+    // Cast environment to unknown first to appease TypeScript, then to specific type
+    const typedEnv = environment as unknown as {
+      useInMemoryMongo: boolean;
+      mongoUri: string;
+      apiBaseUrl: string;
+      socketBaseUrl: string;
+      logsPath: string;
+    };
+    this.dbStatus = typedEnv.useInMemoryMongo ? 'green' : 'yellow';
+    this.dbStatusText = typedEnv.mongoUri;
 
     this.refreshInterval = this.refreshIntervalService.getInterval();
     
@@ -205,11 +211,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     this.isAudioInitialized = true;
     
-    // Initialize the sound helper service
+    // Initialize the modernized sound service
     this.subscription.add(
-      this.soundHelper.initialize().subscribe(success => {
+      this.soundService.initialize().subscribe(success => {
         if (success) {
           // Set enabled once initialized
+          this.soundService.setEnabled(true);
+          
+          // For backward compatibility, also enable the legacy service
           this.soundHelper.setEnabled(true);
           
           setTimeout(() => {
@@ -252,11 +261,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   setupAudioElements() {
     const audioElements = [
-      { ref: this.keyStrikeSound, name: 'keyStrikeSound' },
-      { ref: this.dingSound, name: 'dingSound' },
+      { ref: this.keyStrikeSound, name: 'keyStrikeSound', type: SoundType.KEYSTRIKE },
+      { ref: this.dingSound, name: 'dingSound', type: SoundType.DING },
     ];
+    
+    // Register audio elements with both services for backward compatibility
     audioElements.forEach((elem) => {
       if (!elem.ref?.nativeElement) return;
+      
+      // Register with the new sound service
+      this.soundService.registerExistingSoundElement(elem.type, elem.ref.nativeElement);
+      
+      // Legacy registration with the older service
+      this.soundHelper.registerExistingSoundElement(elem.type, elem.ref.nativeElement);
+      
+      // Check if file exists
       const filePath = elem.ref.nativeElement.src;
       const xhr = new XMLHttpRequest();
       xhr.open('HEAD', filePath, true);
@@ -341,11 +360,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   preloadAudioElements() {
     const soundFiles = [
-      { ref: this.keyStrikeSound, volume: 0.2, name: 'keyStrikeSound' },
-      { ref: this.dingSound, volume: 0.5, name: 'dingSound' },
-      // Add optional ambient sounds with null checks
-      { ref: this.ambientSound, volume: 0.3, name: 'ambientSound', optional: true },
-      { ref: this.starsAndStripesSound, volume: 0.4, name: 'starsAndStripesSound', optional: true },
+      { ref: this.keyStrikeSound, volume: 0.2, name: 'keyStrikeSound', optional: false },
+      { ref: this.dingSound, volume: 0.5, name: 'dingSound', optional: false }
+      // Removed ambient sound references
+      // { ref: this.ambientSound, volume: 0.3, name: 'ambientSound', optional: true },
+      // { ref: this.starsAndStripesSound, volume: 0.4, name: 'starsAndStripesSound', optional: true }
     ];
     
     soundFiles.forEach((sound) => {
@@ -394,19 +413,23 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   playKeySound(volume?: number): void {
     if (this.audioEnabled) {
-      this.soundHelper.playSound(SoundType.KEYSTRIKE, volume).subscribe();
+      // Use the modernized sound service
+      this.soundService.playSound(SoundType.KEYSTRIKE, volume);
     }
   }
 
   playDingSound(volume?: number): void {
     if (this.audioEnabled) {
-      this.soundHelper.playSound(SoundType.DING, volume).subscribe();
+      // Use the modernized sound service
+      this.soundService.playSound(SoundType.DING, volume);
     }
   }
 
   toggleMute(event: Event): void {
     event.stopPropagation();
     this.isMuted = !this.isMuted;
+    // Update mute state in both services for compatibility
+    this.soundService.setMuted(this.isMuted);
     this.soundHelper.setMuted(this.isMuted);
   }
 
@@ -512,8 +535,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (tileType === 'activity') {
       this.showActivityTile = !this.showActivityTile;
     }
-    if (tileType === 'kablan') {
-      this.showKablanTile = !this.showKablanTile;
+    if (tileType === 'kanban') {
+      this.showKanbanTile = !this.showKanbanTile;
     }
 
     // Persist visibility settings
@@ -525,7 +548,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
       activity: this.showActivityTile,
-      kablan: this.showKablanTile
+      kanban: this.showKanbanTile
     };
     this.tileStateService.setTileVisibility('user1', visibility)
       .subscribe({
@@ -621,6 +644,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.audioEnabled && !this.isAudioInitialized) {
       this.enableAudio();
     } else {
+      // Update both services for compatibility
+      this.soundService.setEnabled(this.audioEnabled);
       this.soundHelper.setEnabled(this.audioEnabled);
     }
   }

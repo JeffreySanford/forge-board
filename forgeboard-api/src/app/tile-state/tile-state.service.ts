@@ -19,7 +19,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true
+        kanban: true
       },
       lastModified: new Date().toISOString(),
       success: true  // Add success property
@@ -40,7 +40,7 @@ export class TileStateService {
           logs: true,
           uptime: true,
           activity: true,
-          kablan: true
+          kanban: true
         },
         lastModified: new Date().toISOString(),
         success: true  // Add success property

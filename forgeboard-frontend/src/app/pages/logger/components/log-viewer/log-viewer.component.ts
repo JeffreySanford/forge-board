@@ -1,21 +1,9 @@
 import { Component, Input, OnInit, ViewChild, AfterViewInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 import { LoggerService } from '../../logger.service';
 import { LogEntry, LogLevelEnum } from '@forge-board/shared/api-interfaces';
-import { logLevelToString } from '../../logger.utils';
 import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RefreshIntervalService } from '../../../../services/refresh-interval.service';
@@ -31,22 +19,7 @@ type TabType = 'data' | 'analysis' | 'duplicates';
   selector: 'app-log-viewer',
   templateUrl: './log-viewer.component.html',
   styleUrls: ['./log-viewer.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatButtonModule,
-    MatIconModule,
-    MatDividerModule,
-    MatButtonToggleModule,
-    MatTooltipModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatSlideToggleModule
-  ]
+  standalone: false
 })
 export class LogViewerComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   @Input() set logs(value: LogEntry[]) {

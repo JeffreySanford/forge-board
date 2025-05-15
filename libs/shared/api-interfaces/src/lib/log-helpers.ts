@@ -14,18 +14,18 @@ import {
  * Helper to create a log entry
  */
 export function createLogEntry(
+  level: LogLevelEnum,
   message: string,
-  level: LogLevelString = 'info',
-  source = 'app',
-  data?: Record<string, unknown>
+  source: string,
+  details?: Record<string, unknown>
 ): LogEntry {
   return {
     id: generateId(),
     timestamp: new Date().toISOString(),
-    level: stringToLogLevelEnum(level), // Convert string to enum
+    level,
     message,
     source,
-    data
+    details // Use details instead of data
   };
 }
 

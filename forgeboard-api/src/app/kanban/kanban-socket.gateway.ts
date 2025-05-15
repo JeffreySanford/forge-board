@@ -1,0 +1,181 @@
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
+  WsResponse,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { KanbanService } from './kanban.service';
+import { createSocketResponse } from '@forge-board/shared/api-interfaces';
+import { MoveCardDto } from './dto/kanban.dto';
+import { LoggerService } from '../logger/logger.service';
+import { Injectable } from '@nestjs/common';
+
+// Define proper types to replace 'any'
+interface MoveCardPayload {
+  boardId: string;
+  moveCard: {
+    cardId: string;
+    sourceColumnId: string;
+    targetColumnId: string;
+    newIndex: number;
+  };
+}
+
+@Injectable()
+@WebSocketGateway({
+  namespace: '/kanban',
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }
+})
+export class KanbanSocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
+
+  constructor(
+    private readonly kanbanService: KanbanService,
+    private readonly logger: LoggerService
+  ) {}
+
+  afterInit(server: Server): void {
+    this.logger.info('Kanban WebSocket Gateway Initialized', 'KanbanSocketGateway');
+    this.logger.info(`Server namespace: ${server.path() || '/kanban'}`, 'KanbanSocketGateway');
+  }
+
+  handleConnection(client: Socket): void {
+    this.logger.info(`Client connected to kanban namespace: ${client.id}`, 'KanbanSocketGateway', { clientId: client.id });
+    
+    // Send initial data when client connects
+    this.sendInitialData(client);
+  }
+
+  handleDisconnect(client: Socket): void {
+    this.logger.info(`Client disconnected from kanban namespace: ${client.id}`, 'KanbanSocketGateway', { clientId: client.id });
+  }
+
+  private async sendInitialData(client: Socket): Promise<void> {
+    try {
+      const boards = await this.kanbanService.getBoards();
+      const storageType = this.kanbanService.getStorageType();
+      
+      this.logger.info(`Sending initial data to client ${client.id} with storage type: ${storageType}`, 'KanbanSocketGateway', { 
+        clientId: client.id, 
+        storageType, 
+        boardCount: boards.length 
+      });
+      
+      // Also send storage type info with the boards
+      client.emit('boards-update', createSocketResponse('boards-update', {
+        boards,
+        storageType: storageType
+      }));
+    } catch (error) {
+      this.logger.error('Error sending initial data:', 'KanbanSocketGateway', { 
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id
+      });
+    }
+  }
+
+  @SubscribeMessage('get-boards')
+  async handleGetBoards(client: Socket): Promise<WsResponse<unknown>> {
+    this.logger.info(`Client ${client.id} requested boards`, 'KanbanSocketGateway', { clientId: client.id });
+    try {
+      const boards = await this.kanbanService.getBoards();
+      const storageType = this.kanbanService.getStorageType();
+      
+      this.logger.info(`Sending boards to client ${client.id} with storage type: ${storageType}`, 'KanbanSocketGateway', {
+        clientId: client.id,
+        storageType,
+        boardCount: boards.length
+      });
+      
+      return { 
+        event: 'boards-update', 
+        data: createSocketResponse('boards-update', {
+          boards,
+          storageType: storageType
+        })
+      };
+    } catch (error) {
+      this.logger.error(`Error retrieving boards:`, 'KanbanSocketGateway', {
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id
+      });
+      return { 
+        event: 'error', 
+        data: { 
+          status: 'error', 
+          message: 'Failed to retrieve boards',
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+  }
+
+  @SubscribeMessage('move-card')
+  async handleMoveCard(client: Socket, payload: MoveCardPayload): Promise<WsResponse<unknown>> {
+    this.logger.info(`Client ${client.id} moving card`, 'KanbanSocketGateway', { 
+      clientId: client.id, 
+      boardId: payload.boardId,
+      cardId: payload.moveCard.cardId,
+      sourceColumnId: payload.moveCard.sourceColumnId,
+      targetColumnId: payload.moveCard.targetColumnId,
+      newIndex: payload.moveCard.newIndex
+    });
+    
+    try {
+      const { boardId, moveCard } = payload;
+      const { cardId, sourceColumnId, targetColumnId, newIndex } = moveCard;
+      
+      const moveCardDto: MoveCardDto = {
+        cardId,
+        sourceColumnId, 
+        targetColumnId,
+        sourceIndex: -1, // The service will find the card's actual index
+        targetIndex: newIndex
+      };
+      
+      // Call service method to update the board
+      const updatedBoard = await this.kanbanService.moveCard(boardId, moveCardDto);
+      
+      // Broadcast to all clients
+      this.server.emit('boards-update', createSocketResponse('boards-update', {
+        boards: [updatedBoard],
+        storageType: this.kanbanService.getStorageType()
+      }));
+      
+      this.logger.info(`Card moved successfully`, 'KanbanSocketGateway', {
+        boardId,
+        cardId,
+        sourceColumnId,
+        targetColumnId,
+        targetIndex: newIndex,
+        clientId: client.id
+      });
+      
+      return {
+        event: 'move-card-success',
+        data: createSocketResponse('move-card-success', { success: true })
+      };
+    } catch (error) {
+      this.logger.error(`Error moving card:`, 'KanbanSocketGateway', {
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        clientId: client.id,
+        payload
+      });
+      return {
+        event: 'error',
+        data: createSocketResponse('error', {
+          message: 'Failed to move card',
+          error: error instanceof Error ? error.message : String(error)
+        })
+      };
+    }
+  }
+}

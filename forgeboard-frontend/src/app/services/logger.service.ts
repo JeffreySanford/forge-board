@@ -1,741 +1,476 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { LogEntry, LogFilter, LogLevelEnum, logLevelEnumToString, stringToLogLevelEnum } from '@forge-board/shared/api-interfaces';
+import { Injectable, OnDestroy } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject, Subject, Subscription, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { LogEntry, LogLevelEnum, LogFilter, LogResponse } from '@forge-board/shared/api-interfaces'; // Added LogResponse
 import { LogDispatchService } from './log-dispatch.service';
-import { v4 as uuid } from 'uuid';
-import { environment } from '../../environments/environment';
-import { SocketRegistryService } from './socket-registry.service';
-
-/**
- * Log levels supported by the logger
- */
-export enum LogLevel {
-  TRACE = 0,
-  DEBUG = 1,
-  INFO = 2,
-  WARN = 3,
-  ERROR = 4,
-  FATAL = 5,
-  OFF = 6
-}
-
-// Define type for log level strings used in API
-export type LogLevelType = 'debug' | 'info' | 'warning' | 'warn' | 'error' | 'fatal' | 'trace';
-
-/**
- * Common log metadata structure
- */
-export interface LogMetadata {
-  service?: string;
-  action?: string;
-  [key: string]: unknown;
-}
-
-/**
- * Logger configuration
- */
-interface LoggerConfig {
-  level: LogLevel;
-  includeTimestamp: boolean;
-  enableConsoleColors: boolean;
-  // New flag to control console output
-  enableConsoleOutput: boolean;
-}
-
-// Define response type for log requests
-export interface LogResponse {
-  logs: LogEntry[];
-  totalCount: number;
-  filtered: boolean;
-  status: boolean;
-  total: number;
-  timestamp: string;
-}
+import { io, Socket } from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root'
 })
-export class LoggerService {
-  private logs: LogEntry[] = [];
+export class LoggerService implements OnDestroy {
+  private readonly MAX_LOG_RECORDS = 1000;
+
+  // Stream of all log entries
   private logsSubject = new BehaviorSubject<LogEntry[]>([]);
-  
-  // Add subject for new log entries received via socket
-  private newLogEntrySubject = new Subject<LogEntry>();
-  public newLogEntry$ = this.newLogEntrySubject.asObservable();
-  
-  private readonly apiUrl = `${environment.apiBaseUrl}/logs`;
+  logs$ = this.logsSubject.asObservable();
 
-  // Maximum number of logs to keep in memory
-  private readonly maxLogSize = 1000;
+  // Stream of filtered log entries
+  private filteredLogsSubject = new BehaviorSubject<LogEntry[]>([]);
+  filteredLogs$ = this.filteredLogsSubject.asObservable();
   
-  // Buffer for logs waiting to be sent to server
-  private logBuffer: LogEntry[] = [];
-  private bufferSize = 10;
-  private autoSendInterval = 5000; // ms
-  private autoSendTimer: ReturnType<typeof setTimeout> | null = null;
+  // Subject for emitting new logs as they come in
+  private newLogSubject = new Subject<LogEntry>();
+  newLog$ = this.newLogSubject.asObservable();
   
-  // Add the missing pendingLogs property to track logs that are still pending transmission
-  private pendingLogs: LogEntry[] = [];
-
-  private config: LoggerConfig = {
-    level: LogLevel.INFO,
-    includeTimestamp: true,
-    enableConsoleColors: true,
-    // Use environment configuration if available
-    enableConsoleOutput: environment.logging?.enableConsole !== undefined ? 
-      environment.logging.enableConsole : true
-  };
-
-  // Add SocketRegistryService to constructor
+  // Socket connection for real-time logs
+  private socket: Socket | null = null;
+  
+  // Collection for storing all subscriptions for cleanup
+  private subscriptions = new Subscription();
+  
+  // Current log filter
+  private filter: LogFilter = {};
+  mockDataGeneration = false;
+  
   constructor(
-    private logDispatch: LogDispatchService,
-    private socketRegistry: SocketRegistryService
+    private http: HttpClient,
+    private logDispatchService: LogDispatchService
   ) {
-    // Initialize the logger without using console.log
+    this.initSocketConnection();
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up socket
+    this.cleanupSocket();
     
-    // Set log level from environment if available
-    if (environment.logging?.level) {
-      const envLevel = this.stringToLogLevel(environment.logging.level);
-      if (envLevel !== undefined) {
-        this.config.level = envLevel;
+    // Complete subjects
+    this.logsSubject.complete();
+    this.filteredLogsSubject.complete();
+    this.newLogSubject.complete();
+    
+    // Stop mock data generation if active
+    this.stopMockDataGeneration();
+
+    this.subscriptions.unsubscribe();
+  }
+  /**
+   * Log a debug message - console logging version
+   * @param message Message content
+   * @param params Optional parameters/metadata
+   */
+  private logConsole(level: LogLevelEnum, message: string, ...params: unknown[]): void {
+    // Implementation for console logging
+    console[LogLevelEnum[level].toLowerCase()](message, ...params);
+  }
+
+  /**
+   * Clean up socket connections
+   */
+  private cleanupSocket(): void {
+    if (this.socket) {
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('log-stream');
+      this.socket.off('log-batch');
+      this.socket.off('backend-log-entry');
+      
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
+      this.socket = null;
+    }
+  }
+
+  stopMockDataGeneration(): void {
+   // Stop any mock data generation if applicable
+   if (this.mockDataGeneration) {
+     this.mockDataGeneration = false;
+   }
+  }
+
+  private initSocketConnection(): void {
+    try {
+      // Get API URL from environment or use default
+      const socketUrl = 'http://localhost:3000'; // Using hardcoded URL instead of environment
+      
+      this.socket = io(`${socketUrl}/logs`, {
+        transports: ['websocket'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+      
+      // Socket event listeners
+      this.socket.on('connect', () => {
+        console.log('Connected to logs socket');
+        // Subscribe to server logs on connection
+        this.subscribeToServerLogs();
+      });
+      
+      this.socket.on('disconnect', () => {
+        console.log('Disconnected from logs socket');
+      });
+      
+      this.socket.on('connect_error', (err) => {
+        console.error('Socket connection error:', err);
+      });
+      
+      this.socket.on('log-batch', (response) => {
+        if (response.status === 'success') {
+          const logBatch = response.data;
+          this.processBatchLogs(logBatch);
+        }
+      });
+      
+      this.socket.on('log-stream', (response) => {
+        if (response.status === 'success') {
+          const data = response.data;
+          if (data.append) {
+            this.appendLogs(data.logs);
+          } else {
+            this.replaceLogs(data.logs);
+          }
+        }
+      });
+      
+      this.socket.on('backend-log-entry', (response) => {
+        if (response.status === 'success' && response.data) {
+          this.handleBackendLog(response.data);
+        }
+      });
+      
+      // Error handling
+      this.socket.on('error', (error) => {
+        console.error('Socket error:', error);
+      });
+      
+    } catch (err) {
+      console.error('Failed to initialize socket connection:', err);
+    }
+  }
+  
+  private disconnectSocket(): void {
+    if (this.socket) {
+      // Remove all listeners
+      this.socket.off('connect');
+      this.socket.off('disconnect');
+      this.socket.off('connect_error');
+      this.socket.off('log-batch');
+      this.socket.off('log-stream');
+      this.socket.off('backend-log-entry');
+      this.socket.off('error');
+      
+      // Disconnect the socket
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+  
+  private subscribeToServerLogs(filter?: LogFilter): void {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('Cannot subscribe to logs: Socket not connected');
+      return;
+    }
+    
+    // Store the current filter
+    this.filter = filter || this.filter;
+    
+    this.socket.emit('subscribe-logs', this.filter);
+  }
+  
+  updateFilter(filter: LogFilter): void {
+    this.filter = { ...filter };
+    
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('update-filter', this.filter);
+    }
+  }
+  
+  getLatestLogs(afterTimestamp?: string): void {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('Cannot get latest logs: Socket not connected');
+      return;
+    }
+    
+    const options = afterTimestamp ? { afterTimestamp } : {};
+    this.socket.emit('get-latest-logs', options);
+  }
+  
+  /**
+   * Fetch logs from server with optional filtering
+   * @param filter Optional filter criteria
+   * @returns Observable of LogResponse
+   */
+  fetchLogs(filter?: Partial<LogFilter>): Observable<LogResponse> {
+    // Convert filter to query params for HTTP request
+    const params: Record<string, string> = {};
+    
+    if (filter) {
+      // Convert filter to query parameters
+      if (filter.level !== undefined) {
+        params['level'] = filter.level.toString();
+      }
+      if (filter.service) {
+        params['source'] = filter.service;
+      }
+      if (filter.limit) {
+        params['limit'] = filter.limit.toString();
+      }
+      if (filter.startDate) {
+        params['startDate'] = filter.startDate;
+      }
+      if (filter.endDate) {
+        params['endDate'] = filter.endDate;
+      }
+      if (filter.search) {
+        params['search'] = filter.search;
       }
     }
     
-    // Check for log level override in localStorage
-    const storedLevel = localStorage.getItem('log_level');
-    if (storedLevel && Object.values(LogLevel).includes(Number(storedLevel))) {
-      this.config.level = Number(storedLevel) as LogLevel;
-    }
-
-    // Start auto-send timer if configured
-    if (this.autoSendInterval > 0) {
-      this.startAutoSend();
-    }
+    // Save filter for potential reuse
+    this.filter = filter || {};
     
-    // Generate some initial test logs
-    this.generateTestLogs();
-    
-    // After initialization, now we can safely log
-    this.info('LoggerService initialized', 'LoggerService');
-    
-    // Subscribe to socket for real-time logs
-    this.setupSocketConnection();
-  }
-
-  // Convert string log level to enum value
-  private stringToLogLevel(level: string): LogLevel | undefined {
-    switch (level.toLowerCase()) {
-      case 'trace': return LogLevel.TRACE;
-      case 'debug': return LogLevel.DEBUG;
-      case 'info': return LogLevel.INFO;
-      case 'warn':
-      case 'warning': return LogLevel.WARN;
-      case 'error': return LogLevel.ERROR;
-      case 'fatal': return LogLevel.FATAL;
-      case 'off': return LogLevel.OFF;
-      default: return undefined;
-    }
-  }
-
-  private startAutoSend(): void {
-    this.autoSendTimer = setInterval(() => {
-      this.flushBuffer();
-    }, this.autoSendInterval);
-  }
-
-  /**
-   * Get logs as an observable
-   */
-  getLogs(): Observable<LogEntry[]> {
-    return this.logsSubject.asObservable();
-  }
-
-  /**
-   * Fetch logs from the server
-   */
-  fetchLogs(filter?: LogFilter): Observable<LogResponse> {
-    // Convert filter to params or use empty object if undefined
-    const params = filter ? this.buildFilterParams(filter) : {};
-    return this.logDispatch.fetchLogs(params).pipe(
-      tap(response => {
-        // Update local logs
-        this.logs = [...response.logs];
-        this.notifySubscribers();
+    return this.logDispatchService.fetchLogs(params).pipe(
+      map(response => {
+        if (response.status && response.logs) {
+          this.replaceLogs(response.logs);
+        }
+        return response;
+      }),
+      catchError(err => {
+        console.error('Error fetching logs:', err);
+        return throwError(() => err);
       })
     );
   }
 
-  /**
-   * Build filter parameters
-   */
-  private buildFilterParams(filter: LogFilter): Record<string, string> {
-    const params: Record<string, string> = {};
-    
-    // Use level instead of levels
-    if (filter.level) {
-      // Convert enum to string using the shared helper function
-      if (Array.isArray(filter.level)) {
-        params['level'] = filter.level.map(l => logLevelEnumToString(l)).join(',');
-      } else {
-        params['level'] = logLevelEnumToString(filter.level);
-      }
-    }
-    
-    // Handle service instead of sources
-    if (filter.service) {
-      params['service'] = filter.service;
-    }
-    
-    // Use startDate instead of startTime
-    if (filter.startDate) {
-      params['startDate'] = filter.startDate;
-    }
-    
-    // Use endDate instead of endTime
-    if (filter.endDate) {
-      params['endDate'] = filter.endDate;
-    }
-    
-    if (filter.search) {
-      params['search'] = filter.search;
-    }
-    
-    if (filter.limit) {
-      params['limit'] = filter.limit.toString();
-    }
-    
-    // Use skip instead of offset
-    if (filter.skip) {
-      params['skip'] = filter.skip.toString();
-    }
-    
-    return params;
-  }
-
-  /**
-   * Add a log entry to the local store and optionally send to server
-   */
-  logMessage(level: LogLevelType, message: string, source: string = 'app', data?: Record<string, unknown>): void {
-    // Convert the string level to enum using the shared helper function
-    const levelEnum = stringToLogLevelEnum(level);
-    
+  // Add a log entry via API
+  addLog(level: LogLevelEnum, message: string, source: string = 'client', details: Record<string, unknown> = {}): Observable<LogEntry> {
     const entry: LogEntry = {
-      id: uuid(), // Now using the uuid function
-      timestamp: new Date().toISOString(),
-      level: levelEnum,
+      id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      level,
       message,
       source,
-      data
-    };
-
-    // Add to local logs
-    this.addLog(entry);
-    
-    // Add to buffer for sending to server
-    this.logBuffer.push(entry);
-    
-    // If buffer is full, send logs to server
-    if (this.logBuffer.length >= this.bufferSize) {
-      this.flushBuffer();
-    }
-  }
-
-  /**
-   * Generate random test logs for development
-   */
-  generateTestLogs(count: number = 10, level: LogLevelType | 'random' = 'random'): void {
-    if (level === 'random') {
-      const levels: LogLevelType[] = ['debug', 'info', 'warning', 'error'];
-      
-      // Create complex debug logs
-      this.logMessage(
-        'debug',
-        'TESTING: Application initialization completed',
-        'testing',
-        { 
-          initTime: 1235.45,
-          modules: ['CoreModule', 'AuthModule', 'DashboardModule'],
-          configuration: {
-            environment: 'development',
-            features: {
-              darkMode: true,
-              analytics: false,
-              experimental: true
-            }
-          }
-        }
-      );
-      
-      this.logMessage(
-        'debug',
-        'TESTING: API response time analysis',
-        'testing',
-        { 
-          endpoint: '/api/metrics',
-          responseTime: 235.42,
-          samplingMethod: 'average',
-          sampleSize: 50,
-          details: {
-            min: 120.23,
-            max: 350.67,
-            median: 228.45,
-            percentile95: 312.87
-          }
-        }
-      );
-      
-      // Create complex error logs
-      this.logMessage(
-        'error',
-        'TESTING: Database connection failed',
-        'testing',
-        { 
-          connectionId: 'db-conn-39a45f',
-          attemptCount: 3,
-          lastAttempt: new Date().toISOString(),
-          error: {
-            code: 'ECONNREFUSED',
-            message: 'Unable to connect to database server',
-            details: 'Connection timeout after 5000ms'
-          },
-          stackTrace: 'Error: ECONNREFUSED at DatabaseService.connect (database.service.ts:58:23)...'
-        }
-      );
-      
-      this.logMessage(
-        'error',
-        'TESTING: JWT token validation failed',
-        'testing',
-        { 
-          tokenId: 'eyJhbGciOiJIUzI1NiIsIn...[truncated]',
-          issueType: 'TokenExpiredError',
-          expiredAt: new Date().toISOString(),
-          requestContext: {
-            url: '/api/secure-resource',
-            method: 'GET',
-            clientIp: '192.168.1.105',
-            userId: 'anonymous'
-          },
-          securityContext: {
-            severity: 'high',
-            action: 'deny-access',
-            auditTrail: true
-          }
-        }
-      );
-      
-      // Generate random logs as normal
-      for (let i = 0; i < count; i++) {
-        const randomLevel = levels[Math.floor(Math.random() * levels.length)];
-        this.logMessage(
-          randomLevel,
-          `Test ${randomLevel} log message ${i + 1}`,
-          randomLevel === 'error' || randomLevel === 'debug' ? 'testing' : 'test-generator',
-          { testId: i, random: Math.random() }
-        );
-      }
-    } else {
-      for (let i = 0; i < count; i++) {
-        this.logMessage(
-          level,
-          `TESTING: ${level} message ${i + 1}`,
-          'testing',
-          { 
-            testId: i, 
-            timestamp: Date.now(),
-            context: {
-              action: `test-action-${i}`,
-              component: `TestComponent${i}`,
-              user: i % 2 === 0 ? 'admin' : 'user'
-            }
-          }
-        );
-      }
-    }
-  }
-
-  /**
-   * Log a debug message (older API)
-   */
-  debug(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log a debug message (detailed diagnostics)
-   */
-  debug(message: string, metadata?: LogMetadata): void;
-  /**
-   * Debug implementation that handles both versions
-   */
-  debug(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('debug', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.DEBUG, message, sourceOrMetadata);
-    }
-  }
-
-  /**
-   * Log an info message (older API)
-   */
-  info(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log an info message (normal operations)
-   */
-  info(message: string, metadata?: LogMetadata): void;
-  /**
-   * Info implementation that handles both versions
-   */
-  info(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('info', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.INFO, message, sourceOrMetadata);
-    }
-  }
-
-  /**
-   * Log a warning message (older API)
-   */
-  warning(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log a warning message (potential issues)
-   */
-  warning(message: string, metadata?: LogMetadata): void;
-  /**
-   * Warning implementation that handles both versions
-   */
-  warning(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('warning', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.WARN, message, sourceOrMetadata);
-    }
-  }
-  
-  /**
-   * Alias for warning method (older API)
-   */
-  warn(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Alias for warning method (newer API)
-   */
-  warn(message: string, metadata?: LogMetadata): void;
-  /**
-   * Warn implementation that delegates to warning
-   */
-  warn(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    this.warning(message, typeof sourceOrMetadata === 'string' ? sourceOrMetadata : undefined, data);
-  }
-
-  /**
-   * Log an error message (older API)
-   */
-  error(message: string, source?: string, data?: Record<string, unknown>): void;
-  /**
-   * Log an error message (recoverable errors)
-   */
-  error(message: string, metadata?: LogMetadata): void;
-  /**
-   * Error implementation that handles both versions
-   */
-  error(message: string, sourceOrMetadata?: string | LogMetadata, data?: Record<string, unknown>): void {
-    if (typeof sourceOrMetadata === 'string' || sourceOrMetadata === undefined) {
-      this.logMessage('error', message, sourceOrMetadata, data);
-    } else {
-      this.log(LogLevel.ERROR, message, sourceOrMetadata);
-    }
-  }
-
-  /**
-   * Log a trace message (most detailed)
-   */
-  trace(message: string, metadata?: LogMetadata): void {
-    this.log(LogLevel.TRACE, message, metadata);
-  }
-
-  /**
-   * Log a fatal message (unrecoverable errors)
-   */
-  fatal(message: string, metadata?: LogMetadata): void {
-    this.log(LogLevel.FATAL, message, metadata);
-  }
-
-  /**
-   * Add a log entry to the local store and notify subscribers
-   */
-  private addLog(log: LogEntry): void {
-    // Add log to the beginning of the array
-    this.logs.unshift(log);
-    
-    // Limit size of logs array
-    if (this.logs.length > this.maxLogSize) {
-      this.logs = this.logs.slice(0, this.maxLogSize);
-    }
-    
-    // Notify subscribers
-    this.notifySubscribers();
-  }
-
-  /**
-   * Flush log buffer to server
-   */
-  private flushBuffer(): void {
-    if (this.logBuffer.length === 0) return;
-    
-    const logsToSend = [...this.logBuffer];
-    this.logBuffer = [];
-    
-    this.debug(`Sending ${logsToSend.length} logs to server`, 'LoggerService');
-    
-    // Use LogDispatchService to send logs
-    this.logDispatch.sendLogs(logsToSend)
-      .subscribe({
-        next: (response) => {
-          if (!response) {
-            this.warning('No response received from log batch request', 'LoggerService');
-            return;
-          }
-          
-          if (response.success) {
-            this.debug('Successfully sent logs to server', 'LoggerService');
-          } else {
-            this.warning(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService');
-            // Re-add logs to buffer for next attempt
-            this.logBuffer = [...logsToSend, ...this.logBuffer];
-          }
-        },
-        error: (err) => {
-          this.error('Error in log batch response', 'LoggerService', { error: err });
-          // Re-add logs to buffer for next attempt
-          this.logBuffer = [...logsToSend, ...this.logBuffer];
-        }
-      });
-  }
-
-  /**
-   * Send logs to server
-   */
-  private sendLogsToServer(logs: LogEntry[]): void {
-    if (!logs.length) return;
-    
-    this.logDispatch.sendLogs(logs)
-      .subscribe({
-        next: (response) => {
-          if (response.success) { // Fixed: Use success instead of ok
-            this.info(`Successfully sent ${logs.length} logs to server`, 'LoggerService');
-            // Fix: Add proper type for log parameter
-            this.pendingLogs = this.pendingLogs.filter(log => 
-              !logs.some(sentLog => sentLog.id === log.id));
-          } else {
-            this.error(`Failed to send logs to server: ${response.success ? 'Success' : 'Failed'}`, 'LoggerService', { response });
-            // Log will be retried on next batch
-          }
-        },
-        error: (err) => {
-          this.error('Error sending logs to server', 'LoggerService', { error: err });
-          // Logs will be retried on next batch
-        }
-      });
-  }
-
-  /**
-   * Notify subscribers of updated logs
-   */
-  private notifySubscribers(): void {
-    this.logsSubject.next([...this.logs]);
-  }
-
-  /**
-   * Set the current log level
-   */
-  setLogLevel(level: LogLevel): void {
-    this.config.level = level;
-    localStorage.setItem('log_level', level.toString());
-  }
-
-  /**
-   * Core logging function
-   */
-  private log(level: LogLevel, message: string, metadata?: LogMetadata): void {
-    if (level < this.config.level) return;
-    
-    const timestamp = this.config.includeTimestamp ? new Date().toISOString() : null;
-    
-    // Format the log message
-    let formattedMessage = message;
-    if (timestamp) {
-      formattedMessage = `[${timestamp}] ${formattedMessage}`;
-    }
-    
-    // Create combined log data
-    const logData = metadata ? { message, ...metadata } : { message };
-    
-    // Create a log entry
-    const source = metadata?.service || 'LoggerService';
-    
-    // Map internal LogLevel to shared LogLevelEnum
-    const logLevelEnum = this.mapLogLevelToLogLevelEnum(level);
-    
-    const entry: LogEntry = {
-      id: uuid(),
       timestamp: new Date().toISOString(),
-      level: logLevelEnum,
-      message,
-      source,
-      data: metadata
+      details
     };
     
-    // Add entry to logs
-    this.addLog(entry);
+    // Add to local logs immediately
+    this.addLogLocally(entry);
     
-    // Output to browser console without calling ourselves (to avoid recursion)
-    // We use direct console methods to avoid recursive calls to our own logger
-    const consoleData = this.config.enableConsoleColors ? logData : null;
-    
-    switch (level) {
-      case LogLevel.TRACE:
-      case LogLevel.DEBUG:
-        this.writeToConsole('debug', formattedMessage, consoleData);
-        break;
-      case LogLevel.INFO:
-        this.writeToConsole('info', formattedMessage, consoleData);
-        break;
-      case LogLevel.WARN:
-        this.writeToConsole('warn', formattedMessage, consoleData);
-        break;
-      case LogLevel.ERROR:
-      case LogLevel.FATAL:
-        this.writeToConsole('error', formattedMessage, consoleData);
-        break;
-    }
-  }
-  
-  /**
-   * Map internal LogLevel enum to the shared LogLevelEnum
-   */
-  private mapLogLevelToLogLevelEnum(level: LogLevel): LogLevelEnum {
-    switch (level) {
-      case LogLevel.TRACE: return LogLevelEnum.TRACE;
-      case LogLevel.DEBUG: return LogLevelEnum.DEBUG;
-      case LogLevel.INFO: return LogLevelEnum.INFO;
-      case LogLevel.WARN: return LogLevelEnum.WARN;
-      case LogLevel.ERROR: return LogLevelEnum.ERROR;
-      case LogLevel.FATAL: return LogLevelEnum.FATAL;
-      default: return LogLevelEnum.INFO;
-    }
-  }
-
-  /**
-   * Direct write to console to avoid recursive logging
-   * This is the only place in the codebase where we should use console directly
-   */
-  private writeToConsole(method: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
-    if (this.config.enableConsoleOutput) {
-      if (data) {
-        console[method](message, data);
-      } else {
-        console[method](message);
-      }
-    }
-  }
-  
-  /**
-   * Convert LogLevel enum to string
-   */
-  private getLogLevelString(level: LogLevel): LogLevelType {
-    switch (level) {
-      case LogLevel.TRACE: return 'trace';
-      case LogLevel.DEBUG: return 'debug';
-      case LogLevel.INFO: return 'info';
-      case LogLevel.WARN: return 'warning';
-      case LogLevel.ERROR: return 'error';
-      case LogLevel.FATAL: return 'fatal';
-      default: return 'info';
-    }
-  }
-  
-  /**
-   * Set up socket connection to receive real-time logs
-   */
-  private setupSocketConnection(): void {
-    // Attempt to get the socket - if it doesn't exist yet, try again after a delay
-    const attemptConnection = () => {
-      const logsSocket = this.socketRegistry.getSocket('/logs');
-      
-      if (logsSocket) {
-        this.debug('Connected to logs socket', 'LoggerService');
-        
-        // Listen for new log entries
-        logsSocket.on('log-entry', (logEntry: LogEntry) => {
-          this.debug('Received log entry from server', 'LoggerService');
-          // Add to local logs
-          this.addLog(logEntry);
-          // Emit via newLogEntry$ observable
-          this.newLogEntrySubject.next(logEntry);
-        });
-        
-        // Listen for log batches
-        logsSocket.on('log-batch', (logEntries: LogEntry[]) => {
-          this.debug(`Received batch of ${logEntries.length} logs from server`, 'LoggerService');
-          // Add each log
-          logEntries.forEach(log => {
-            this.addLog(log);
-            this.newLogEntrySubject.next(log);
-          });
-        });
-      } else {
-        // Socket not available yet, try again after a delay
-        setTimeout(attemptConnection, 2000);
-        this.debug('Logs socket not available yet, retrying in 2s', 'LoggerService');
-      }
-    };
-    
-    // Start the connection attempt
-    attemptConnection();
-  }
-
-  /**
-   * Get the latest logs from the source
-   * Only fetch logs newer than the most recent one we have
-   */
-  getLatestLogs(): Observable<LogEntry[]> {
-    // If we have logs, get the timestamp of the most recent one
-    let params: Record<string, string> = {};
-    if (this.logs.length > 0) {
-      const mostRecentTimestamp = this.logs[0].timestamp;
-      params = {
-        'afterTimestamp': mostRecentTimestamp
-      };
-    }
-
-    // Otherwise just fetch the most recent logs
-    return this.logDispatch.fetchLogs(params).pipe(
-      tap(response => {
-        // If we got new logs, add them to our local cache
-        if (response.logs.length > 0) {
-          // Add each new log to the beginning
-          const newLogs = response.logs.filter(newLog => 
-            !this.logs.some(existingLog => existingLog.id === newLog.id)
-          );
-          
-          if (newLogs.length > 0) {
-            this.debug(`Got ${newLogs.length} new logs from server`, 'LoggerService');
-            
-            // Add to the beginning of our logs array
-            this.logs = [...newLogs, ...this.logs];
-            
-            // Limit size
-            if (this.logs.length > this.maxLogSize) {
-              this.logs = this.logs.slice(0, this.maxLogSize);
-            }
-            
-            this.notifySubscribers();
-          } else {
-            this.debug('No new logs from server', 'LoggerService');
-          }
+    // Send to server
+    this.logDispatchService.sendLogs([entry]).pipe(
+      map(response => {
+        if (!response.success) {
+          console.error('Failed to send log to server:', response.message);
         }
+        return entry;
       }),
-      map(() => this.logs)
-    );
+      catchError(error => {
+        console.error('Error sending log to server:', error);
+        return throwError(() => error);
+      })
+    ).subscribe(); // Intentional direct subscribe for fire-and-forget
+    
+    return new Observable<LogEntry>(observer => {
+      observer.next(entry);
+      observer.complete();
+    });
+  }
+  
+  /**
+   * Get logs observable
+   * @returns Observable of log entries
+   */
+  getLogs(filter?: LogFilter): Observable<LogEntry[]> {
+    // If filter is provided, you would apply filtering logic here
+    if (filter) {
+      const currentLogs = this.logsSubject.getValue();
+      const filteredLogs = this.applyFilter(currentLogs, filter);
+      return new Observable<LogEntry[]>(observer => {
+        observer.next(filteredLogs);
+        observer.complete();
+      });
+    }
+    // Otherwise simply return the logs$ observable
+    return this.logs$;
+  }
+
+  // Convenience methods for different log levels
+  debug(message: string, source: string = 'client', details: Record<string, unknown> = {}): Observable<LogEntry> {
+    return this.addLog(LogLevelEnum.DEBUG, message, source, details);
+  }
+  
+  info(message: string, source: string = 'client', details: Record<string, unknown> = {}): Observable<LogEntry> {
+    return this.addLog(LogLevelEnum.INFO, message, source, details);
+  }
+  
+  warn(message: string, source: string = 'client', details: Record<string, unknown> = {}): Observable<LogEntry> {
+    return this.addLog(LogLevelEnum.WARN, message, source, details);
+  }
+  
+  error(message: string, source: string = 'client', details: Record<string, unknown> = {}): Observable<LogEntry> {
+    return this.addLog(LogLevelEnum.ERROR, message, source, details);
+  }
+  
+  // Handle logs from backend
+  private handleBackendLog(log: LogEntry): void {
+    this.addLogLocally(log);
+  }
+  
+  private addLogLocally(log: LogEntry): void {
+    // Add to all logs
+    const currentLogs = this.logsSubject.getValue();
+    const updatedLogs = [log, ...currentLogs].slice(0, this.MAX_LOG_RECORDS);
+    this.logsSubject.next(updatedLogs);
+    
+    // Add to filtered logs if it matches the filter
+    if (this.matchesFilter(log, this.filter)) {
+      const currentFiltered = this.filteredLogsSubject.getValue();
+      const updatedFiltered = [log, ...currentFiltered].slice(0, this.MAX_LOG_RECORDS);
+      this.filteredLogsSubject.next(updatedFiltered);
+    }
+    
+    // Emit as a new log
+    this.newLogSubject.next(log);
+  }
+  
+  private processBatchLogs(logs: LogEntry[]): void {
+    if (!logs || logs.length === 0) {
+      return;
+    }
+    
+    // Add all logs to the current logs
+    const currentLogs = this.logsSubject.getValue();
+    const allLogs = [...logs, ...currentLogs].slice(0, this.MAX_LOG_RECORDS);
+    this.logsSubject.next(allLogs);
+    
+    // Filter logs based on current filter
+    const filteredLogs = logs.filter(log => this.matchesFilter(log, this.filter));
+    if (filteredLogs.length > 0) {
+      const currentFiltered = this.filteredLogsSubject.getValue();
+      const allFiltered = [...filteredLogs, ...currentFiltered].slice(0, this.MAX_LOG_RECORDS);
+      this.filteredLogsSubject.next(allFiltered);
+    }
+    
+    // Emit new logs one by one
+    logs.forEach(log => this.newLogSubject.next(log));
+  }
+  
+  private appendLogs(logs: LogEntry[]): void {
+    if (!logs || logs.length === 0) {
+      return;
+    }
+    
+    // Add the logs to existing logs
+    const currentLogs = this.logsSubject.getValue();
+    const allLogs = [...currentLogs, ...logs].slice(0, this.MAX_LOG_RECORDS);
+    this.logsSubject.next(allLogs);
+    
+    // Filter logs for the filtered stream
+    const filteredLogs = logs.filter(log => this.matchesFilter(log, this.filter));
+    if (filteredLogs.length > 0) {
+      const currentFiltered = this.filteredLogsSubject.getValue();
+      const allFiltered = [...currentFiltered, ...filteredLogs].slice(0, this.MAX_LOG_RECORDS);
+      this.filteredLogsSubject.next(allFiltered);
+    }
+  }
+  
+  private replaceLogs(logs: LogEntry[]): void {
+    // Replace all logs
+    this.logsSubject.next(logs.slice(0, this.MAX_LOG_RECORDS));
+    
+    // Filter logs for the filtered stream
+    const filteredLogs = logs.filter(log => this.matchesFilter(log, this.filter));
+    this.filteredLogsSubject.next(filteredLogs.slice(0, this.MAX_LOG_RECORDS));
+  }
+  
+  /**
+   * Apply filter to logs
+   * @param logs The logs to filter
+   * @param filterParams The filter parameters
+   * @returns The filtered logs
+   */
+  private applyFilter(logs: LogEntry[], filterParams?: LogFilter): LogEntry[] {
+    if (!filterParams) {
+      return logs;
+    }
+    
+    return logs.filter(log => this.matchesFilter(log, filterParams));
+  }
+  
+  private matchesFilter(log: LogEntry, filterParams?: LogFilter): boolean {
+    if (!filterParams) {
+      return true;
+    }
+    
+    // Check level
+    if (filterParams.level !== undefined) {
+      if (Array.isArray(filterParams.level)) {
+        if (filterParams.level.length > 0 && !filterParams.level.includes(log.level)) {
+          return false;
+        }
+      } else if (filterParams.level !== null && log.level !== filterParams.level) {
+        return false;
+      }
+    }
+    
+    // Check source/service
+    if (filterParams.service && log.source !== filterParams.service) {
+      return false;
+    }
+    
+    // Check search term
+    if (filterParams.search) {
+      const searchLower = filterParams.search.toLowerCase();
+      const messageMatch = log.message.toLowerCase().includes(searchLower);
+      const sourceMatch = log.source && log.source.toLowerCase().includes(searchLower);
+      if (!messageMatch && !sourceMatch) {
+        return false;
+      }
+    }
+    
+    // Check date range
+    if (filterParams.startDate && new Date(log.timestamp) < new Date(filterParams.startDate)) {
+      return false;
+    }
+    
+    if (filterParams.endDate && new Date(log.timestamp) > new Date(filterParams.endDate)) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  private cleanupSubscriptions(): void {
+    // Check if this.subscriptions exists and unsubscribe
+    if (this.subscriptions) {
+      this.subscriptions.unsubscribe();
+    }
+  }
+  
+  // Helper method to parse socket errors
+  private parseSocketError(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    } else if (error && typeof error === 'object') {
+      if ('message' in error) {
+        return (error as { message: string }).message;
+      }
+      return JSON.stringify(error);
+    }
+    return 'Unknown error';
+  }
+
+  /**
+   * Filter logs using the base LogFilter interface
+   * This provides compatibility with systems expecting to work with the basic LogFilter
+   */
+  filterWithBasicFilter(filter: LogFilter): LogEntry[] {
+    const currentLogs = this.logsSubject.getValue();
+    return this.applyFilter(currentLogs, filter);
   }
 }

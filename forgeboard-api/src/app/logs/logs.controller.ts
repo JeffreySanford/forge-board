@@ -1,68 +1,65 @@
-import { Controller, Post, Body, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { LogsService } from './logs.service';
-import { LogDto, LogEntry } from '@forge-board/shared/api-interfaces';
+import type { LogEntry } from '@forge-board/shared/api-interfaces'; // Changed to import type
+import { ApiResponse } from '@forge-board/shared/api-interfaces'; // Import ApiResponse
+import { LoggerService } from '../logger/logger.service'; // Import LoggerService
+import { Observable } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 @Controller('logs')
 export class LogsController {
-  private readonly logger = new Logger(LogsController.name);
-  private readonly verboseLogging = false; // Set to false to disable verbose console logs
-  private readonly debugLogging = true; // Set to true to see log content in console
+  private readonly controllerLogger = new Logger(LogsController.name); // Renamed logger instance
 
-  constructor(private readonly logsService: LogsService) {}
+  constructor(
+    private readonly logsService: LogsService,
+    private readonly loggerService: LoggerService // Inject LoggerService
+  ) {}
 
   @Post()
-  async addLog(@Body() log: LogEntry) {
-    // Keep adding logs to the service
-    const result = await this.logsService.addLogs([log]);
-    
-    // Only log to console if verbose logging is enabled
-    if (this.verboseLogging) {
-      this.logger.log(`Received log entry: ${log.message}`);
-    }
-    
-    // Debug logging to see actual content
-    if (this.debugLogging) {
-      console.log('Single log content:', JSON.stringify(log, null, 2));
-    }
-    
-    return result;
+  async createLog(@Body() logEntry: LogEntry) {
+    // For single log entries, we can still use the original LogsService's saveLog,
+    // or delegate to loggerService.addLogs([logEntry]) if we want all logging through LoggerService.
+    // Sticking to original behavior for this endpoint for now.
+    return this.logsService.saveLog(logEntry);
   }
 
-  @Post('batch')
-  async createBatchLogs(@Body() logDtos: LogDto[]) {
-    this.logger.log(`Creating batch of ${logDtos.length} logs`);
-    
-    // Debug logging to see actual content of the logs
-    if (this.debugLogging) {
-      console.log('=== BATCH LOGS CONTENT ===');
-      console.log(`Received ${logDtos.length} logs at ${new Date().toISOString()}`);
-      logDtos.forEach((log, index) => {
-        console.log(`Log #${index+1}:`);
-        console.log(`- Level: ${log.level}`);
-        console.log(`- Source: ${log.source || 'not specified'}`);
-        console.log(`- Message: ${log.message}`);
-        console.log(`- Timestamp: ${log.timestamp}`);
-        if (log.data) {
-          console.log(`- Data: ${JSON.stringify(log.data, null, 2)}`);
-        }
-        console.log('-------------------');
-      });
-      console.log('=== END BATCH LOGS ===');
+  @Post('batch') // New endpoint for batch log submission
+  addLogsBatch(@Body() logs: LogEntry[]): Observable<ApiResponse<{ count: number }>> {
+    if (!Array.isArray(logs) || logs.length === 0) {
+      throw new HttpException('Log batch must be a non-empty array.', HttpStatus.BAD_REQUEST);
     }
-    
-    try {
-      const createdLogs = await this.logsService.createMany(logDtos);
-      return { 
-        success: true, 
-        count: createdLogs.length,
-        message: `Successfully saved ${createdLogs.length} logs`
-      };
-    } catch (error) {
-      this.logger.error(`Failed to create batch logs: ${error.message}`, error.stack);
-      throw new HttpException(
-        { message: 'Failed to create batch logs', error: error.message },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+    this.controllerLogger.log(`Received batch of ${logs.length} logs.`);
+    return this.loggerService.addLogs(logs).pipe(
+      map(processedLogs => {
+        const count = processedLogs.length;
+        this.controllerLogger.log(`Successfully processed batch of ${count} logs.`);
+        return {
+          success: true,
+          message: `Successfully processed ${count} log(s).`,
+          data: { count },
+          timestamp: new Date().toISOString(),
+          statusCode: HttpStatus.OK
+        };
+      }),
+      catchError(error => {
+        this.controllerLogger.error(`Error processing log batch: ${error.message}`, error.stack);
+        // Ensure a proper error response is sent to the client
+        throw new HttpException(
+          { 
+            success: false, 
+            message: `Failed to process log batch: ${error.message}`, 
+            error: error.message,
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            timestamp: new Date().toISOString()
+          } as ApiResponse<never>, 
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      })
+    );
+  }
+
+  @Get()
+  async getLogs(@Query() query) {
+    return this.logsService.getLogs(query);
   }
 }

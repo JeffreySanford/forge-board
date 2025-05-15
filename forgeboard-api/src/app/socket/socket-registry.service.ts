@@ -19,6 +19,16 @@ export class SocketRegistryService {
   private connectionHistory: SocketInfo[] = [];
   
   /**
+   * Unregister a socket connection. Typically called on disconnect.
+   * @param socketId The ID of the socket to unregister
+   * @param reason Optional reason for unregistering
+   */
+  unregisterSocket(socketId: string, reason?: string): void {
+    this.logger.log(`Unregistering socket: ${socketId}. Reason: ${reason || 'N/A'}`);
+    this.handleDisconnect(socketId); // handleDisconnect already logs and updates metrics
+  }
+
+  /**
    * Register a new socket connection
    * @param socket The socket instance to register
    * @param namespace Optional namespace name

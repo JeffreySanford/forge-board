@@ -10,12 +10,12 @@ export interface Environment {
   /**
    * API URL (e.g., http://localhost:3000/api)
    */
-  apiUrl: string;
+  apiUrl?: string;
   
   /**
    * Socket URL (e.g., http://localhost:3000)
    */
-  socketUrl: string;
+  socketUrl?: string;
   
   /**
    * API base URL (e.g., http://localhost:3000/api)
@@ -30,50 +30,83 @@ export interface Environment {
   /**
    * JWT token for current user (set at runtime)
    */
-  encryptedJwtToken: string;
+  encryptedJwtToken?: string;
   
   /**
    * Default JWT token for guest access
    */
-  jwtGuestToken: string;
+  jwtGuestToken?: string;
   
   /**
    * Feature flags
    */
-  features: {
+  features?: {
     /**
      * Enable mock data for development
      */
-    enableMockData: boolean;
+    enableMockData?: boolean;
     
     /**
      * Enable diagnostics tools
      */
-    enableDiagnostics: boolean;
+    enableDiagnostics?: boolean;
     
     /**
      * Enable socket logging
      */
-    enableSocketLogging: boolean;
+    enableSocketLogging?: boolean;
     
     /**
      * Enable type validation
      */
-    enableTypeValidation: boolean;
+    enableTypeValidation?: boolean;
   };
   
   /**
    * Logging configuration
    */
-  logging: {
+  logging?: {
     /**
      * Log level ('debug', 'info', 'warn', 'error')
      */
-    level: string;
+    level?: LogLevel;
     
     /**
      * Enable console logging
-     */
-    enableConsole: boolean;
+     */    enableConsole?: boolean;
   };
+  
+  /**
+   * MongoDB configuration
+   */
+  mongo?: {
+    /**
+     * MongoDB URI (e.g., mongodb://localhost:27017/forgeboard)
+     */
+    uri: string;
+    /**
+     * MongoDB connection options
+     */
+    options: Record<string, any>;
+  };
+  
+  /**
+   * Flag to use in-memory MongoDB for development
+   */
+  useInMemoryMongo: boolean;
+  
+  /**
+   * MongoDB URI display value
+   */
+  mongoUri: string;
+  
+  /**
+   * Path for logs endpoint (default is 'logs')
+   */
+  logsPath: string;
 }
+
+/**
+ * Log level type
+ */
+export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';

@@ -1,6 +1,6 @@
 {
   "root": true,
-  "ignorePatterns": ["**/*"],
+  "ignorePatterns": ["node_modules", "dist", "coverage"],
   "plugins": ["@nx", "require-socket-cleanup"],
   "overrides": [
     {

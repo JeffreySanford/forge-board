@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { User, UserRole } from '@forge-board/shared/api-interfaces';
 import type { AuthState } from '@forge-board/shared/api-interfaces';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { map, tap, catchError, switchMap } from 'rxjs/operators';
+import { map, tap, catchError, switchMap, shareReplay } from 'rxjs/operators';
 import { Socket } from 'socket.io';
 import { JwtDiagnosticsService } from '../diagnostics/jwt-diagnostics.service';
 
@@ -18,17 +18,26 @@ interface JwtPayload extends Record<string, unknown> {
 /**
  * Authentication service using reactive patterns with RxJS
  * 
- * - Uses BehaviorSubject for state management
- * - Returns Observables instead of Promises
+ * - Uses BehaviorSubject for hot observable state management
+ * - Returns Observables instead of Promises for reactive programming
  * - Integrates with MongoDB via UserService
  * - Supports WebSocket authentication
+ * 
+ * @example
+ * // Subscribe to authentication state changes
+ * authService.authState$.subscribe(state => {
+ *   if (state.user) {
+ *     console.log('User authenticated:', state.user.username);
+ *   }
+ * });
  */
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   private readonly logger = new Logger(AuthService.name);
   
   /**
    * BehaviorSubject for the current authentication state
+   * This is a hot observable that emits the current value to new subscribers
    */
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
@@ -39,36 +48,53 @@ export class AuthService {
   
   /**
    * Observable of the current authentication state
+   * Using shareReplay(1) to ensure all subscribers get the most recent value
    */
-  public authState$: Observable<AuthState> = this.authStateSubject.asObservable();
+  public authState$: Observable<AuthState> = this.authStateSubject.asObservable().pipe(
+    shareReplay(1)
+  );
   
   /**
    * Observable of the current user
+   * Derived from the auth state hot observable
    */
   public currentUser$: Observable<User | null> = this.authState$.pipe(
-    map(state => state.user)
+    map(state => state.user),
+    shareReplay(1)
   );
   
   /**
    * Observable of whether the user is authenticated
+   * Derived from the auth state hot observable
    */
   public isAuthenticated$: Observable<boolean> = this.authState$.pipe(
-    map(state => !!state.user)
+    map(state => !!state.user),
+    shareReplay(1)
   );
   
   /**
    * Observable of the current token
+   * Derived from the auth state hot observable
    */
   public token$: Observable<string | null> = this.authState$.pipe(
-    map(state => state.token)
+    map(state => state.token),
+    shareReplay(1)
   );
   
   constructor(
     private jwtService: JwtService,
     private userService: UserService,
     private readonly jwtDiagnostics: JwtDiagnosticsService
-  ) {}
+  ) {
+    this.logger.log('AuthService initialized with BehaviorSubject state management');
+  }
   
+  // Clean up resources when the module is destroyed
+  onModuleDestroy(): void {
+    this.logger.log('AuthService cleaning up resources');
+    this.authStateSubject.complete();
+  }
+
   /**
    * Get the current authentication state
    */

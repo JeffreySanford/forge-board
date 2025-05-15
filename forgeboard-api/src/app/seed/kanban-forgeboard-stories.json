@@ -1,0 +1,369 @@
+[
+  {
+    "id": "forgeboard-main",
+    "name": "ForgeBoard Project Stories",
+    "columns": [
+      {
+        "id": "col1-fb",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card1-fb",
+            "title": "Story: Markdown Documentation Status",
+            "description": "Track and update the status of all markdown documentation files for the project.",
+            "priority": "high",
+            "tags": ["documentation", "markdown"],
+            "category": "documentation",
+            "assignee": "Project Lead",
+            "createdAt": "2025-05-01T10:00:00Z",
+            "updatedAt": "2025-05-01T10:00:00Z"
+          },
+          {
+            "id": "card2-fb",
+            "title": "Story: Nx Workspace Setup",
+            "description": "Ensure Nx workspace is configured for all teams and projects.",
+            "priority": "medium",
+            "tags": ["setup", "nx"],
+            "category": "project-management",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-02T10:00:00Z",
+            "updatedAt": "2025-05-02T10:00:00Z"
+          },
+          {
+            "id": "card3-fb",
+            "title": "Story: Real-time Kanban Sync",
+            "description": "Implement real-time updates for kanban board using websockets.",
+            "priority": "high",
+            "tags": ["feature", "websockets"],
+            "category": "feature",
+            "assignee": "Frontend Team",
+            "createdAt": "2025-05-03T10:00:00Z",
+            "updatedAt": "2025-05-03T10:00:00Z"
+          },
+          {
+            "id": "card7-fb",
+            "title": "Story: User Role Management",
+            "description": "Design and implement user role and permission management.",
+            "priority": "high",
+            "tags": ["security", "roles"],
+            "category": "security",
+            "assignee": "Backend Team",
+            "createdAt": "2025-05-06T10:00:00Z",
+            "updatedAt": "2025-05-06T10:00:00Z"
+          },
+          {
+            "id": "card8-fb",
+            "title": "Story: Performance Monitoring",
+            "description": "Integrate performance monitoring tools for backend and frontend.",
+            "priority": "medium",
+            "tags": ["monitoring", "performance"],
+            "category": "optimization",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-07T10:00:00Z",
+            "updatedAt": "2025-05-07T10:00:00Z"
+          },
+          {
+            "id": "card9-fb",
+            "title": "Story: Accessibility Review",
+            "description": "Conduct accessibility audit and implement improvements.",
+            "priority": "medium",
+            "tags": ["a11y", "user-experience"],
+            "category": "user-experience",
+            "assignee": "QA",
+            "createdAt": "2025-05-08T10:00:00Z",
+            "updatedAt": "2025-05-08T10:00:00Z"
+          },
+          {
+            "id": "card10-fb",
+            "title": "Story: Infrastructure as Code",
+            "description": "Automate infrastructure setup using Terraform.",
+            "priority": "low",
+            "tags": ["infrastructure", "automation"],
+            "category": "infrastructure",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-09T10:00:00Z",
+            "updatedAt": "2025-05-09T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col2-fb",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "development",
+        "cards": [
+          {
+            "id": "card4-fb",
+            "title": "Story: API Gateway Security",
+            "description": "Add security middleware and rate limiting to the API gateway.",
+            "priority": "high",
+            "tags": ["security", "api"],
+            "category": "security",
+            "assignee": "Backend Team",
+            "createdAt": "2025-05-04T10:00:00Z",
+            "updatedAt": "2025-05-04T10:00:00Z"
+          },
+          {
+            "id": "card5-fb",
+            "title": "Story: Markdown Linting",
+            "description": "Integrate markdown linting into CI pipeline for documentation quality.",
+            "priority": "medium",
+            "tags": ["ci", "markdown"],
+            "category": "documentation",
+            "assignee": "QA",
+            "createdAt": "2025-05-05T10:00:00Z",
+            "updatedAt": "2025-05-05T10:00:00Z"
+          },
+          {
+            "id": "card11-fb",
+            "title": "Story: Component Library",
+            "description": "Develop and document a reusable component library for the frontend.",
+            "priority": "high",
+            "tags": ["ui", "components"],
+            "category": "user-experience",
+            "assignee": "Frontend Team",
+            "createdAt": "2025-05-10T10:00:00Z",
+            "updatedAt": "2025-05-10T10:00:00Z"
+          },
+          {
+            "id": "card12-fb",
+            "title": "Story: Automated Testing",
+            "description": "Expand automated test coverage for critical modules.",
+            "priority": "medium",
+            "tags": ["testing", "automation"],
+            "category": "feature",
+            "assignee": "QA",
+            "createdAt": "2025-05-11T10:00:00Z",
+            "updatedAt": "2025-05-11T10:00:00Z"
+          },
+          {
+            "id": "card13-fb",
+            "title": "Story: Database Migration Scripts",
+            "description": "Create and test migration scripts for database schema changes.",
+            "priority": "medium",
+            "tags": ["database", "migration"],
+            "category": "infrastructure",
+            "assignee": "Backend Team",
+            "createdAt": "2025-05-12T10:00:00Z",
+            "updatedAt": "2025-05-12T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col3-fb",
+        "name": "Done",
+        "order": 2,
+        "phase": "completion",
+        "cards": [
+          {
+            "id": "card6-fb",
+            "title": "Story: Initial Project Bootstrap",
+            "description": "Bootstrap the ForgeBoard project with Nx, Angular, and NestJS.",
+            "priority": "high",
+            "tags": ["setup", "nx"],
+            "category": "project-management",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-01T10:00:00Z",
+            "updatedAt": "2025-05-01T10:00:00Z"
+          },
+          {
+            "id": "card14-fb",
+            "title": "Story: CI/CD Pipeline Setup",
+            "description": "Set up continuous integration and deployment for all services.",
+            "priority": "high",
+            "tags": ["ci", "cd", "devops"],
+            "category": "infrastructure",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-02T10:00:00Z",
+            "updatedAt": "2025-05-02T10:00:00Z"
+          },
+          {
+            "id": "card15-fb",
+            "title": "Story: Linting and Formatting",
+            "description": "Establish linting and formatting standards for the codebase.",
+            "priority": "medium",
+            "tags": ["linting", "formatting"],
+            "category": "project-management",
+            "assignee": "QA",
+            "createdAt": "2025-05-03T10:00:00Z",
+            "updatedAt": "2025-05-03T10:00:00Z"
+          },
+          {
+            "id": "card16-fb",
+            "title": "Story: User Authentication",
+            "description": "Implement user authentication and session management.",
+            "priority": "high",
+            "tags": ["security", "authentication"],
+            "category": "security",
+            "assignee": "Backend Team",
+            "createdAt": "2025-05-04T10:00:00Z",
+            "updatedAt": "2025-05-04T10:00:00Z"
+          }
+        ]
+      }
+    ],
+    "currentPhase": "development",
+    "phases": {
+      "planning": { "active": false, "startDate": "2025-05-01T00:00:00Z" },
+      "development": { "active": true, "startDate": "2025-05-03T00:00:00Z" },
+      "completion": { "active": false }
+    },
+    "createdAt": "2025-05-01T00:00:00Z",
+    "updatedAt": "2025-05-13T10:00:00Z"
+  },
+  {
+    "id": "security-initiatives",
+    "name": "Security Initiatives",
+    "columns": [
+      {
+        "id": "col1-sec",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card1-sec",
+            "title": "Penetration Testing Plan",
+            "description": "Draft a plan for external penetration testing.",
+            "priority": "high",
+            "tags": ["security", "testing"],
+            "category": "security",
+            "assignee": "Security Team",
+            "createdAt": "2025-05-14T10:00:00Z",
+            "updatedAt": "2025-05-14T10:00:00Z"
+          },
+          {
+            "id": "card2-sec",
+            "title": "GDPR Compliance Review",
+            "description": "Review all data flows for GDPR compliance.",
+            "priority": "medium",
+            "tags": ["compliance", "privacy"],
+            "category": "security",
+            "assignee": "Legal",
+            "createdAt": "2025-05-14T10:00:00Z",
+            "updatedAt": "2025-05-14T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col2-sec",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "development",
+        "cards": [
+          {
+            "id": "card3-sec",
+            "title": "OAuth2 Integration",
+            "description": "Integrate OAuth2 for third-party authentication.",
+            "priority": "high",
+            "tags": ["security", "oauth2"],
+            "category": "security",
+            "assignee": "Backend Team",
+            "createdAt": "2025-05-14T10:00:00Z",
+            "updatedAt": "2025-05-14T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col3-sec",
+        "name": "Done",
+        "order": 2,
+        "phase": "completion",
+        "cards": [
+          {
+            "id": "card4-sec",
+            "title": "Security Headers",
+            "description": "Add security headers to all HTTP responses.",
+            "priority": "medium",
+            "tags": ["security", "headers"],
+            "category": "security",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-13T10:00:00Z",
+            "updatedAt": "2025-05-13T10:00:00Z"
+          }
+        ]
+      }
+    ],
+    "currentPhase": "development",
+    "phases": {
+      "planning": { "active": false, "startDate": "2025-05-10T00:00:00Z" },
+      "development": { "active": true, "startDate": "2025-05-12T00:00:00Z" },
+      "completion": { "active": false }
+    },
+    "createdAt": "2025-05-10T00:00:00Z",
+    "updatedAt": "2025-05-14T10:00:00Z"
+  },
+  {
+    "id": "performance-optimization",
+    "name": "Performance Optimization",
+    "columns": [
+      {
+        "id": "col1-perf",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card1-perf",
+            "title": "Database Index Review",
+            "description": "Review and optimize database indexes for all collections.",
+            "priority": "medium",
+            "tags": ["database", "performance"],
+            "category": "optimization",
+            "assignee": "DBA",
+            "createdAt": "2025-05-14T10:00:00Z",
+            "updatedAt": "2025-05-14T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col2-perf",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "development",
+        "cards": [
+          {
+            "id": "card2-perf",
+            "title": "Frontend Bundle Analysis",
+            "description": "Analyze and reduce frontend bundle size.",
+            "priority": "high",
+            "tags": ["frontend", "performance"],
+            "category": "optimization",
+            "assignee": "Frontend Team",
+            "createdAt": "2025-05-14T10:00:00Z",
+            "updatedAt": "2025-05-14T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col3-perf",
+        "name": "Done",
+        "order": 2,
+        "phase": "completion",
+        "cards": [
+          {
+            "id": "card3-perf",
+            "title": "Enable HTTP/2",
+            "description": "Configure server to use HTTP/2 for better performance.",
+            "priority": "medium",
+            "tags": ["http2", "server"],
+            "category": "optimization",
+            "assignee": "DevOps",
+            "createdAt": "2025-05-12T10:00:00Z",
+            "updatedAt": "2025-05-12T10:00:00Z"
+          }
+        ]
+      }
+    ],
+    "currentPhase": "development",
+    "phases": {
+      "planning": { "active": false, "startDate": "2025-05-10T00:00:00Z" },
+      "development": { "active": true, "startDate": "2025-05-12T00:00:00Z" },
+      "completion": { "active": false }
+    },
+    "createdAt": "2025-05-10T00:00:00Z",
+    "updatedAt": "2025-05-14T10:00:00Z"
+  }
+]

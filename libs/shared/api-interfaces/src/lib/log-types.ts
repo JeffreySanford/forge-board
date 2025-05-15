@@ -2,8 +2,11 @@
  * Types related to logging system
  */
 
+// Mark file as having exports
+export const __logTypes = true;
+
 /**
- * Log level enum
+ * Log level enumeration
  */
 export enum LogLevelEnum {
   TRACE = 0,
@@ -22,8 +25,9 @@ export type LogLevelString = 'trace' | 'debug' | 'info' | 'warn' | 'warning' | '
 /**
  * Convert string log level to enum
  */
-export function stringToLogLevelEnum(level: LogLevelString): LogLevelEnum {
-  switch(level.toLowerCase()) {
+export function stringToLogLevelEnum(levelStr: LogLevelString | string | undefined): LogLevelEnum {
+  if (!levelStr) return LogLevelEnum.INFO; // Default level
+  switch (levelStr.toLowerCase()) {
     case 'trace': return LogLevelEnum.TRACE;
     case 'debug': return LogLevelEnum.DEBUG;
     case 'info': return LogLevelEnum.INFO;
@@ -31,7 +35,7 @@ export function stringToLogLevelEnum(level: LogLevelString): LogLevelEnum {
     case 'warning': return LogLevelEnum.WARN;
     case 'error': return LogLevelEnum.ERROR;
     case 'fatal': return LogLevelEnum.FATAL;
-    default: return LogLevelEnum.INFO;
+    default: return LogLevelEnum.INFO; // Default for unrecognized strings
   }
 }
 
@@ -39,14 +43,14 @@ export function stringToLogLevelEnum(level: LogLevelString): LogLevelEnum {
  * Convert enum log level to string
  */
 export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
-  switch(level) {
+  switch (level) {
     case LogLevelEnum.TRACE: return 'trace';
     case LogLevelEnum.DEBUG: return 'debug';
     case LogLevelEnum.INFO: return 'info';
     case LogLevelEnum.WARN: return 'warn';
     case LogLevelEnum.ERROR: return 'error';
     case LogLevelEnum.FATAL: return 'fatal';
-    default: return 'info';
+    default: return 'info'; // Should not happen with enum
   }
 }
 
@@ -54,105 +58,115 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
  * Log entry interface
  */
 export interface LogEntry {
-  id: string;
-  timestamp: string;
+  // Core fields that are always required
   level: LogLevelEnum;
   message: string;
+  
+  // Fields that might be auto-generated if not provided
+  id: string;
+  timestamp: string;
+  
+  // Optional fields
   source?: string;
-  data?: Record<string, unknown>;
-  
-  // Extended display properties
-  displayMessage?: string;
-  rawData?: string;
+  context?: string; // Optional context string
+  details?: Record<string, unknown>; // For structured data, was 'data'
+  data?: Record<string, unknown>; // Add data property for backward compatibility
   expanded?: boolean;
+  rawData?: string;
   categories?: string[];
-  eventId?: string;
-  
-  // Duplicate tracking
-  duplicateCount?: number;
-  duplicates?: LogEntry[];
-  
-  // Category grouping
   isCategory?: boolean;
   categoryName?: string;
   categoryLogs?: LogEntry[];
   categoryCount?: number;
-  
-  // Additional metadata
-  details?: Record<string, unknown>;
-  
-  // Loop prevention flag
-  isLoggingLoop?: boolean;
+  duplicates?: LogEntry[];
+  duplicateCount?: number;
+  isLoggingLoop?: boolean; // Flag for loop detection
+  stackTrace?: string; // Optional stack trace
+  tags?: string[]; // Optional tags
+  eventId?: string; // Correlation ID
 }
 
 /**
  * Data Transfer Object for creating logs
- * Used when sending logs from client to server
  */
 export interface LogDto {
-  timestamp: string;
   level: LogLevelEnum;
   message: string;
   source?: string;
-  data?: Record<string, unknown>;
+  details?: Record<string, unknown>;
+  context?: string;
+  timestamp?: string; // Optional, can be set by server
 }
 
 /**
- * Log filter options
+ * Filter for fetching logs
+ * All fields are optional since filters are often created empty and populated conditionally
  */
 export interface LogFilter {
+  // Filter by log level (single or multiple)
   level?: LogLevelEnum | LogLevelEnum[];
+  
+  // Filter by service/component name
   service?: string;
+  
+  // Date range filters
   startDate?: string;
   endDate?: string;
+  afterTimestamp?: string;
+  
+  // Text search
   search?: string;
+  
+  // Pagination
   limit?: number;
   skip?: number;
-  afterTimestamp?: string; // Add property to get logs after a specific timestamp
 }
 
 /**
- * Response format for log queries
- */
-export interface LogQueryResponse {
-  status: boolean;
-  logs: LogEntry[];
-  totalCount: number;
-  filtered?: boolean;
-  timestamp?: string;
-}
-
-/**
- * Response format for log requests
+ * Response structure for log requests
  */
 export interface LogResponse {
   logs: LogEntry[];
   totalCount: number;
   filtered: boolean;
-  status: boolean;
-  total: number;
+  status: boolean; // General success/failure status of the response
   timestamp: string;
 }
 
 /**
- * Response for batch log operations
+ * Update structure for log streams
  */
-export interface LogBatchResponse {
-  success: boolean;
-  count?: number;
-  timestamp?: string;
+export interface LogStreamUpdate {
+  log?: LogEntry; // A single new log entry
+  logs?: LogEntry[]; // A batch of new or updated logs
+  totalCount?: number; // Optional: updated total count of logs matching a filter
+  append?: boolean; // True if logs should be appended, false if they replace existing
+  stats?: Record<string, number>; // Optional: updated log statistics
 }
 
 /**
- * Update format for log streaming
+ * Result structure for log statistics
  */
-export interface LogStreamUpdate {
-  log?: LogEntry;
-  logs?: LogEntry[];
+export interface LogStatsResult {
   totalCount: number;
-  append?: boolean;
-  stats?: Record<string, number>;
+  byLevel: Record<LogLevelEnum, number>; // Use LogLevelEnum as key
+  bySource: Record<string, number>;
 }
 
-// Mark this module for export
-export const __logTypes = true;
+/**
+ * Response for log query operations
+ */
+export interface LogQueryResponse {
+  status: boolean; // Success/failure of the query
+  logs: LogEntry[];
+  totalCount: number; // Total logs matching the query (pre-pagination)
+  filtered: boolean; // Indicates if the results are from a filtered query
+  timestamp: string;
+  total?: number; // Add total for backward compatibility
+  page?: number;
+  pages?: number;
+  stats?: {
+    byLevel: Record<string, number>;
+    bySource: Record<string, number>;
+  };
+}

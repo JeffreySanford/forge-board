@@ -1,0 +1,84 @@
+[
+  {
+    "id": "example-board-1",
+    "name": "Example Project Board",
+    "columns": [
+      {
+        "id": "col1-ex",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card1-ex",
+            "title": "Example: User Authentication",
+            "description": "Implement login and registration for users.",
+            "priority": "high",
+            "tags": ["auth", "security"],
+            "category": "security",
+            "assignee": "Alice Example",
+            "createdAt": "2024-01-01T10:00:00Z",
+            "updatedAt": "2024-01-01T10:00:00Z"
+          },
+          {
+            "id": "card2-ex",
+            "title": "Example: Project Setup",
+            "description": "Initialize project with Nx, Angular, and NestJS.",
+            "priority": "medium",
+            "tags": ["setup", "nx"],
+            "category": "project-management",
+            "assignee": "Bob Example",
+            "createdAt": "2024-01-02T10:00:00Z",
+            "updatedAt": "2024-01-02T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col2-ex",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "development",
+        "cards": [
+          {
+            "id": "card3-ex",
+            "title": "Example: API Documentation",
+            "description": "Write OpenAPI docs for all endpoints.",
+            "priority": "medium",
+            "tags": ["documentation", "api"],
+            "category": "documentation",
+            "assignee": "Carol Example",
+            "createdAt": "2024-01-03T10:00:00Z",
+            "updatedAt": "2024-01-03T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col3-ex",
+        "name": "Done",
+        "order": 2,
+        "phase": "completion",
+        "cards": [
+          {
+            "id": "card4-ex",
+            "title": "Example: CI/CD Pipeline",
+            "description": "Set up GitHub Actions for CI/CD.",
+            "priority": "high",
+            "tags": ["devops", "automation"],
+            "category": "infrastructure",
+            "assignee": "Dave Example",
+            "createdAt": "2024-01-04T10:00:00Z",
+            "updatedAt": "2024-01-04T10:00:00Z"
+          }
+        ]
+      }
+    ],
+    "currentPhase": "planning",
+    "phases": {
+      "planning": { "active": true, "startDate": "2024-01-01T00:00:00Z" },
+      "development": { "active": false },
+      "completion": { "active": false }
+    },
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-04T10:00:00Z"
+  }
+]

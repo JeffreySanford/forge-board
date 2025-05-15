@@ -9,16 +9,16 @@ export interface ProjectConfig {
   description?: string;
 }
 
-// Define environment interface directly before use
-interface Environment {
-  production: boolean;
-  apiBaseUrl: string;
-  socketBaseUrl: string;
+// Import the Environment interface from the environment file
+import { Environment } from '../../environments/environment.interface';
+
+// Extend the environment type to include optional project config
+interface ExtendedEnvironment extends Environment {
   project?: ProjectConfig;
 }
 
-// Type assertion with the interface
-const typedEnvironment = environment as Environment;
+// Type assertion with the interface - cast to unknown first to avoid TypeScript error
+const typedEnvironment = environment as unknown as ExtendedEnvironment;
 
 @Injectable({
   providedIn: 'root'

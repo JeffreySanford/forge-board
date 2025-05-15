@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip'; // Import MatTooltipModule
 
 // CDK Modules
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -20,9 +21,12 @@ import { LayoutModule } from '@angular/cdk/layout';
 // Custom Directives
 import { LetterAnimatorDirective } from '../letter-animator.directive';
 
+// Import Shared Modules
+import { StorageTypeIndicatorModule } from './components/storage-type-indicator/storage-type-indicator.module';
+
 @NgModule({
   declarations: [
-    LetterAnimatorDirective
+    LetterAnimatorDirective,
   ],
   imports: [
     // Angular modules
@@ -30,6 +34,7 @@ import { LetterAnimatorDirective } from '../letter-animator.directive';
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
+    StorageTypeIndicatorModule,
     
     // Angular Material modules
     MatCardModule,
@@ -40,6 +45,7 @@ import { LetterAnimatorDirective } from '../letter-animator.directive';
     MatProgressBarModule,
     MatSliderModule,
     MatChipsModule,
+    MatTooltipModule, // Add MatTooltipModule to imports
     
     // CDK modules
     DragDropModule,
@@ -61,13 +67,14 @@ import { LetterAnimatorDirective } from '../letter-animator.directive';
     MatProgressBarModule,
     MatSliderModule,
     MatChipsModule,
+    MatTooltipModule, // Add MatTooltipModule to exports
     
     // CDK modules
     DragDropModule,
     LayoutModule,
     
     // Directives
-    LetterAnimatorDirective
+    LetterAnimatorDirective,
   ]
 })
 export class SharedModule { 

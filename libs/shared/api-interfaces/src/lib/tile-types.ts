@@ -1,7 +1,7 @@
 /**
  * Available tile types
  */
-export type TileType = 'health' | 'memory' | 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
+export type TileType = 'health' | 'memory' | 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kanban';
 
 /**
  * Tile visibility settings

@@ -8,10 +8,12 @@ import {
   safeStringify,
   TypeValidator,
   ValidationResult,
-  ValidatedTypes, // Import ValidatedTypes interface
+  ValidatedTypes,
   validateHealthData,
   validateUser,
-  User // Add this import
+  User,
+  LogQueryResponse,
+  LogResponse
 } from '@forge-board/shared/api-interfaces';
 import { LoggerService } from './logger.service';
 
@@ -30,42 +32,10 @@ export interface TypeDiagnosticEvent {
 }
 
 /**
- * Interface for LogQueryResponse structure used in validation
- */
-export interface LogQueryResponse {
-  status: boolean;
-  logs: unknown[];
-  totalCount: number;
-  filtered?: boolean;
-  timestamp?: string;
-}
-
-/**
- * Interface for LogBatchResponse structure
- */
-export interface LogBatchResponse {
-  success: boolean;
-  count?: number;
-  timestamp?: string;
-}
-
-/**
- * Interface for LogResponse structure
- */
-export interface LogResponse {
-  logs: unknown[];
-  totalCount: number;
-  filtered?: boolean;
-  status: boolean;
-  timestamp?: string;
-}
-
-/**
  * Custom types that extend ValidatedTypes
  */
 interface CustomValidatedTypes {
   LogQueryResponse: LogQueryResponse;
-  LogBatchResponse: LogBatchResponse;
   LogResponse: LogResponse;
   User: User;
   HealthData: import('@forge-board/shared/api-interfaces').HealthData; // Add HealthData
@@ -108,10 +78,6 @@ export class TypeDiagnosticsService {
     this.registerValidator<'LogQueryResponse'>('LogQueryResponse', 
       this.validateLogQueryResponse.bind(this) as TypeValidator<LogQueryResponse>);
     
-    // Add validator for LogBatchResponse with proper typing
-    this.registerValidator<'LogBatchResponse'>('LogBatchResponse', 
-      this.validateLogBatchResponse.bind(this) as TypeValidator<LogBatchResponse>);
-    
     // Add validator for LogResponse with proper typing
     this.registerValidator<'LogResponse'>('LogResponse', 
       this.validateLogResponse.bind(this) as TypeValidator<LogResponse>);
@@ -127,9 +93,9 @@ export class TypeDiagnosticsService {
   private safeLog(level: 'debug' | 'info' | 'warn' | 'error', message: string, meta?: Record<string, unknown>): void {
     if (this.logger) {
       switch (level) {
+        case 'warn': this.logger.warn(message, 'TypeDiagnosticsService', meta); break; // Changed from warning to warn
         case 'debug': this.logger.debug(message, 'TypeDiagnosticsService', meta); break;
         case 'info': this.logger.info(message, 'TypeDiagnosticsService', meta); break;
-        case 'warn': this.logger.warning(message, 'TypeDiagnosticsService', meta); break;
         case 'error': this.logger.error(message, 'TypeDiagnosticsService', meta); break;
       }
     } else {
@@ -421,50 +387,6 @@ export class TypeDiagnosticsService {
     this.safeLog('debug', `LogQueryResponse validation ${validationResult.valid ? 'succeeded' : 'failed'}`, {
       service: 'TypeDiagnosticsService',
       action: 'validateLogQueryResponse',
-      valid: validationResult.valid,
-      issues: validationResult.issues,
-      objectSummary: !validationResult.valid ? validationResult.stringRepresentation : undefined
-    });
-    
-    return validationResult;
-  }
-
-  /**
-   * Validator for LogBatchResponse type
-   */
-  private validateLogBatchResponse(obj: unknown): ValidationResult {
-    const issues: string[] = [];
-    
-    if (!obj || typeof obj !== 'object') {
-      issues.push('Expected an object');
-      return { valid: false, issues };
-    }
-    
-    const batchObj = obj as ValidationObject;
-    
-    if (typeof batchObj['success'] !== 'boolean') {
-      issues.push('success must be a boolean');
-    }
-    
-    // Optional fields
-    if (batchObj['count'] !== undefined && typeof batchObj['count'] !== 'number') {
-      issues.push('count must be a number if present');
-    }
-    
-    if (batchObj['timestamp'] !== undefined && typeof batchObj['timestamp'] !== 'string') {
-      issues.push('timestamp must be a string if present');
-    }
-    
-    const validationResult = {
-      valid: issues.length === 0,
-      issues,
-      typeName: 'LogBatchResponse',
-      stringRepresentation: safeStringify(obj)
-    };
-    
-    this.safeLog('debug', `LogBatchResponse validation ${validationResult.valid ? 'succeeded' : 'failed'}`, {
-      service: 'TypeDiagnosticsService',
-      action: 'validateLogBatchResponse',
       valid: validationResult.valid,
       issues: validationResult.issues,
       objectSummary: !validationResult.valid ? validationResult.stringRepresentation : undefined

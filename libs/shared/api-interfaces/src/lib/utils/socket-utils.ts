@@ -9,14 +9,16 @@ export function createSocketResponse<T>(eventOrData: string | T, data?: T): Sock
   if (typeof eventOrData === 'string' && data !== undefined) {
     // Called with event name and data
     return {
-      status: 'success' as const,
+      event: eventOrData,
+      status: 'success',
       data,
       timestamp: new Date().toISOString(),
     };
   } else {
     // Called with just data
     return {
-      status: 'success' as const,
+      event: 'data', // Default event name when none provided
+      status: 'success',
       data: eventOrData as T,
       timestamp: new Date().toISOString(),
     };
@@ -28,7 +30,8 @@ export function createSocketResponse<T>(eventOrData: string | T, data?: T): Sock
  */
 export function createSocketErrorResponse<T>(message: string, data?: T): SocketResponse<T> {
   return {
-    status: 'error' as const,
+    event: 'error',
+    status: 'error',
     message,
     data: data as T,
     timestamp: new Date().toISOString(),
@@ -43,6 +46,7 @@ export function createSocketErrorResponse<T>(message: string, data?: T): SocketR
  */
 export function createLogSocketResponse<T>(event: string, data: T): SocketResponse<T> {
   return {
+    event,
     status: 'success',
     data,
     timestamp: new Date().toISOString()

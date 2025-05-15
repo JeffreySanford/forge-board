@@ -13,10 +13,15 @@ import { shouldEnableConsoleLogging } from './bootstrap';
  */
 class FilteredLogger implements LoggerService {
   private readonly enableConsoleOutput: boolean;
+  private readonly recentLogs: Set<string> = new Set();
+  private readonly dedupTimeout = 1000; // 1 second timeout for deduplication
   
   constructor() {
     // Read from environment config
     this.enableConsoleOutput = shouldEnableConsoleLogging();
+    
+    // Clean up old entries from deduplication cache periodically
+    setInterval(() => this.recentLogs.clear(), 5000);
   }
 
   /**
@@ -32,9 +37,27 @@ class FilteredLogger implements LoggerService {
     return false;
   }
 
+  /**
+   * Check if this log message is a duplicate of a recent message
+   */
+  private isDuplicate(context: string, message: string): boolean {
+    const logKey = `${context}:${message}`;
+    if (this.recentLogs.has(logKey)) {
+      return true;
+    }
+    
+    // Add to recent logs and schedule cleanup
+    this.recentLogs.add(logKey);
+    setTimeout(() => this.recentLogs.delete(logKey), this.dedupTimeout);
+    return false;
+  }
+
   log(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
     if (context && this.shouldFilter(context, String(message))) {
+      return;
+    }
+    if (context && this.isDuplicate(context, String(message))) {
       return;
     }
     console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [${context}] ${message}`);
@@ -42,21 +65,33 @@ class FilteredLogger implements LoggerService {
 
   error(message: unknown, trace?: string, context?: string): void {
     if (!this.enableConsoleOutput) return;
+    if (context && this.isDuplicate(context, String(message))) {
+      return;
+    }
     console.error(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     ERROR [${context}] ${message}`, trace);
   }
 
   warn(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
+    if (context && this.isDuplicate(context, String(message))) {
+      return;
+    }
     console.warn(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     WARN [${context}] ${message}`);
   }
 
   debug(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
+    if (context && this.isDuplicate(context, String(message))) {
+      return;
+    }
     console.debug(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     DEBUG [${context}] ${message}`);
   }
 
   verbose(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
+    if (context && this.isDuplicate(context, String(message))) {
+      return;
+    }
     console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     VERBOSE [${context}] ${message}`);
   }
 }

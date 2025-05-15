@@ -13,7 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
   selector: 'app-type-diagnostics',
   templateUrl: './type-diagnostics.component.html',
   styleUrls: ['./type-diagnostics.component.scss'],
-  standalone: true,
+  standalone: true, // Set standalone to true
   imports: [
     CommonModule,
     MatCardModule,

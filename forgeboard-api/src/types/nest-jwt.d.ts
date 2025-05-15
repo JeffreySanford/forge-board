@@ -1,7 +1,7 @@
 declare module '@nestjs/jwt' {
   export class JwtService {
     sign(payload: Record<string, unknown>): string;
-    verify<T>(token: string): T;
+    verify<T>(token: string, options?: TokenVerificationOptions): T;  
   }
 
   export interface JwtModuleOptions {

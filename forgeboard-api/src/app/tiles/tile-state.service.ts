@@ -18,7 +18,7 @@ export class TileStateService {
       logs: true,
       uptime: true,
       activity: true,
-      kablan: true
+      kanban: true
     };
     
     this.tileOrders.set('user1', defaultOrder);
@@ -37,7 +37,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true
+        kanban: true
       };
       
       this.tileOrders.set(userId, defaultOrder);
@@ -55,7 +55,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true  // Add the missing 'kablan' property
+        kanban: true  // Add the missing 'kanban' property
       },
       lastModified: new Date().toISOString(),
       success: true
@@ -77,7 +77,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true  // Add the missing 'kablan' property
+        kanban: true  // Add the missing 'kanban' property
       },
       lastModified: new Date().toISOString(),
       success: true
@@ -99,7 +99,7 @@ export class TileStateService {
         logs: true,
         uptime: true,
         activity: true,
-        kablan: true  // Add the missing 'kablan' property
+        kanban: true  // Add the missing 'kanban' property
       },
       lastModified: new Date().toISOString(),
       success: true

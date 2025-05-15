@@ -1,41 +1,136 @@
-# ForgeBoard API Documentation
-*Last Updated: June 25, 2025*
+# <img src="../images/logo.png" alt="ForgeBoard Logo" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> ForgeBoard API Documentation
 
-## API Architecture Overview
+<div style="background: linear-gradient(90deg, #002868 0%, #BF0A30 100%); height: 8px; margin-bottom: 20px;"></div>
+
+*A product of True North Insights, a division of True North*
+
+*Last Updated: May 15, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Category:</strong> Technical Reference
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Status:</strong> Production-Ready
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>API:</strong> REST + WebSocket
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Data Provenance:</strong> Server-Managed
+  </div>
+</div>
+
+## API Philosophy
+
+ForgeBoard implements a Server-Authoritative architecture with complete, server-managed data provenance:
+
+1. **Server is the Source of Authority**: All data and its provenance live on the server, which controls access and modifications.
+2. **Complete Data Lifecycle (Server-Managed)**: All data includes server-managed provenance records from inception through disposal.
+3. **P2P Communication for Ephemeral Data**: WebRTC connections can be used for direct peer exchange of non-authoritative, ephemeral data, while authoritative data is server-managed.
+4. **CRDT for Conflict Resolution (Server-Side)**: Conflict-free merging, orchestrated by the server, while preserving server-managed provenance chains.
+5. **Blockchain Immutability (Server-Side)**: Critical provenance records stored in a server-managed, tamper-proof blockchain.
+
+## Data Provenance API Architecture Overview (Server-Authoritative)
 
 ```mermaid
 flowchart LR
-  subgraph REST [REST API]
+  subgraph SERVER [Server - Authoritative API & Data Store]
     direction TB
-    A[Metrics API]:::rest
-    B[Diagnostics API]:::rest
-    C[Kablan API]:::rest
-    D[Logger API]:::rest
+    PrimaryStore[(Primary Data Store)]:::server_store
+    Chain[(SlimChain - Server Ledger)]:::chain
+    CRDT[CRDT Merge Engine (Server)]:::crdt
+    Prov[Provenance Engine (Server)]:::prov
+    RESTAPI[REST API]:::remote
+    WSAPI[WebSockets API]:::remote
   end
-  subgraph WS [WebSocket Namespaces]
+  
+  subgraph P2P [Optional WebRTC P2P Mesh for Ephemeral Data]
     direction TB
-    E[/metrics]:::ws
-    F[/diagnostics]:::ws
-    G[/kablan]:::ws
-    H[/logs]:::ws
+    P2P1[Peer 1 / Client]:::p2p
+    P2P2[Peer 2 / Client]:::p2p
+    P2P3[Peer 3 / Client]:::p2p
   end
-  A --> E
-  B --> F
-  C --> G
-  D --> H
+  
+  PrimaryStore -->|"Authoritative Data"| Prov
+  Prov -->|"Track & Verify"| CRDT
+  CRDT -->|"Persist Provenance"| Chain
+  
+  P2P1 <-->|"Ephemeral Data Exchange"| P2P2
+  P2P2 <-->|"Ephemeral Data Exchange"| P2P3
+  
+  P2P1 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P1 -->|"Real-time Updates"| WSAPI
+  P2P2 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P2 -->|"Real-time Updates"| WSAPI
+  P2P3 -->|"API Calls for Authoritative Data"| RESTAPI
+  P2P3 -->|"Real-time Updates"| WSAPI
 
-  classDef rest fill:#FFEBEE,stroke:#C62828,stroke-width:2px;
-  classDef ws fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
+  classDef server_store fill:#002868,stroke:#BF0A30,stroke-width:3px,color:#FFFFFF;
+  classDef chain fill:#BF0A30,stroke:#7D100E,stroke-width:3px,color:#FFFFFF;
+  classDef crdt fill:#F9C74F,stroke:#FB8C00,stroke-width:2px;
+  classDef p2p fill:#90BE6D,stroke:#43A047,stroke-width:2px;
+  classDef remote fill:#CCCCCC,stroke:#666666,stroke-width:1px,color:#333333;
+  classDef prov fill:#002868,stroke:#071442,stroke-width:3px,color:#FFFFFF;
 ```
+
+## API Layers
+
+### Layer 1: Server-Side Authoritative Store & Provenance Engine (Primary)
+
+All interactions in ForgeBoard are ultimately authorized and processed by the server, which maintains the authoritative data store and comprehensive data provenance tracking.
+
+### Layer 2: Server-Managed APIs (REST & WebSockets)
+
+Clients interact with the server via REST APIs for request-response operations and WebSockets for real-time data streams. The server ensures all data access is authenticated and authorized, and all changes include provenance.
+
+### Layer 3: Optional WebRTC P2P Mesh (For Ephemeral/Non-Authoritative Data)
+
+Direct peer-to-peer communication can be utilized for specific features involving ephemeral data exchange (e.g., cursor positions, temporary UI states) but does not handle authoritative data changes, which must go through the server.
 
 ## API Overview
 
-ForgeBoard uses a combination of REST APIs and WebSocket connections for real-time data exchange. This document describes both API types.
+ForgeBoard uses a combination of REST APIs and WebSocket connections for real-time data exchange, with MongoDB as the database backend. This document describes both API types and their integration with MongoDB.
+
+## Data Architecture
+
+```mermaid
+flowchart TD
+    Client["Client (Browser)"]
+    RestAPI["REST API"]
+    WebSockets["WebSocket API"]
+    Mongoose["Mongoose ODM"]
+    MongoDB[(MongoDB)]
+    InMemoryMongo[(In-Memory MongoDB)]
+    
+    Client -->|"HTTP Requests"| RestAPI
+    Client -->|"Socket.IO"| WebSockets
+    RestAPI --> Mongoose
+    WebSockets --> Mongoose
+    
+    subgraph "Database Layer"
+        Mongoose
+        MongoDB
+        InMemoryMongo
+    end
+    
+    Mongoose -->|"Production"| MongoDB
+    Mongoose -->|"Development"| InMemoryMongo
+```
+
+## Database Configuration
+
+ForgeBoard can use either:
+- **In-Memory MongoDB**: For development (when `USE_IN_MEMORY_MONGO=true`)
+- **Persistent MongoDB**: For production (using `MONGODB_URI` environment variable)
+
+For more details, see the [DATABASE.md](DATABASE.md) documentation.
 
 ## Base URLs
 
 - REST API: `http://localhost:3000/api`
 - WebSocket: `http://localhost:3000`
+- MongoDB: Logged at startup with message `[MongoMemoryServer] Started in-memory MongoDB at <uri>` (when using in-memory mode)
 
 ## Authentication
 
@@ -88,9 +183,9 @@ This namespace provides system diagnostic information.
 | `get-socket-logs` | Request socket log history | `socket-logs` event |
 | `get-health` | Request system health data | `health-update` event |
 
-### Kablan Namespace
+### Kanban Namespace
 
-**Endpoint**: `/kablan`
+**Endpoint**: `/kanban`
 
 This namespace provides project board data and interactions.
 
@@ -100,7 +195,7 @@ This namespace provides project board data and interactions.
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
-| `boards-update` | Current state of all boards | `KablanBoard[]` |
+| `boards-update` | Current state of all boards | `KanbanBoard[]` |
 
 **Client → Server:**
 
@@ -251,7 +346,7 @@ Get information about socket connections.
 
 #### GET /api/logs
 
-Get log entries with optional filtering.
+Get log entries with optional filtering and complete provenance information.
 
 **Query Parameters:**
 - `level`: Filter by log level (debug, info, warning, error)
@@ -259,6 +354,7 @@ Get log entries with optional filtering.
 - `from`: Filter by start date/time
 - `to`: Filter by end date/time
 - `limit`: Maximum number of logs to return
+- `includeProvenance`: Whether to include full provenance chain (default: false)
 
 **Response:**
 ```json
@@ -270,7 +366,15 @@ Get log entries with optional filtering.
       "message": "Server started",
       "source": "app",
       "timestamp": "2023-07-15T12:30:00Z",
-      "data": { "pid": 1234 }
+      "data": { "pid": 1234 },
+      "provenance": {
+        "id": "prov-abc-123",
+        "stage": "storage",
+        "origin": "app-server",
+        "signature": "abc123xyz...",
+        "previousStageId": "prov-abc-122",
+        "hash": "sha256-..."
+      }
     }
   ],
   "totalCount": 150,
@@ -282,7 +386,7 @@ Get log entries with optional filtering.
 
 #### POST /api/logs/batch
 
-Send multiple log entries in a batch.
+Send multiple log entries in a batch with provenance tracking.
 
 **Request Body:**
 ```json
@@ -293,14 +397,24 @@ Send multiple log entries in a batch.
       "message": "User login",
       "source": "auth",
       "timestamp": "2023-07-15T12:34:56Z",
-      "data": { "userId": "user123" }
+      "data": { "userId": "user123" },
+      "provenance": {
+        "origin": "auth-service",
+        "purpose": "security-audit",
+        "signature": "abc123xyz..."
+      }
     },
     {
       "level": "error",
       "message": "API error",
       "source": "api",
       "timestamp": "2023-07-15T12:34:58Z",
-      "data": { "status": 500, "path": "/api/users" }
+      "data": { "status": 500, "path": "/api/users" },
+      "provenance": {
+        "origin": "api-gateway",
+        "purpose": "error-tracking",
+        "signature": "def456xyz..."
+      }
     }
   ]
 }
@@ -311,58 +425,124 @@ Send multiple log entries in a batch.
 {
   "success": true,
   "count": 2,
-  "timestamp": "2023-07-15T12:34:59Z"
+  "timestamp": "2023-07-15T12:34:59Z",
+  "provenanceReceipts": [
+    {
+      "logId": "log124",
+      "provenanceId": "prov-abc-124",
+      "blockchainTxId": "tx-123",
+      "verified": true
+    },
+    {
+      "logId": "log125",
+      "provenanceId": "prov-abc-125",
+      "blockchainTxId": "tx-124",
+      "verified": true
+    }
+  ]
 }
 ```
 
-### Tiles Endpoints
+### Provenance Endpoints
 
-#### GET /api/tiles/:userId/order
+#### GET /api/provenance/:dataId
 
-Get the tile order for a user's dashboard.
+Get the complete provenance chain for a specific data record.
+
+**Parameters:**
+- `dataId`: The ID of the data record
 
 **Response:**
 ```json
 {
-  "userId": "user123",
-  "order": ["metrics", "connection", "logs", "uptime", "activity"],
-  "visibility": {
-    "metrics": true,
-    "connection": true,
-    "logs": true,
-    "uptime": true,
-    "activity": true
-  },
-  "lastModified": "2023-07-15T12:34:56Z",
-  "success": true
+  "success": true,
+  "timestamp": "2023-07-15T12:34:56Z",
+  "provenanceChain": [
+    {
+      "id": "prov-abc-123",
+      "stage": "inception",
+      "dataId": "data123",
+      "timestamp": "2023-07-15T12:30:00Z",
+      "source": "user-input",
+      "hash": "sha256-...",
+      "signature": "abc123xyz..."
+    },
+    {
+      "id": "prov-abc-124",
+      "stage": "processing",
+      "dataId": "data123",
+      "timestamp": "2023-07-15T12:31:00Z",
+      "source": "processing-service",
+      "previousStageId": "prov-abc-123",
+      "previousHash": "sha256-...",
+      "hash": "sha256-...",
+      "signature": "def456xyz..."
+    },
+    {
+      "id": "prov-abc-125",
+      "stage": "storage",
+      "dataId": "data123",
+      "timestamp": "2023-07-15T12:32:00Z",
+      "source": "storage-service",
+      "previousStageId": "prov-abc-124",
+      "previousHash": "sha256-...",
+      "hash": "sha256-...",
+      "signature": "ghi789xyz...",
+      "blockchainTxId": "tx123"
+    }
+  ],
+  "verified": true
 }
 ```
 
-#### POST /api/tiles/:userId/order
+#### POST /api/provenance/verify
 
-Update the tile order for a user's dashboard.
+Verify the integrity of a provenance chain.
 
 **Request Body:**
 ```json
 {
-  "order": ["connection", "metrics", "logs", "activity", "uptime"]
+  "provenanceId": "prov-abc-125"
 }
 ```
 
 **Response:**
 ```json
 {
-  "userId": "user123",
-  "order": ["connection", "metrics", "logs", "activity", "uptime"],
-  "visibility": {
-    "metrics": true,
-    "connection": true,
-    "logs": true,
-    "uptime": true,
-    "activity": true
+  "success": true,
+  "timestamp": "2023-07-15T12:34:56Z",
+  "verified": true,
+  "blockchain": {
+    "txId": "tx123",
+    "blockId": "block456",
+    "timestamp": "2023-07-15T12:32:05Z"
   },
-  "lastModified": "2023-07-15T12:35:00Z",
-  "success": true
+  "merkleProof": {
+    "root": "merkle-root-hash",
+    "path": ["hash1", "hash2", "hash3"]
+  }
+}
+```
+
+#### POST /api/provenance/export
+
+Generate a portable proof package for provenance verification.
+
+**Request Body:**
+```json
+{
+  "dataId": "data123",
+  "format": "pdf"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "timestamp": "2023-07-15T12:34:56Z",
+  "documentUrl": "/api/documents/proof-data123.pdf",
+  "verificationUrl": "https://verify.forgeboard.io/?proof=abc123"
 }
 ```
 
@@ -401,88 +581,23 @@ npm install @forge-board/shared/api-interfaces
 - LogQueryResponse       — Log query result wrapper
 - LogBatchResponse       — Batched log POST response
 - TileType               — Dashboard tile identifiers
+- ProvenanceMetadata     — Data provenance metadata
+- ProvenanceRecord       — Complete provenance record
+- ProvenanceStage        — Provenance lifecycle stage
 
-### Runtime Helpers
-- createSocketResponse(event, data)
-- createSocketErrorResponse(message, data)
-- __apiResponse (marker for response module)
+---
 
-Refer to the library's [README](libs/shared/api-interfaces/README.md) for full API, examples, and integration guidance.
-
-## Type Definitions
-
-Below are the core shared types used by both frontend and backend (from `@forge-board/shared/api-interfaces`):
-
-```typescript
-interface MetricData {
-  cpu: number;      // CPU usage percentage
-  memory: number;   // Memory usage percentage
-  disk?: number;    // Optional disk usage percentage
-  network?: number; // Optional network usage percentage
-  time: string;     // ISO timestamp
-}
-
-interface SocketInfo {
-  id: string;
-  namespace: string;
-  clientIp: string;
-  userAgent: string;
-  connectTime: string | Date;
-  disconnectTime?: string | Date;
-  lastActivity: string | Date;
-  events: {
-    type: string;
-    timestamp: string | Date;
-    data?: any;
-  }[];
-}
-
-interface SocketMetrics {
-  totalConnections: number;
-  activeConnections: number;
-  disconnections: number;
-  errors: number;
-  messagesSent: number;
-  messagesReceived: number;
-}
-
-interface HealthData {
-  status: string;
-  uptime: number;
-  timestamp: string;
-  details: {
-    past?: string;
-    present?: string;
-    future?: string;
-    [key: string]: string | undefined;
-  };
-}
-
-interface KablanBoard {
-  id: string;
-  name: string;
-  columns: KablanColumn[];
-  currentPhase: ProjectPhase;
-  phases: {
-    [key in ProjectPhase]: {
-      active: boolean;
-      startDate?: string;
-      completionDate?: string;
-    }
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LogEntry {
-  id: string;
-  level: 'debug' | 'info' | 'warning' | 'error';
-  message: string;
-  source: string;
-  timestamp: string;
-  data?: Record<string, unknown>;
-}
-
-// TileType used by the UI to identify dashboard tiles
-type TileType = 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kablan';
-```
+<div style="background-color: #F5F5F5; padding: 15px; border-radius: 6px; margin-top: 30px; border-top: 3px solid #BF0A30;">
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <div>
+      <strong>ForgeBoard</strong><br>
+      A product of True North Insights<br>
+      &copy; 2025 True North. All rights reserved.
+    </div>
+    <div>
+      <strong>Contact:</strong><br>
+      <a href="mailto:support@truenorthinsights.com">support@truenorthinsights.com</a><br>
+      <a href="https://www.truenorthinsights.com">www.truenorthinsights.com</a>
+    </div>
+  </div>
+</div>

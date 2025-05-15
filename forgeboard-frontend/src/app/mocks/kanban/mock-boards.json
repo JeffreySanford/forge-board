@@ -1,0 +1,108 @@
+[
+  {
+    "id": "board1",
+    "name": "ForgeBoard Development",
+    "columns": [
+      {
+        "id": "col1",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card1",
+            "title": "Create API documentation",
+            "description": "Write comprehensive API docs for all endpoints",
+            "priority": "medium",
+            "tags": ["documentation", "api"],
+            "category": "documentation",
+            "createdAt": "2023-05-10T12:00:00Z",
+            "updatedAt": "2023-05-10T12:00:00Z"
+          },
+          {
+            "id": "card2",
+            "title": "Implement Authentication",
+            "description": "Set up JWT authentication for the API",
+            "priority": "high",
+            "tags": ["security", "api"],
+            "category": "security",
+            "createdAt": "2023-05-10T12:00:00Z",
+            "updatedAt": "2023-05-10T12:00:00Z"
+          },
+          {
+            "id": "card3",
+            "title": "Design Dashboard Layout",
+            "description": "Create wireframes for the main dashboard",
+            "priority": "medium",
+            "tags": ["ui", "design"],
+            "category": "user-experience",
+            "createdAt": "2023-05-10T12:00:00Z",
+            "updatedAt": "2023-05-10T12:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col2",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card4",
+            "title": "Setup CI/CD Pipeline",
+            "description": "Configure GitHub Actions for continuous integration",
+            "priority": "high",
+            "tags": ["devops", "automation"],
+            "category": "infrastructure",
+            "createdAt": "2023-05-10T12:00:00Z",
+            "updatedAt": "2023-05-10T12:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "col3",
+        "name": "Done",
+        "order": 2,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card5",
+            "title": "Project Setup",
+            "description": "Initialize Angular and NestJS projects with Nx",
+            "priority": "high",
+            "tags": ["setup", "nx"],
+            "category": "project-management",
+            "createdAt": "2023-05-10T12:00:00Z",
+            "updatedAt": "2023-05-10T12:00:00Z"
+          }
+        ]
+      }
+    ],
+    "currentPhase": "planning",
+    "phases": {
+      "inception": {
+        "active": true,
+        "startDate": "2023-04-10T00:00:00Z",
+        "completionDate": "2023-04-25T00:00:00Z"
+      },
+      "planning": {
+        "active": true,
+        "startDate": "2023-04-26T00:00:00Z"
+      },
+      "design": {
+        "active": false
+      },
+      "development": {
+        "active": false
+      },
+      "testing": {
+        "active": false
+      },
+      "completion": {
+        "active": false
+      }
+    },
+    "createdAt": "2023-04-10T00:00:00Z",
+    "updatedAt": "2023-05-10T12:00:00Z"
+  }
+]

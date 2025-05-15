@@ -19,7 +19,7 @@ export class OscalController {
   @Get('documents')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getDocuments(@Req() req, @Query() query): Observable<any> {
+  getDocuments(@Req() req: RequestWithUser, @Query() query: QueryParams): Observable<OscalDocument[]> {
     const { user } = req;
     const { type, limit, offset } = query;
     
@@ -46,7 +46,7 @@ export class OscalController {
   @Get('documents/:id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getDocumentById(@Param('id') id: string, @Req() req): Observable<any> {
+  getDocumentById(@Param('id') id: string, @Req() req: RequestWithUser): Observable<OscalDocument | null> {
     const { user } = req;
     
     // Audit the API access
@@ -74,7 +74,7 @@ export class OscalController {
   @RequirePermissions('oscal:read')
   getDocumentXml(
     @Param('id') id: string,
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Res() res: Response,
     @Headers('accept') accept: string
   ): void {
@@ -119,7 +119,7 @@ export class OscalController {
   @RequirePermissions('oscal:read')
   getDocumentJson(
     @Param('id') id: string,
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Res() res: Response,
     @Headers('accept') accept: string
   ): void {
@@ -162,7 +162,7 @@ export class OscalController {
   @Post('documents/:id/validate')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:validate')
-  validateDocument(@Param('id') id: string, @Req() req): Observable<any> {
+  validateDocument(@Param('id') id: string, @Req() req: RequestWithUser): Observable<ValidationResult> {
     const { user } = req;
     
     // Audit the API access
@@ -201,7 +201,7 @@ export class OscalController {
   @Get('templates')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getTemplates(@Req() req): Observable<any> {
+  getTemplates(@Req() req: RequestWithUser): Observable<OscalTemplate[]> {
     const { user } = req;
     
     // Audit the API access
@@ -226,7 +226,7 @@ export class OscalController {
   @Get('templates/:type')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getTemplateByType(@Param('type') type: string, @Req() req): Observable<any> {
+  getTemplateByType(@Param('type') type: string, @Req() req: RequestWithUser): Observable<OscalTemplate | null> {
     const { user } = req;
     
     // Audit the API access
@@ -252,7 +252,7 @@ export class OscalController {
   @Get('baselines')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
-  getBaselines(@Req() req): Observable<any> {
+  getBaselines(@Req() req: RequestWithUser): Observable<OscalBaseline[]> {
     const { user } = req;
     
     // Audit the API access

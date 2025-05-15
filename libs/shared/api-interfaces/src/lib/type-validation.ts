@@ -1,9 +1,10 @@
 import { DiagnosticEvent} from './diagnostic-types';
 import { SocketResponse } from './socket-types';
-import { LogQueryResponse, LogBatchResponse, LogResponse, LogFilter, LogEntry, LogLevelString, LogLevelEnum } from './log-types';
+import { LogQueryResponse, LogResponse, LogFilter, LogEntry, LogLevelString, LogLevelEnum } from './log-types';
 import { User } from './user-types';
 import { HealthData } from './health.type';
 import { MetricData } from './metrics-types';
+import { HistoricalMetrics, SystemPerformanceSnapshot } from './historical-metrics';
 
 export interface ValidationResult {
   valid: boolean;
@@ -43,7 +44,6 @@ export interface ValidatedTypes {
   User: User;
   SocketResponse: SocketResponse<unknown>;
   LogQueryResponse: LogQueryResponse;
-  LogBatchResponse: LogBatchResponse;
   LogResponse: LogResponse;
   [key: string]: unknown;
 }
@@ -225,7 +225,33 @@ export function isErrorResponse<T>(obj: unknown): obj is SocketResponse<T> {
   return isSocketResponse(obj) && obj.status === 'error';
 }
 
+/**
+ * Safely stringify an object, handling circular references
+ * @param obj Object to stringify
+ * @returns String representation of the object
+ */
+export function safeStringify(obj: unknown): string {
+  if (obj === undefined) return 'undefined';
+  if (obj === null) return 'null';
+  
+  try {
+    const cache = new Set();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) {
+          return '[Circular Reference]';
+        }
+        cache.add(value);
+      }
+      return value;
+    }, 2);
+  } catch (error) {
+    return `[Error during stringify: ${error instanceof Error ? error.message : String(error)}]`;
+  }
+}
+
 export function validateSocketResponse<T>(obj: unknown): ValidationResult {
+  // Implementation of validateSocketResponse
   const issues: string[] = [];
   
   if (!obj || typeof obj !== 'object') {
@@ -235,18 +261,27 @@ export function validateSocketResponse<T>(obj: unknown): ValidationResult {
   
   const response = obj as Partial<SocketResponse<T>>;
   
-  if (!response.status) {
-    issues.push('Missing status');
-  } else if (response.status !== 'success' && response.status !== 'error') {
-    issues.push('status must be "success" or "error"');
+  if (response.status !== 'success' && response.status !== 'error') {
+    issues.push('status must be either "success" or "error"');
   }
   
+  if (response.status === 'error') {
+    // Use type assertion with 'in' operator for safer property access
+    if (!('error' in response) || typeof response['error'] !== 'string') {
+      issues.push('error must be a string when status is "error"');
+    }
+  }
+  
+  if (!response.timestamp) {
+    issues.push('Missing timestamp');
+  } else if (typeof response.timestamp !== 'string') {
+    issues.push('timestamp must be a string');
+  }
+  
+  // Don't validate the data property itself, just check it exists
   if (!('data' in response)) {
     issues.push('Missing data property');
   }
-  
-  if (!response.timestamp) issues.push('Missing timestamp');
-  else if (typeof response.timestamp !== 'string') issues.push('timestamp must be a string');
   
   return {
     valid: issues.length === 0,
@@ -297,36 +332,6 @@ export function validateLogResponse(obj: unknown): ValidationResult {
     valid: issues.length === 0,
     issues,
     typeName: 'LogResponse',
-    stringRepresentation: safeStringify(obj)
-  };
-}
-
-export function validateLogBatchResponse(obj: unknown): ValidationResult {
-  const issues: string[] = [];
-  
-  if (!obj || typeof obj !== 'object') {
-    issues.push('Expected an object');
-    return { valid: false, issues };
-  }
-  
-  const response = obj as Partial<LogBatchResponse>;
-  
-  if (typeof response.success !== 'boolean') {
-    issues.push('success must be a boolean');
-  }
-  
-  if (response.count !== undefined && typeof response.count !== 'number') {
-    issues.push('count must be a number if present');
-  }
-  
-  if (response.timestamp !== undefined && typeof response.timestamp !== 'string') {
-    issues.push('timestamp must be a string if present');
-  }
-  
-  return {
-    valid: issues.length === 0,
-    issues,
-    typeName: 'LogBatchResponse',
     stringRepresentation: safeStringify(obj)
   };
 }
@@ -436,21 +441,93 @@ export function validateUser(obj: unknown): ValidationResult {
   };
 }
 
-export function safeStringify(obj: unknown): string {
-  try {
-    const cache = new Set();
-    return JSON.stringify(obj, (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (cache.has(value)) {
-          return '[Circular Reference]';
-        }
-        cache.add(value);
-      }
-      return value;
-    }, 2);
-  } catch (e) {
-    return String(obj);
+export function validateHistoricalMetrics(obj: unknown): ValidationResult {
+  const issues: string[] = [];
+  
+  if (!obj || typeof obj !== 'object') {
+    issues.push('Expected an object');
+    return { valid: false, issues };
   }
+  
+  const metrics = obj as Partial<HistoricalMetrics>;
+  
+  if (!metrics.id) issues.push('Missing id');
+  if (!metrics.timestamp) issues.push('Missing timestamp');
+  if (!metrics.source) issues.push('Missing source');
+  if (!metrics.data) issues.push('Missing data');
+  
+  // Handle optional extended properties - remove direct references
+  // Check data structure only if available
+  if (metrics.data && typeof metrics.data !== 'object') {
+    issues.push('Data must be an object');
+  }
+  
+  // Instead of directly checking systemPerformance, check if it's an object when present
+  const extendedData = metrics as Record<string, unknown>;
+  if (extendedData['systemPerformance'] !== undefined &&
+      (typeof extendedData['systemPerformance'] !== 'object' || extendedData['systemPerformance'] === null)) {
+    return { valid: false, issues: ['systemPerformance must be an object'] };
+  }
+
+  // Similarly for interval
+  if (extendedData['interval'] !== undefined && typeof extendedData['interval'] !== 'string') {
+    return { valid: false, issues: ['interval must be a string'] };
+  }
+  
+  return {
+    valid: issues.length === 0,
+    issues,
+    typeName: 'HistoricalMetrics'
+  };
+}
+
+/**
+ * Validates if the object matches the SystemPerformanceSnapshot interface
+ */
+export function validateSystemPerformance(obj: unknown): ValidationResult {
+  if (!obj || typeof obj !== 'object') {
+    return { valid: false, issues: ['Expected an object'] };
+  }
+
+  const snapshot = obj as Partial<SystemPerformanceSnapshot>;
+  const issues: string[] = [];
+
+  if (!snapshot.timestamp) {
+    issues.push('Missing timestamp field');
+  }
+
+  if (typeof snapshot.cpu !== 'number') {
+    issues.push('Missing or invalid cpu field');
+  }
+
+  if (typeof snapshot.memory !== 'number') {
+    issues.push('Missing or invalid memory field');
+  }
+
+  if (typeof snapshot.activeConnections !== 'number') {
+    issues.push('Missing or invalid activeConnections field');
+  }
+
+  if (typeof snapshot.requestsPerMinute !== 'number') {
+    issues.push('Missing or invalid requestsPerMinute field');
+  }
+
+  if (typeof snapshot.errorsPerMinute !== 'number') {
+    issues.push('Missing or invalid errorsPerMinute field');
+  }
+
+  if (typeof snapshot.averageResponseTime !== 'number') {
+    issues.push('Missing or invalid averageResponseTime field');
+  }
+
+  if (typeof snapshot.activeUsers !== 'number') {
+    issues.push('Missing or invalid activeUsers field');
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues
+  };
 }
 
 export const validators = {
@@ -471,6 +548,7 @@ export const validators = {
   isErrorResponse,
   validateSocketResponse,
   validateLogResponse,
-  validateLogBatchResponse,
-  safeStringify
+  safeStringify,
+  validateHistoricalMetrics,
+  validateSystemPerformance
 };

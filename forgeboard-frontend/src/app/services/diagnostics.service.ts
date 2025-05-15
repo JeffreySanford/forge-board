@@ -1,507 +1,398 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { Socket, io } from 'socket.io-client';
-import { 
-  SocketResponse, 
-  SocketInfo, 
-  SocketMetrics, 
-  SocketStatusUpdate,
-  SocketLogEvent,
-  HealthData,
-  validateMetricData,
-  ValidationResult,
-} from '@forge-board/shared/api-interfaces';
-import { BackendStatusService } from './backend-status.service';
+import { BehaviorSubject, Observable, Subject, timer, throwError } from 'rxjs'; // Removed EMPTY, of, switchMap, tap, retryWhen, delayWhen
+import { catchError, takeUntil } from 'rxjs/operators'; // Removed switchMap, tap, retryWhen, delayWhen from here too if they were mistakenly duplicated
+import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment'; // Import environment
+import { Environment } from '../../environments/environment.interface'; // Import Environment interface
+
+import { BackendStatusService, BackendStatusSummary } from './backend-status.service'; // Added BackendStatusSummary
 import { TypeDiagnosticsService } from './type-diagnostics.service';
 
-// Add enhanced health data interfaces
-export interface DatabaseHealth {
-  status: 'ok' | 'warning' | 'error';
-  message?: string;
-  connections?: {
-    total: number;
-    active: number;
-    idle: number;
-    status: 'healthy' | 'degraded' | 'unhealthy';
-  };
-  performance?: {
-    avgQueryTime: number;
-    slowQueries: number;
-    status: 'healthy' | 'degraded' | 'unhealthy';
-  };
-  storage?: {
-    total: number;
-    used: number;
-    free: number;
-    status: 'healthy' | 'degraded' | 'unhealthy';
-  };
-}
+import {
+  HealthData,
+  SocketLogEvent,
+  SocketStatusUpdate,
+  MetricData,
+  HealthTimelinePoint, // Added HealthTimelinePoint
+  SocketResponse // Import SocketResponse from shared
+} from '@forge-board/shared/api-interfaces';
 
-// Fix the interface extension issue by making it properly extend HealthData
-export interface EnhancedHealthData extends Omit<HealthData, 'details'> {
-  details?: {
-    database?: DatabaseHealth;
-    [key: string]: unknown; // Use unknown instead of any for better type safety
-  };
+// Extended health data type
+export interface EnhancedHealthData extends HealthData {
+  clientProcessedTimestamp?: string;
+  isSimulated?: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
-export class DiagnosticsService implements OnDestroy {
-  // API URLs
-  private readonly apiUrl = 'http://localhost:3000/api';
-  private readonly socketUrl = 'http://localhost:3000';
-  
-  // Socket connection
-  private socket: Socket | null = null;
-  
+export class DiagnosticsService implements OnDestroy {  private socket!: Socket; // Added definite assignment assertion  
+  private API_URL: string; // Make API_URL configurable  
+  // List of available namespaces to try in order of preference
+  private readonly namespaces = ['/diagnostics', 'diagnostics', '', '/'];
+  private currentNamespaceIndex = 0;
+
   // Socket data subjects
-  private socketStatusSubject = new Subject<SocketStatusUpdate>();
-  private socketLogsSubject = new Subject<SocketLogEvent[]>();
-  private healthSubject = new BehaviorSubject<EnhancedHealthData>({
-    status: 'unknown',
-    uptime: 0,
-    timestamp: new Date().toISOString(),
-    details: {}
-  });
-  
+  private healthUpdatesSubject = new BehaviorSubject<EnhancedHealthData | null>(null);
+  private socketStatusSubject = new BehaviorSubject<SocketStatusUpdate | null>(null);
+  private socketLogsSubject = new BehaviorSubject<SocketLogEvent[]>([]);
+  private liveMetricsSubject = new BehaviorSubject<MetricData | null>(null); // Added for live metrics
+  private timelinePointsSubject = new BehaviorSubject<HealthTimelinePoint[]>([]); // New Subject for timeline points
+
   // Connection status
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
-  
-  // Add mock data functionality
-  private mockDataInterval: ReturnType<typeof setInterval> | null = null;
-  private readonly defaultSocketMetrics: SocketMetrics = {
-    totalConnections: 0,
-    activeConnections: 0,
-    disconnections: 0,
-    errors: 0,
-    messagesSent: 0,
-    messagesReceived: 0
-  };
-  
-  // Add reconnection properties
-  private reconnecting = false;
-  private backendAvailableListener: () => void;
-  
+  private destroy$ = new Subject<void>();
+
+  // Reconnection properties
+  private reconnectionAttemptTimer = timer(5000, 10000); // Start after 5s, then every 10s
+  private maxReconnectAttempts = 5;
+  private currentReconnectAttempt = 0;
+
+  // Environment configuration
+  private readonly envConfig = environment as Environment; // Get environment config
+
   constructor(
     private http: HttpClient,
     private backendStatusService: BackendStatusService,
     private typeDiagnostics: TypeDiagnosticsService
-  ) {
-    // Initialize socket and event listener
-    this.backendAvailableListener = () => {
-      if (!this.socket?.connected && !this.reconnecting) {
-        this.reconnectToBackend();
+  ) {    // Determine API_URL for sockets - we need the base URL without the /api path
+    if (this.envConfig.socketBaseUrl) {
+      // Use socketBaseUrl directly if available
+      this.API_URL = this.envConfig.socketBaseUrl;
+    } else if (this.envConfig.apiBaseUrl) {
+      // If we only have apiBaseUrl, extract the origin
+      try {
+        const parsedUrl = new URL(this.envConfig.apiBaseUrl);
+        this.API_URL = parsedUrl.origin; // e.g., http://localhost:3000
+      } catch (e) {
+        console.error('DiagnosticsService: Invalid apiBaseUrl in environment, defaulting.', e);
+        this.API_URL = 'http://localhost:3000'; // Default if parsing fails
       }
-    };
+    } else if (this.envConfig.apiUrl) {
+      try {
+        const parsedUrl = new URL(this.envConfig.apiUrl);
+        this.API_URL = parsedUrl.origin; // e.g., http://localhost:3000
+      } catch (e) {
+        console.error('DiagnosticsService: Invalid apiUrl in environment, defaulting.', e);
+        this.API_URL = 'http://localhost:3000'; // Default if parsing fails
+      }
+    } else {
+      this.API_URL = 'http://localhost:3000'; // Default if no relevant URL in env
+    }    // Check if we have a last successful namespace and prioritize it
+    const lastSuccessfulNamespace = localStorage.getItem('lastSuccessfulSocketNamespace');
+    if (lastSuccessfulNamespace) {
+      // Find the index of the last successful namespace
+      const index = this.namespaces.indexOf(lastSuccessfulNamespace);
+      if (index !== -1) {
+        // Move the successful namespace to the front of the array
+        this.currentNamespaceIndex = index;
+        console.log(`Using last successful namespace: ${lastSuccessfulNamespace}`);
+      }
+    }
     
-    window.addEventListener('backend-available', this.backendAvailableListener);
-    
-    // Register validators
-    this.typeDiagnostics.registerValidator('MetricData', validateMetricData);
-    
-    // Initialize socket
-    this.initSocket();
-  }
+    this.initializeSocketConnection();
 
-  ngOnDestroy(): void {
-    console.log('DiagnosticsService: Cleaning up resources');
-    
-    // Remove event listener
-    window.removeEventListener('backend-available', this.backendAvailableListener);
-    
-    // Clean up socket connection
+    // Monitor backend status for reconnection
+    this.backendStatusService.getStatusSummary().pipe( // Changed to getStatusSummary()
+      takeUntil(this.destroy$)
+    ).subscribe((status: BackendStatusSummary) => { // Explicitly typed status
+      if (status.allConnected && (!this.socket || !this.socket.connected)) { // Used status.allConnected
+        this.attemptReconnect();
+      }
+    });
+  }  private initializeSocketConnection(): void {
+    // Clean up any existing socket connection
     this.cleanupSocket();
     
-    // Complete all subjects
-    this.socketStatusSubject.complete();
-    this.socketLogsSubject.complete();
-    this.healthSubject.complete();
-    this.connectionStatusSubject.complete();
+    // Get the current namespace to try
+    const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+    const socketUrl = `${this.API_URL}`;
     
-    // Stop mock data generation
-    this.stopMockDataGeneration();
+    console.log(`DiagnosticsService: Connecting to socket at ${socketUrl} with namespace '${currentNamespace}'`);
+    
+    let fullUrl: string;
+    if (currentNamespace === '') {
+      // Connect to root namespace
+      fullUrl = socketUrl;
+    } else if (currentNamespace === '/') {
+      // Another way to connect to root namespace
+      fullUrl = socketUrl + '/';
+    } else if (currentNamespace.startsWith('/')) {
+      // Namespace already has leading slash
+      fullUrl = socketUrl + currentNamespace;
+    } else {
+      // Add leading slash to namespace
+      fullUrl = `${socketUrl}/${currentNamespace}`;
+    }
+
+    this.socket = io(fullUrl, {
+      transports: ['websocket'],
+      reconnection: false, // Disable automatic reconnection to manage it manually
+      forceNew: true
+    });
+
+    this.connectionStatusSubject.next(false);    this.socket.on('connect', () => {
+      this.connectionStatusSubject.next(true);
+      this.currentReconnectAttempt = 0; // Reset reconnect attempts on successful connection
+      const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+      console.log(`Successfully connected to diagnostics socket with namespace '${currentNamespace}'.`);
+      
+      // Store the successful namespace for future connections
+      localStorage.setItem('lastSuccessfulSocketNamespace', currentNamespace);
+      
+      // Update backend status service to reflect connected state
+      this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
+      this.setupSocketEventHandlers();
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      this.connectionStatusSubject.next(false);
+      console.log(`Disconnected from diagnostics socket: ${reason}`);
+      // Update backend status service to reflect disconnected state
+      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
+      if (reason !== 'io server disconnect' && reason !== 'io client disconnect') {
+        // Attempt to reconnect if not a manual disconnect
+        this.attemptReconnect();
+      }
+    });    this.socket.on('connect_error', (error) => {
+      this.connectionStatusSubject.next(false);
+      const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+      console.error(`Diagnostics socket connection error with namespace '${currentNamespace}':`, error);
+      console.error('Connection details:', {
+        url: fullUrl,
+        namespace: currentNamespace,
+        baseUrl: socketUrl,
+        path: '/socket.io'
+      });
+      
+      // Check if error message indicates namespace issues
+      const errorMsg = error.toString();
+      const isNamespaceError = errorMsg.includes('Invalid namespace') || errorMsg.includes('Namespace not found');
+      
+      // Update backend status service to reflect error state
+      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
+      
+      // Try the next namespace if available
+      if (this.currentNamespaceIndex < this.namespaces.length - 1) {
+        this.currentNamespaceIndex++;
+        console.log(`Trying next namespace: ${this.namespaces[this.currentNamespaceIndex]}`);
+        this.initializeSocketConnection();
+      } else {
+        // Reset to the first namespace for next reconnection attempt
+        this.currentNamespaceIndex = 0;
+        if (isNamespaceError) {
+          console.warn('All namespace attempts failed. The server might be using a different namespace configuration.');
+        }
+        this.attemptReconnect(); // Attempt to reconnect after delay
+      }
+    });
   }
   
+  private setupSocketEventHandlers(): void {
+    if (!this.socket) return;
+
+    // Refined handleResponse function
+    const handleResponse = <T>(eventData: SocketResponse<T> | T, subject: BehaviorSubject<T | null>) => {
+      // Check if eventData is a SocketResponse object (from socket-types.ts)
+      if (eventData && typeof eventData === 'object' && 'data' in eventData && 'event' in eventData && 'status' in eventData) {
+        const socketResp = eventData as SocketResponse<T>;
+        if (socketResp.status === 'success') {
+          subject.next(socketResp.data);
+        } else {
+          console.error(`Received error response for event ${socketResp.event}: ${socketResp.message}`);
+          subject.next(null); // Or handle error state appropriately
+        }
+      } else {
+        // Assume eventData is of type T directly
+        subject.next(eventData as T | null);
+      }
+    };
+
+    this.socket.on('health-update', (receivedData: SocketResponse<HealthData> | HealthData) => {
+      let actualData: HealthData | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<HealthData>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Health update error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as HealthData;
+      }
+
+      if (actualData) {
+        const enhancedData: EnhancedHealthData = {
+          ...(actualData), // No longer need to cast actualData to HealthData if types are correct
+          clientProcessedTimestamp: new Date().toISOString()
+        };
+        this.healthUpdatesSubject.next(enhancedData);
+      } else {
+        this.healthUpdatesSubject.next(null);
+      }
+    });
+
+    this.socket.on('socket-status', (data: SocketResponse<SocketStatusUpdate> | SocketStatusUpdate) => {
+       handleResponse<SocketStatusUpdate>(data, this.socketStatusSubject);
+    });
+    this.socket.on('socket-logs', (receivedData: SocketResponse<SocketLogEvent[]> | SocketLogEvent[]) => {
+      let actualData: SocketLogEvent[] | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<SocketLogEvent[]>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Socket logs error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as SocketLogEvent[];
+      }
+      this.socketLogsSubject.next(actualData || []); // Ensure it's an array
+    });
+    this.socket.on('live-metric-update', (data: SocketResponse<MetricData> | MetricData) => {
+      handleResponse<MetricData>(data, this.liveMetricsSubject);
+    });
+
+    // Listen for timeline updates
+    this.socket.on('timeline-update', (receivedData: SocketResponse<HealthTimelinePoint[]> | HealthTimelinePoint[]) => {
+      let actualData: HealthTimelinePoint[] | null = null;
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
+        const socketResp = receivedData as SocketResponse<HealthTimelinePoint[]>;
+        if (socketResp.status === 'success') {
+          actualData = socketResp.data;
+        } else {
+          console.error(`Timeline update error for event ${socketResp.event}: ${socketResp.message}`);
+        }
+      } else {
+        actualData = receivedData as HealthTimelinePoint[];
+      }
+      this.timelinePointsSubject.next(actualData || []); // Ensure it's an array
+    });
+
+    // Request initial data upon connection (optional, if backend sends it)
+    this.socket.emit('request-initial-timeline');
+  }  private attemptReconnect(): void {
+    if (this.currentReconnectAttempt < this.maxReconnectAttempts && (!this.socket || !this.socket.connected)) {
+      this.currentReconnectAttempt++;
+      console.log(`Attempting to reconnect to diagnostics socket... (Attempt ${this.currentReconnectAttempt}/${this.maxReconnectAttempts})`);
+      
+      // Reset namespace index to try all namespaces again
+      this.currentNamespaceIndex = 0;
+      
+      // Use a timer for delay before retrying connection
+      timer(3000 * this.currentReconnectAttempt) // Exponential backoff
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          if (!this.socket || !this.socket.connected) {
+            this.initializeSocketConnection(); // Re-initialize the connection attempt
+          }
+        });
+    } else if (this.currentReconnectAttempt >= this.maxReconnectAttempts) {
+      console.error('Max reconnection attempts reached for diagnostics socket.');
+    }
+  }
   /**
-   * Properly clean up socket connection
+   * Cleans up socket connections and event listeners
    */
   private cleanupSocket(): void {
     if (this.socket) {
-      console.log('DiagnosticsService: Disconnecting socket');
-      
-      // Remove all event listeners
+      // Remove event listeners
       this.socket.off('connect');
       this.socket.off('disconnect');
+      this.socket.off('connect_error');
+      this.socket.off('health-update');
       this.socket.off('socket-status');
       this.socket.off('socket-logs');
-      this.socket.off('health-update');
-      this.socket.off('connect_error');
+      this.socket.off('live-metric-update');
+      this.socket.off('timeline-update');
       
       // Disconnect if connected
       if (this.socket.connected) {
         this.socket.disconnect();
       }
-      this.socket = null;
+      console.log('DiagnosticsService: Socket cleaned up.');
     }
-  }
-  
-  /**
-   * Initialize socket connection to diagnostics namespace
-   */
-  private initSocket(): void {
-    try {
-      console.log('DiagnosticsService: Initializing socket connection');
-      
-      // Clean up any existing socket first to prevent duplicate connections
-      this.cleanupSocket();
-      
-      // Create new socket connection with proper options
-      this.socket = io(`${this.socketUrl}/diagnostics`, {
-        withCredentials: false,
-        transports: ['websocket', 'polling'],
-        timeout: 5000,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        forceNew: true // Force new connection to avoid conflicts
-      });
-      
-      // Setup socket event handlers
-      this.setupSocketEvents();
-    } catch (err) {
-      console.error('Failed to connect to diagnostics socket:', err);
-      this.connectionStatusSubject.next(false);
-      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
-      this.startMockDataGeneration();
-    }
-  }
-  
-  /**
-   * Set up all socket event handlers
-   */
-  private setupSocketEvents(): void {
-    if (!this.socket) return;
+  }  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     
-    this.socket.on('connect', () => {
-      console.log('Connected to diagnostics socket');
-      this.connectionStatusSubject.next(true);
-      this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
-      this.stopMockDataGeneration();
-    });
-    
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from diagnostics socket');
-      this.connectionStatusSubject.next(false);
-      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
-    });
-    
-    this.socket.on('connect_error', (err) => {
-      console.error('Diagnostics socket connection error:', err);
-      this.connectionStatusSubject.next(false);
-      this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
-      this.startMockDataGeneration();
-    });
-    
-    this.socket.on('socket-status', (response: SocketResponse<SocketStatusUpdate>) => {
-      if (response.status === 'success') {
-        this.socketStatusSubject.next(response.data);
-      }
-    });
-    
-    this.socket.on('socket-logs', (response: SocketResponse<SocketLogEvent[]>) => {
-      if (response.status === 'success') {
-        this.socketLogsSubject.next(response.data);
-      }
-    });
-    
-    this.socket.on('health-update', (response: SocketResponse<HealthData>) => {
-      if (response.status === 'success') {
-        try {
-          // Validate health data before updating the subject
-          const validatedHealth = this.typeDiagnostics.validateType<HealthData>(
-            response.data, 
-            'HealthData', 
-            'DiagnosticsService.setupSocketEvents.health-update'
-          );
-          this.healthSubject.next(validatedHealth);
-        } catch (error) {
-          console.error('Health data validation failed:', error);
-          // Still update with response.data but log the error
-          this.healthSubject.next(response.data);
-        }
-      }
-    });
-  }
-
-  // Mock data generation methods
-  private startMockDataGeneration(): void {
-    if (this.mockDataInterval) return;
-    
-    console.log('DiagnosticsService: Starting mock data generation');
-    
-    // Generate fake health data
-    const mockHealth: HealthData = {
-      status: 'simulated',
-      uptime: 3600,
-      timestamp: new Date().toISOString(),
-      details: {
-        simulatedData: {
-          message: 'Using simulated data - backend unavailable'
-        }
-      }
-    };
-    
-    // Generate fake socket info
-    const mockSocketInfo: SocketInfo = {
-      id: 'mock-socket-id',
-      namespace: '/diagnostics',
-      clientIp: '127.0.0.1',
-      userAgent: 'Mock Client',
-      connectTime: new Date(),
-      lastActivity: new Date(),
-      events: []
-    };
-    
-    // Set up intervals for mock data
-    this.mockDataInterval = setInterval(() => {
-      // Update health data with current time
-      mockHealth.timestamp = new Date().toISOString();
-      mockHealth.uptime = (mockHealth.uptime ?? 0) + 1;
-      this.healthSubject.next({...mockHealth});
-      
-      // Update socket metrics with random fluctuations
-      const mockMetrics = {...this.defaultSocketMetrics};
-      mockMetrics.messagesSent += Math.floor(Math.random() * 5);
-      mockMetrics.messagesReceived += Math.floor(Math.random() * 3);
-      
-      // Update socket status
-      this.socketStatusSubject.next({
-        activeSockets: [mockSocketInfo],
-        metrics: mockMetrics
-      });
-      
-      // Generate random log events occasionally
-      if (Math.random() > 0.7) {
-        const eventTypes = ['connect', 'message', 'ping', 'status'];
-        const randomEvent: SocketLogEvent = {
-          socketId: 'mock-socket-id',
-          namespace: '/diagnostics',
-          eventType: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-          timestamp: new Date(),
-          message: 'Mock event generated'
-        };
-        this.socketLogsSubject.next([randomEvent]);
-      }
-    }, 2000);
-    
-    // Update backend status service
-    this.backendStatusService.updateGatewayStatus('diagnostics', false, true);
-  }
-  
-  private stopMockDataGeneration(): void {
-    if (this.mockDataInterval) {
-      console.log('DiagnosticsService: Stopping mock data generation');
-      clearInterval(this.mockDataInterval);
-      this.mockDataInterval = null;
-      
-      // Update backend status
-      this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
-    }
-  }
-
-  /**
-   * Attempt to reconnect to the backend when it becomes available again
-   */
-  private reconnectToBackend(): void {
-    if (this.reconnecting) return;
-    this.reconnecting = true;
-    
-    console.log('[DiagnosticsService] Attempting to reconnect to backend');
-    
-    // Perform a connection test first to verify backend is truly available
-    this.http.get<{status: string}>(`${this.apiUrl}/diagnostics/health`)
-      .pipe(
-        catchError(() => {
-          console.log('[DiagnosticsService] Backend still not available during reconnection');
-          this.reconnecting = false;
-          return of({ status: 'error' });
-        })
-      )
-      .subscribe(response => {
-        if (response && response.status !== 'error') {
-          console.log('[DiagnosticsService] Backend confirmed available, reconnecting socket');
-          this.performSocketReconnection();
-        } else {
-          this.reconnecting = false;
-        }
-      });
-  }
-  
-  /**
-   * Perform the actual socket reconnection after confirming backend is available
-   */
-  private performSocketReconnection(): void {
-    // Clean up the existing socket
+    // Clean up socket connection explicitly in ngOnDestroy to satisfy ESLint rule
     this.cleanupSocket();
     
-    // Initialize a new socket connection
-    try {
-      console.log('[DiagnosticsService] Creating new socket connection');
-      this.socket = io(`${this.socketUrl}/diagnostics`, {
-        withCredentials: false,
-        transports: ['websocket', 'polling'],
-        timeout: 5000,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        forceNew: true
-      });
-      
-      // Setup enhanced reconnection event handlers
-      this.socket.on('connect', () => {
-        console.log('[DiagnosticsService] Socket reconnected successfully!');
-        this.connectionStatusSubject.next(true);
-        
-        // Stop mock data and update backend status
-        this.stopMockDataGeneration();
-        this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
-        
-        // Request initial data
-        this.socket?.emit('get-health');
-        this.socket?.emit('get-socket-logs');
-        this.socket?.emit('get-socket-history');
-      });
-      
-      this.socket.on('disconnect', () => {
-        console.log('[DiagnosticsService] Socket disconnected during reconnection');
-        this.connectionStatusSubject.next(false);
-        this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
-      });
-      
-      this.socket.on('health-update', (response: SocketResponse<HealthData>) => {
-        if (response.status === 'success') {
-          console.log('[DiagnosticsService] Received real health data after reconnection');
-          this.healthSubject.next(response.data);
-          
-          // Make extra sure mock data generation is stopped
-          if (this.mockDataInterval) {
-            this.stopMockDataGeneration();
-          }
-        }
-      });
-      
-      // Setup the rest of socket event handlers
-      this.setupSocketEvents();
-    } catch (err) {
-      console.error('[DiagnosticsService] Socket reconnection failed:', err);
-    }
+    // Complete all subjects
+    this.healthUpdatesSubject.complete();
+    this.socketStatusSubject.complete();
+    this.socketLogsSubject.complete();
+    this.liveMetricsSubject.complete();
+    this.timelinePointsSubject.complete();
+    this.connectionStatusSubject.complete();
     
-    // Reset reconnection flag after a delay
-    setTimeout(() => {
-      this.reconnecting = false;
-    }, 5000);
+    console.log('DiagnosticsService: Socket disconnected and service destroyed.');
   }
 
-  /**
-   * Get socket status updates as an observable
-   */
-  getSocketStatus(): Observable<SocketStatusUpdate> {
-    // Request latest socket status
-    this.socket?.emit('get-socket-history');
+  // Public Observables
+  public getLiveMetrics(): Observable<MetricData | null> {
+    return this.liveMetricsSubject.asObservable();
+  }
+
+  public getSocketStatus(): Observable<SocketStatusUpdate | null> {
     return this.socketStatusSubject.asObservable();
   }
   
-  /**
-   * Get socket logs as an observable
-   */
-  getSocketLogs(): Observable<SocketLogEvent[]> {
-    // Request latest logs
-    this.socket?.emit('get-socket-logs');
+  public getSocketLogs(): Observable<SocketLogEvent[]> {
     return this.socketLogsSubject.asObservable();
   }
   
-  /**
-   * Get health data as an observable
-   */
-  getHealthUpdates(): Observable<EnhancedHealthData> {
-    // Request latest health data
-    this.socket?.emit('get-health');
-    return this.healthSubject.asObservable();
+  public getHealthUpdates(): Observable<EnhancedHealthData | null> {
+    return this.healthUpdatesSubject.asObservable();
   }
   
-  /**
-   * Get connection status as an observable
-   */
-  getConnectionStatus(): Observable<boolean> {
+  public getConnectionStatus(): Observable<boolean> {
     return this.connectionStatusSubject.asObservable();
   }
   
-  /**
-   * Get health data via HTTP API
-   */
-  getHealth(): Observable<HealthData> {
-    return this.http.get<HealthData>(`${this.apiUrl}/diagnostics/health`).pipe(
-      map(response => {
-        // Ensure the response matches the HealthData interface
-        if (typeof response.status === 'string' && 
-            !['healthy', 'degraded', 'unhealthy', 'unknown', 'simulated'].includes(response.status)) {
-          return {
-            ...response,
-            status: 'unknown' as const // Force it to be a valid status
-          };
-        }
-        return response;
-      }),
-      catchError(() => of({
-        status: 'unknown' as const,
-        uptime: 0,
-        timestamp: new Date().toISOString(),
-        details: {
-          error: {
-            message: 'Unable to connect to backend server'
-          }
-        }
-      }))
+  // New method to get timeline points
+  public getTimelinePoints(): Observable<HealthTimelinePoint[]> {
+    return this.timelinePointsSubject.asObservable();
+  }
+    // HTTP methods
+  public getHealth(): Observable<HealthData> {
+    // For HTTP calls, use the apiBaseUrl from environment which includes /api path
+    return this.http.get<HealthData>(`${this.envConfig.apiBaseUrl}/diagnostics/health`).pipe(
+      catchError(err => {
+        console.error('Error fetching health data via HTTP', err);
+        return throwError(() => err);
+      })
     );
   }
   
-  /**
-   * Get socket information via HTTP API
-   */
-  getSocketInfo(): Observable<SocketStatusUpdate> {
-    return this.http.get<SocketStatusUpdate>(`${this.apiUrl}/sockets`).pipe(
-      catchError(() => of({
-        activeSockets: [],
-        metrics: {
-          totalConnections: 0,
-          activeConnections: 0,
-          disconnections: 0,
-          errors: 0,
-          messagesSent: 0,
-          messagesReceived: 0
-        }
-      }))
+  public getSocketInfo(): Observable<SocketStatusUpdate> {
+    // For HTTP calls, use the apiBaseUrl from environment which includes /api path
+    return this.http.get<SocketStatusUpdate>(`${this.envConfig.apiBaseUrl}/diagnostics/socket-info`).pipe(
+      catchError(err => {
+        console.error('Error fetching socket info via HTTP', err);
+        return throwError(() => err);
+      })
     );
   }
-
-  // Custom validator for HealthData
-  private validateHealthData(obj: HealthData): ValidationResult {
-    const issues: string[] = [];
+  // Try connection with alternative namespaces if primary fails
+  private tryAlternativeNamespaces(): void {
+    console.log('Trying connection with alternative namespaces...');
     
-    if (!obj) {
-      issues.push('Object is null or undefined');
-      return { valid: false, issues };
+    // Clean up existing socket first
+    this.cleanupSocket();
+    
+    // Move to the next namespace in the list
+    if (this.currentNamespaceIndex < this.namespaces.length - 1) {
+      this.currentNamespaceIndex++;
+      console.log(`Trying next namespace: ${this.namespaces[this.currentNamespaceIndex]}`);
+      this.initializeSocketConnection();
+    } else {
+      // If we've tried all namespaces, reset to the first one for next attempt
+      this.currentNamespaceIndex = 0;
+      console.error('All namespace attempts failed. Will retry after delay.');
+      this.attemptReconnect();
     }
-    
-    if (typeof obj.status !== 'string') issues.push('Missing or invalid status (string)');
-    if (typeof obj.uptime !== 'number') issues.push('Missing or invalid uptime (number)');
-    if (typeof obj.timestamp !== 'string') issues.push('Missing or invalid timestamp (string)');
-    if (!obj.details || typeof obj.details !== 'object') {
-      issues.push('Missing or invalid details (object)');
-    }
-    
-    return { valid: issues.length === 0, issues };
   }
 }

@@ -19,7 +19,6 @@ import { TileStateController } from './tiles/tile-state.controller';
 import { LoggerModule } from './logger/logger.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { TileStateModule } from './tile-state/tile-state.module';
-import { LogsController } from './logs/logs.controller';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { AuthController } from './auth/auth.controller';
@@ -33,8 +32,12 @@ import { User, UserSchema } from './models/user.model';
 import { Log, LogSchema } from './models/log.model';
 import { Metric, MetricSchema } from './models/metric.model';
 import { Diagnostic, DiagnosticSchema } from './models/diagnostic.model';
-import { SeedService } from './seed.service';
+import { KanbanBoard, KanbanBoardSchema } from './models/kanban.model';
+import { SeedService } from './seed/seed.service';
+import { SecurityStreamGateway } from './security/scanner-service/security-stream.gateway';
 import { LogsModule } from './logs/logs.module';
+import { SystemModule } from './system/system.module';
+import { Sound, SoundSchema } from './models/sound.model';
 
 @Module({
   imports: [
@@ -63,6 +66,8 @@ import { LogsModule } from './logs/logs.module';
       { name: Log.name, schema: LogSchema },
       { name: Metric.name, schema: MetricSchema },
       { name: Diagnostic.name, schema: DiagnosticSchema },
+      { name: KanbanBoard.name, schema: KanbanBoardSchema },
+      { name: Sound.name, schema: SoundSchema }, // Add Sound schema
     ]),
     MetricsModule,
     SocketModule,
@@ -73,8 +78,9 @@ import { LogsModule } from './logs/logs.module';
     TileStateModule,
     AuthModule,
     UserModule,
-    LogsModule,
+    LogsModule, // Add LogsModule here
     // JwtModule removed for v10+
+    SystemModule,
   ],
   controllers: [
     AppController,
@@ -82,7 +88,6 @@ import { LogsModule } from './logs/logs.module';
     StatusController,
     MetricsController,
     TileStateController,
-    LogsController,
     AuthController,
   ],
   providers: [
@@ -102,8 +107,9 @@ import { LogsModule } from './logs/logs.module';
     WsJwtGuard,
     JwtService,
     SeedService,
+    SecurityStreamGateway,
   ],
-  exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService],
+  exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService]
 })
 export class AppModule {
   constructor(private readonly configService: ConfigService, private readonly seedService: SeedService) {

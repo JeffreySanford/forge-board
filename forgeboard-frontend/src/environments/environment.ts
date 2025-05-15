@@ -1,28 +1,18 @@
+// This file can be replaced during build by using the `fileReplacements` array.
+// `ng build` replaces `environment.ts` with `environment.prod.ts`.
+
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
-  socketUrl: 'http://localhost:3000',
   apiBaseUrl: 'http://localhost:3000/api',
   socketBaseUrl: 'http://localhost:3000',
-  encryptedJwtToken: '', // Set at runtime after user login
-  jwtGuestToken: '', // Loaded from environment variable or runtime config
-  features: {
-    enableMockData: true,
-    enableDiagnostics: true,
-    enableSocketLogging: true,
-    enableTypeValidation: true
-  },
-  logging: {
-    level: 'debug',
-    enableConsole: true
-  },
-  mongo: {
-    uri: '', // Loaded from environment variable or runtime config
-    options: {
-      // Removed deprecated options that are no longer needed in MongoDB driver v4.0+
-    }
-  },
   useInMemoryMongo: true,
-  mongoUri: 'In-memory MongoDB'
+  mongoUri: 'mongodb://localhost:27017/forgeboard',
+  logsPath: 'assets/logs',
+  version: '1.0.0',
+  build: 'development',
+  // Adding apiUrl as an alias for apiBaseUrl to fix references
+  get apiUrl() { return this.apiBaseUrl; },
+  // Adding a default guest token for development
+  jwtGuestToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJndWVzdC11c2VyIiwibmFtZSI6Ikd1ZXN0IFVzZXIiLCJyb2xlIjoiZ3Vlc3QiLCJpYXQiOjE2ODgzNDQ3MDN9.yVTwauCTno3n1d-ci3zSIr0vltWGqmvholpKFMFsyhw'
 };
 // Real keys and secrets are now in .env and should be loaded at runtime.

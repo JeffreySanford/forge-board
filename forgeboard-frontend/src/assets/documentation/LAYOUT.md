@@ -1,5 +1,24 @@
-# ForgeBoard: Blueprint UI Dashboard
-*Last Updated: June 28, 2025*
+# 📐 ForgeBoard: Blueprint UI Dashboard Layout System
+*Last Updated: May 7, 2025*
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+  <div style="background-color: #002868; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Design System:</strong> Blueprint 3.0 🧩
+  </div>
+  <div style="background-color: #BF0A30; color: white; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Responsiveness:</strong> Mobile-First 📱
+  </div>
+  <div style="background-color: #F9C74F; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Accessibility:</strong> WCAG 2.1 AA ♿
+  </div>
+  <div style="background-color: #90BE6D; color: #333; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <strong>Theme:</strong> Patriotic Sovereignty 🦅
+  </div>
+</div>
+
+## Introduction
+
+The ForgeBoard layout system provides a flexible and powerful way to create responsive, accessible, and visually appealing dashboard layouts using a tile-based approach. This document outlines the key features, components, and usage guidelines for the layout system.
 
 ## Dashboard Layout Structure
 
@@ -51,7 +70,7 @@
 │  │  │  │                                                        ││││
 │  │  │  └────────────────────────────────────────────────────────┘│││
 │  │  │                                                            │││
-│  │  └────────────────────────────────────────────────────────────┘││
+│  │  └────────────────────────────────────────────────────────────┘│
 │  │                                                                ││
 │  └────────────────────────────────────────────────────────────────┘│
 │                                                                    │
@@ -201,15 +220,15 @@ The metrics dashboard uses a split layout:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Kablan Board
+### Kanban Board
 
-The Kablan board uses a phase-based layout:
+The Kanban board uses a phase-based layout:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ .kablan-board                                               │
+│ .kanban-board                                               │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ .kablan-toolbar                                         │ │
+│ │ .kanban-toolbar                                         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ .project-phases (Timeline visualization)                │ │
@@ -218,7 +237,7 @@ The Kablan board uses a phase-based layout:
 │ │ .board-navigation                                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ .kablan-columns (Horizontally scrollable)               │ │
+│ │ .kanban-columns (Horizontally scrollable)               │ │
 │ │                                                         │ │
 │ │ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐      │ │
 │ │ │ Column  │  │ Column  │  │ Column  │  │ Column  │      │ │

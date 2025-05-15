@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { LogsController } from './logs.controller';
 import { LogsService } from './logs.service';
-import { Log, LogSchema } from '../models/log.model';
-import { LoggerModule } from '../logger/logger.module';
+import { LogGateway } from './logs.gateway';
+import { SocketModule } from '../socket/socket.module'; // Ensure SocketModule is imported
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Log.name, schema: LogSchema }]),
-    LoggerModule
+    SocketModule // Add SocketModule here
   ],
   controllers: [LogsController],
-  providers: [LogsService],
+  providers: [LogsService, LogGateway],
   exports: [LogsService]
 })
 export class LogsModule {}

@@ -7,6 +7,9 @@ export interface HealthTimelinePoint {
   status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   message: string;
   metadata?: Record<string, unknown>;
+  icon?: string; // Added optional icon
+  title?: string; // Added optional title
+  content?: string; // Added optional content (can be same as message or more detailed)
 }
 
 export interface HealthTimeline {

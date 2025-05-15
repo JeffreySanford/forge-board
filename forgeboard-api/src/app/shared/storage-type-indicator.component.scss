@@ -1,0 +1,92 @@
+/* SCSS for StorageTypeIndicatorComponent */
+
+.storage-indicator-container {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: default;
+  border: 1px solid #ccc;
+  font-family: Arial, sans-serif; // Example font
+
+  .storage-icon {
+    margin-right: 10px;
+    font-size: 1.6em; // Slightly larger icon
+  }
+
+  .storage-info {
+    .storage-name {
+      font-weight: bold;
+      font-size: 1em;
+    }
+    .storage-description-text {
+      font-size: 0.8em;
+      color: #666;
+    }
+  }
+
+  // Default state (optional)
+  background-color: #f9f9f9;
+  border-color: #ddd;
+  .storage-info .storage-name { color: #333; }
+
+  // Specific styles per type
+  &.storage-type-memory {
+    background-color: #e0e0e0; 
+    border-color: #bdbdbd;
+    .storage-info .storage-name { color: #212121; }
+    .storage-icon { color: #424242; }
+  }
+
+  &.storage-type-localStorage {
+    background-color: #bbdefb; 
+    border-color: #90caf9;
+    .storage-info .storage-name { color: #1565c0; }
+    .storage-icon { color: #1976d2; }
+  }
+
+  &.storage-type-mongodb {
+    background-color: #c8e6c9; 
+    border-color: #a5d6a7;
+    .storage-info .storage-name { color: #2e7d32; }
+    .storage-icon { color: #388e3c; }
+  }
+
+  &.storage-type-blockchain {
+    background-color: #fff9c4; 
+    border-color: #fff59d;
+    .storage-info .storage-name { color: #f9a825; }
+    .storage-icon { color: #fbc02d; }
+  }
+}
+
+// Tooltip styling (if you need to customize it beyond default Material theming)
+// ::ng-deep .mat-tooltip {
+//   background-color: black;
+//   color: white;
+// }
+
+.database-icon {
+  /* styles for database icon */
+  color: blue;
+}
+
+.memory-icon {
+  /* styles for memory icon */
+  color: green;
+}
+
+.local-storage-icon {
+  /* styles for local storage icon */
+  color: orange;
+}
+
+.blockchain-icon {
+  /* styles for blockchain icon */
+  color: purple;
+}
+
+.default-storage-icon {
+  /* styles for default icon */
+  color: gray;
+}

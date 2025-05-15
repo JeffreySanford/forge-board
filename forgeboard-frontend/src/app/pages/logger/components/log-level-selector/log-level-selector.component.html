@@ -8,14 +8,14 @@
   </div>
   
   <div class="level-chips">
-    <div *ngFor="let level of levelOptions" 
+    <div *ngFor="let level of levels" 
          [ngClass]="{ 'selected': level.selected }"
          class="level-chip"
          [style.background-color]="level.selected ? level.color + '33' : 'transparent'"
          [style.border-color]="level.color"
          (click)="toggleLevel(level)">
       <span class="level-indicator" [style.background-color]="level.color"></span>
-      {{ level.level | uppercase }}
+      {{ level.level.toString() | uppercase }}
     </div>
   </div>
 </div>

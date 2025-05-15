@@ -125,10 +125,9 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       })
     );
-    
-    // Subscribe to backend status to check if we're using mock data
+      // Subscribe to backend status to check if we're using mock data
     this.subscription.add(
-      this.backendStatusService.getStatus().subscribe(status => {
+      this.backendStatusService.getStatusSummary().subscribe(status => {
         this.usingMockData = status.anyMockData;
       })
     );
