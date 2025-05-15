@@ -26,6 +26,8 @@ This document outlines the primary gateways responsible for managing various cro
 
 *   **Description:** Responsible for dispatching notifications to users or other systems via various channels (e.g., email, SMS, WebSockets, push notifications). It decouples the act of sending a notification from the services that trigger them, providing a centralized point for managing notification templates, preferences, and delivery.
 
+   *WebSocket Implementation:* The notification gateway uses WebSockets via Socket.IO for real-time communications. The client-side implementation is handled by the `SocketClientService` which ensures consistent namespace formatting across all socket connections. See [Socket Client Usage Guide](./socket-client-usage.md) for detailed implementation guidelines.
+
 ## 5. Logging & Monitoring Gateway
 
 **Theme:** Observability & System Health

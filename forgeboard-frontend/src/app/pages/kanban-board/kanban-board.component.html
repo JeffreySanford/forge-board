@@ -1,123 +1,185 @@
-<div class="kanban-board-container">
-  <!-- Use *ngIf="board" instead of boards.length since board is the property defined in component -->
-  <ng-container *ngIf="board">
-    <div class="kanban-header">
-      <div class="board-title">
-        <h2>{{ board.name || 'Planning Board' }}</h2>
-      </div>
-      <div class="connection-controls">
-        <!-- Connection status indicator -->
-        <div class="connection-status-container">
-          <div class="connection-status" [class.connected]="isConnected">
-            {{ isConnected ? 'Connected' : 'Using Demo Data' }}
+<div class="page kanban-page">
+  <div class="container kanban-container">
+    <div class="layout-col" style="height: 100%; min-height: 0;">
+      <!-- Use *ngIf="board" instead of boards.length since board is the property defined in component -->
+      <ng-container *ngIf="board">
+        <div class="kanban-header layout-row layout-align-space-between-center" style="flex-wrap: wrap; gap: 16px;">
+          <div class="board-title layout-row layout-align-start-center" style="gap: 16px; min-width: 0; flex: 1 1 300px;">
+            <h2 class="truncate" style="margin: 0; min-width: 0;">{{ board.name || 'Planning Board' }}</h2>
+            <mat-form-field appearance="outline" color="primary" class="board-selector" style="min-width: 220px;">
+              <mat-label>Project Board</mat-label>
+              <mat-select [value]="selectedBoardId" (selectionChange)="onBoardSelect($event.value)">
+                <mat-optgroup label="Example Boards" *ngIf="exampleBoards.length">
+                  <mat-option *ngFor="let b of exampleBoards" [value]="b.id">
+                    <mat-icon style="vertical-align: middle; margin-right: 8px;">school</mat-icon>
+                    {{ b.name }}
+                  </mat-option>
+                </mat-optgroup>
+                <mat-optgroup label="Project Boards" *ngIf="projectBoards.length">
+                  <mat-option *ngFor="let b of projectBoards" [value]="b.id">
+                    <mat-icon style="vertical-align: middle; margin-right: 8px;">dashboard_customize</mat-icon>
+                    {{ b.name }}
+                  </mat-option>
+                </mat-optgroup>
+              </mat-select>
+            </mat-form-field>
           </div>
-          <div class="storage-type">
-            Storage: {{ storageType }}
-            <!-- Storage type selector dropdown (only visible when connected) -->
-            <select *ngIf="isConnected" 
-                    class="storage-type-selector"
-                    [ngModel]="storageType" 
-                    (ngModelChange)="changeStorageType($event)">
-              <option *ngFor="let type of availableStorageTypes" [value]="type">
-                {{ type }}
-              </option>
-            </select>
+          <div class="connection-controls layout-row layout-align-end-center" style="gap: 16px; flex-wrap: wrap;">
+            <!-- Connection status indicator -->
+            <div class="connection-status-container">
+              <div class="connection-status" [class.connected]="isConnected">
+                {{ isConnected ? 'Connected' : 'Using Demo Data' }}
+              </div>
+              <div class="storage-type">
+                Storage: {{ storageType }}
+                <!-- Storage type selector dropdown (only visible when connected) -->
+                <select *ngIf="isConnected" 
+                        class="storage-type-selector"
+                        [ngModel]="storageType" 
+                        (ngModelChange)="changeStorageType($event)">
+                  <option *ngFor="let type of availableStorageTypes" [value]="type">
+                    {{ type }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Data source toggle -->
+            <div class="data-source-toggle">
+              <label class="toggle-label">
+                <input type="checkbox" 
+                       [checked]="forcingMockData" 
+                       (change)="toggleMockData()">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">{{ forcingMockData ? 'Using Mock Data' : 'Using Real Data' }}</span>
+              </label>
+            </div>
           </div>
         </div>
         
-        <!-- Data source toggle -->
-        <div class="data-source-toggle">
-          <label class="toggle-label">
-            <input type="checkbox" 
-                   [checked]="forcingMockData" 
-                   (change)="toggleMockData()">
-            <span class="toggle-slider"></span>
-            <span class="toggle-text">{{ forcingMockData ? 'Using Mock Data' : 'Using Real Data' }}</span>
-          </label>
+        <!-- Project Phases -->
+        <div class="project-phases">
+          <div class="phase-title">Project Phases:</div>
+          <div class="phases-container">
+            <div *ngFor="let phase of allPhases" 
+                 class="project-phase-indicator" 
+                 [class.active]="isCurrentPhase(phase)"
+                 [class.completed]="isPhaseComplete(phase)"
+                 [class.in-progress]="isPhaseActive(phase) && !isPhaseComplete(phase)"
+                 (click)="switchPhase(phase)">
+              <div class="phase-marker"></div>
+              <div class="phase-label">{{ phaseLabels[phase] }}</div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Project Phases -->
-    <div class="project-phases">
-      <div class="phase-title">Project Phases:</div>
-      <div class="phases-container">
-        <div *ngFor="let phase of allPhases" 
-             class="project-phase-indicator" 
-             [class.active]="isCurrentPhase(phase)"
-             [class.completed]="isPhaseComplete(phase)"
-             [class.in-progress]="isPhaseActive(phase) && !isPhaseComplete(phase)"
-             (click)="switchPhase(phase)">
-          <div class="phase-marker"></div>
-          <div class="phase-label">{{ phaseLabels[phase] }}</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Board navigation -->
-    <div class="board-navigation">
-      <button class="nav-arrow left" (click)="navigateCards('left')" [disabled]="currentCardIndex === 0">
-        <span class="material-icons">chevron_left</span>
-      </button>
-      
-      <div class="workflow-indicator">
-        <div class="workflow-step" [class.active]="isStepActive('backlog')">Backlog</div>
-        <div class="workflow-arrow">→</div>
-        <div class="workflow-step" [class.active]="isStepActive('todo')">To Do</div>
-        <div class="workflow-arrow">→</div>
-        <div class="workflow-step" [class.active]="isStepActive('complete')">Complete</div>
-      </div>
-      
-      <button class="nav-arrow right" (click)="navigateCards('right')" [disabled]="currentCardIndex + cardsToShow >= totalCards">
-        <span class="material-icons">chevron_right</span>
-      </button>
-    </div>
-    
-    <!-- Current phase title -->
-    <div class="phase-header">
-      <h3>{{ phaseLabels[currentPhase] }} Phase</h3>
-      
-      <!-- Categorized view toggle (now shows for all phases) -->
-      <div class="view-toggle">
-        <label class="toggle-label">
-          <input type="checkbox" [checked]="showCategorizedView" (change)="toggleCategorizedView()">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">{{ showCategorizedView ? 'Categorized View' : 'List View' }}</span>
-        </label>
-      </div>
-    </div>
-    
-    <!-- Columns and cards -->
-    <div class="kanban-columns" #columnsContainer>
-      <!-- Check if we should show categorized view for backlog -->
-      <ng-container *ngIf="showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog'">
-        <!-- Render categorized backlog -->
-        <div class="kanban-column backlog-column">
-          <div class="column-header">
-            <h3>{{ visibleColumns[0].name }}</h3>
-            <span class="card-count">{{ visibleColumns[0].cards.length }}</span>
+        
+        <!-- Board navigation -->
+        <div class="board-navigation">
+          <button class="nav-arrow left" (click)="navigateCards('left')" [disabled]="currentCardIndex === 0">
+            <span class="material-icons">chevron_left</span>
+          </button>
+          
+          <div class="workflow-indicator">
+            <div class="workflow-step" [class.active]="isStepActive('backlog')">Backlog</div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step" [class.active]="isStepActive('todo')">To Do</div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step" [class.active]="isStepActive('complete')">Complete</div>
           </div>
           
-          <div class="category-groups">
-            <div *ngFor="let category of categoryGroups" class="category-group">
-              <div class="category-header" (click)="toggleCategory(category)">
-                <h4>{{ category.displayName }}</h4>
-                <span class="category-count">{{ category.cards.length }}</span>
-                <span class="category-toggle material-icons">
-                  {{ category.expanded ? 'expand_less' : 'expand_more' }}
-                </span>
+          <button class="nav-arrow right" (click)="navigateCards('right')" [disabled]="currentCardIndex + cardsToShow >= totalCards">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
+        
+        <!-- Current phase title -->
+        <div class="phase-header">
+          <h3>{{ phaseLabels[currentPhase] }} Phase</h3>
+          
+          <!-- Categorized view toggle (now shows for all phases) -->
+          <div class="view-toggle">
+            <label class="toggle-label">
+              <input type="checkbox" [checked]="showCategorizedView" (change)="toggleCategorizedView()">
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">{{ showCategorizedView ? 'Categorized View' : 'List View' }}</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Columns and cards -->
+        <div class="kanban-columns" #columnsContainer>
+          <!-- Check if we should show categorized view for backlog -->
+          <ng-container *ngIf="showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog'">
+            <!-- Render categorized backlog -->
+            <div class="kanban-column backlog-column">
+              <div class="column-header">
+                <h3>{{ visibleColumns[0].name }}</h3>
+                <span class="card-count">{{ visibleColumns[0].cards.length }}</span>
               </div>
               
-              <div class="category-cards" 
-                  *ngIf="category.expanded"
-                  cdkDropList 
-                  [cdkDropListData]="category.cards" 
-                  (cdkDropListDropped)="onCardDropped($event)">
+              <div class="category-groups">
+                <div *ngFor="let category of categoryGroups" class="category-group">
+                  <div class="category-header" (click)="toggleCategory(category)">
+                    <h4>{{ category.displayName }}</h4>
+                    <span class="category-count">{{ category.cards.length }}</span>
+                    <span class="category-toggle material-icons">
+                      {{ category.expanded ? 'expand_less' : 'expand_more' }}
+                    </span>
+                  </div>
+                  
+                  <div class="category-cards" 
+                      *ngIf="category.expanded"
+                      cdkDropList 
+                      [cdkDropListData]="category.cards" 
+                      (cdkDropListDropped)="onCardDropped($event)">
+                    <div class="kanban-card" 
+                         *ngFor="let card of category.cards; trackBy: trackCardByFn"
+                         cdkDrag
+                         [cdkDragData]="card"
+                         [@cardAnimation]="'default'">
+                      <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
+                      <div class="card-header">
+                        <span class="card-title">{{ card.title }}</span>
+                        <span class="card-priority-indicator" [ngClass]="'priority-' + card.priority">
+                          {{ card.priority }}
+                        </span>
+                      </div>
+                      
+                      <div class="card-description">
+                        {{ card.description }}
+                      </div>
+                      
+                      <div class="card-footer">
+                        <div class="card-tags">
+                          <span class="tag" *ngFor="let tag of card.tags">{{ tag }}</span>
+                        </div>
+                        <div class="card-meta" *ngIf="card.assignee">
+                          <span class="assignee">
+                            <span class="material-icons avatar">person</span>
+                            {{ card.assignee }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Render remaining columns normally -->
+            <section class="kanban-column" *ngFor="let column of visibleColumns.slice(1); trackBy: trackByFn">
+              <div class="column-header">
+                <h3>{{ column.name }}</h3>
+                <span class="card-count">{{ column.cards.length }}</span>
+              </div>
+              
+              <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
                 <div class="kanban-card" 
-                     *ngFor="let card of category.cards; trackBy: trackCardByFn"
+                     *ngFor="let card of column.cards; trackBy: trackCardByFn"
                      cdkDrag
                      [cdkDragData]="card"
                      [@cardAnimation]="'default'">
+                  <!-- Card content - same as before -->
                   <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
                   <div class="card-header">
                     <span class="card-title">{{ card.title }}</span>
@@ -142,134 +204,34 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Render remaining columns normally -->
-        <section class="kanban-column" *ngFor="let column of visibleColumns.slice(1); trackBy: trackByFn">
-          <div class="column-header">
-            <h3>{{ column.name }}</h3>
-            <span class="card-count">{{ column.cards.length }}</span>
-          </div>
-          
-          <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
-            <div class="kanban-card" 
-                 *ngFor="let card of column.cards; trackBy: trackCardByFn"
-                 cdkDrag
-                 [cdkDragData]="card"
-                 [@cardAnimation]="'default'">
-              <!-- Card content - same as before -->
-              <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
-              <div class="card-header">
-                <span class="card-title">{{ card.title }}</span>
-                <span class="card-priority-indicator" [ngClass]="'priority-' + card.priority">
-                  {{ card.priority }}
-                </span>
-              </div>
-              
-              <div class="card-description">
-                {{ card.description }}
-              </div>
-              
-              <div class="card-footer">
-                <div class="card-tags">
-                  <span class="tag" *ngFor="let tag of card.tags">{{ tag }}</span>
-                </div>
-                <div class="card-meta" *ngIf="card.assignee">
-                  <span class="assignee">
-                    <span class="material-icons avatar">person</span>
-                    {{ card.assignee }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Empty state for columns with no cards -->
-            <div class="empty-column-message" *ngIf="column.cards.length === 0">
-              <span class="material-icons">info</span>
-              <p>No cards in this column</p>
-              <p>Drag cards here or add new ones</p>
-            </div>
-          </div>
-        </section>
-      </ng-container>
-      
-      <!-- Regular view (non-categorized or for other phases) -->
-      <ng-container *ngIf="!(showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog')">
-        <section class="kanban-column" *ngFor="let column of visibleColumns; trackBy: trackByFn">
-          <div class="column-header">
-            <h3>{{ column.name }}</h3>
-            <span class="card-count">{{ column.cards.length }}</span>
-          </div>
-          
-          <!-- Regular card view (when categorization is disabled) -->
-          <ng-container *ngIf="!showCategorizedView">
-            <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
-              <div class="kanban-card" 
-                   *ngFor="let card of column.cards; trackBy: trackCardByFn"
-                   cdkDrag
-                   [cdkDragData]="card"
-                   [@cardAnimation]="'default'">
-                <!-- Existing card content -->
-                <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
-                <div class="card-header">
-                  <span class="card-title">{{ card.title }}</span>
-                  <span class="card-priority-indicator" [ngClass]="'priority-' + card.priority">
-                    {{ card.priority }}
-                  </span>
-                </div>
                 
-                <div class="card-description">
-                  {{ card.description }}
-                </div>
-                
-                <div class="card-footer">
-                  <div class="card-tags">
-                    <span class="tag" *ngFor="let tag of card.tags">{{ tag }}</span>
-                  </div>
-                  <div class="card-meta" *ngIf="card.assignee">
-                    <span class="assignee">
-                      <span class="material-icons avatar">person</span>
-                      {{ card.assignee }}
-                    </span>
-                  </div>
+                <!-- Empty state for columns with no cards -->
+                <div class="empty-column-message" *ngIf="column.cards.length === 0">
+                  <span class="material-icons">info</span>
+                  <p>No cards in this column</p>
+                  <p>Drag cards here or add new ones</p>
                 </div>
               </div>
-              
-              <!-- Empty state for columns with no cards -->
-              <div class="empty-column-message" *ngIf="column.cards.length === 0">
-                <span class="material-icons">info</span>
-                <p>No cards in this column</p>
-                <p>Drag cards here or add new ones</p>
-              </div>
-            </div>
+            </section>
           </ng-container>
           
-          <!-- Categorized card view (when categorization is enabled) -->
-          <ng-container *ngIf="showCategorizedView">
-            <div class="column-content">
-              <div *ngFor="let categoryGroup of getColumnCategoryGroups(column)" class="category-group">
-                <div class="category-header" (click)="toggleColumnCategory(column, categoryGroup)">
-                  <h4>{{ categoryGroup.displayName }}</h4>
-                  <span class="category-count">{{ categoryGroup.cards.length }}</span>
-                  <span class="category-toggle material-icons">
-                    {{ categoryGroup.expanded ? 'expand_less' : 'expand_more' }}
-                  </span>
-                </div>
-                
-                <div class="category-cards" 
-                     *ngIf="categoryGroup.expanded"
-                     cdkDropList 
-                     [cdkDropListData]="categoryGroup.cards" 
-                     (cdkDropListDropped)="onCardDropped($event)">
+          <!-- Regular view (non-categorized or for other phases) -->
+          <ng-container *ngIf="!(showCategorizedView && currentPhase === 'planning' && visibleColumns.length > 0 && visibleColumns[0]?.name === 'Backlog')">
+            <section class="kanban-column" *ngFor="let column of visibleColumns; trackBy: trackByFn">
+              <div class="column-header">
+                <h3>{{ column.name }}</h3>
+                <span class="card-count">{{ column.cards.length }}</span>
+              </div>
+              
+              <!-- Regular card view (when categorization is disabled) -->
+              <ng-container *ngIf="!showCategorizedView">
+                <div class="column-content" cdkDropList [cdkDropListData]="column.cards" (cdkDropListDropped)="onCardDropped($event)">
                   <div class="kanban-card" 
-                       *ngFor="let card of categoryGroup.cards; trackBy: trackCardByFn"
+                       *ngFor="let card of column.cards; trackBy: trackCardByFn"
                        cdkDrag
                        [cdkDragData]="card"
                        [@cardAnimation]="'default'">
-                    <!-- Card content -->
+                    <!-- Existing card content -->
                     <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
                     <div class="card-header">
                       <span class="card-title">{{ card.title }}</span>
@@ -294,27 +256,86 @@
                       </div>
                     </div>
                   </div>
+                  
+                  <!-- Empty state for columns with no cards -->
+                  <div class="empty-column-message" *ngIf="column.cards.length === 0">
+                    <span class="material-icons">info</span>
+                    <p>No cards in this column</p>
+                    <p>Drag cards here or add new ones</p>
+                  </div>
                 </div>
-              </div>
+              </ng-container>
               
-              <!-- Empty state for columns with no cards -->
-              <div class="empty-column-message" *ngIf="column.cards.length === 0">
-                <span class="material-icons">info</span>
-                <p>No cards in this column</p>
-                <p>Drag cards here or add new ones</p>
-              </div>
-            </div>
+              <!-- Categorized card view (when categorization is enabled) -->
+              <ng-container *ngIf="showCategorizedView">
+                <div class="column-content">
+                  <div *ngFor="let categoryGroup of getColumnCategoryGroups(column)" class="category-group">
+                    <div class="category-header" (click)="toggleColumnCategory(column, categoryGroup)">
+                      <h4>{{ categoryGroup.displayName }}</h4>
+                      <span class="category-count">{{ categoryGroup.cards.length }}</span>
+                      <span class="category-toggle material-icons">
+                        {{ categoryGroup.expanded ? 'expand_less' : 'expand_more' }}
+                      </span>
+                    </div>
+                    
+                    <div class="category-cards" 
+                         *ngIf="categoryGroup.expanded"
+                         cdkDropList 
+                         [cdkDropListData]="categoryGroup.cards" 
+                         (cdkDropListDropped)="onCardDropped($event)">
+                      <div class="kanban-card" 
+                           *ngFor="let card of categoryGroup.cards; trackBy: trackCardByFn"
+                           cdkDrag
+                           [cdkDragData]="card"
+                           [@cardAnimation]="'default'">
+                        <!-- Card content -->
+                        <div class="card-flag" [ngClass]="'priority-' + card.priority"></div>
+                        <div class="card-header">
+                          <span class="card-title">{{ card.title }}</span>
+                          <span class="card-priority-indicator" [ngClass]="'priority-' + card.priority">
+                            {{ card.priority }}
+                          </span>
+                        </div>
+                        
+                        <div class="card-description">
+                          {{ card.description }}
+                        </div>
+                        
+                        <div class="card-footer">
+                          <div class="card-tags">
+                            <span class="tag" *ngFor="let tag of card.tags">{{ tag }}</span>
+                          </div>
+                          <div class="card-meta" *ngIf="card.assignee">
+                            <span class="assignee">
+                              <span class="material-icons avatar">person</span>
+                              {{ card.assignee }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Empty state for columns with no cards -->
+                  <div class="empty-column-message" *ngIf="column.cards.length === 0">
+                    <span class="material-icons">info</span>
+                    <p>No cards in this column</p>
+                    <p>Drag cards here or add new ones</p>
+                  </div>
+                </div>
+              </ng-container>
+            </section>
           </ng-container>
-        </section>
+        </div>
+        
+        <!-- Card pagination indicator -->
+        <div class="pagination-indicator">
+          <div *ngFor="let i of paginationIndicators" 
+               class="pagination-dot"
+               [class.active]="currentCardIndex === i * cardsToShow"
+               (click)="goToPage(i)"></div>
+        </div>
       </ng-container>
     </div>
-    
-    <!-- Card pagination indicator -->
-    <div class="pagination-indicator">
-      <div *ngFor="let i of paginationIndicators" 
-           class="pagination-dot"
-           [class.active]="currentCardIndex === i * cardsToShow"
-           (click)="goToPage(i)"></div>
-    </div>
-  </ng-container>
+  </div>
 </div>

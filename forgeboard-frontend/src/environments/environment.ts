@@ -4,7 +4,7 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'http://localhost:3000/api',
-  socketBaseUrl: 'http://localhost:3000/socket.io',
+  socketBaseUrl: 'http://localhost:3000',
   useInMemoryMongo: true,
   mongoUri: 'mongodb://localhost:27017/forgeboard',
   logsPath: 'assets/logs',

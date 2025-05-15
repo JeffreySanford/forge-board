@@ -76,7 +76,7 @@ export type {
   MetricsSeries,
   SystemPerformanceSnapshot,
   LogActivitySummary,
-  KanbanActivitySummary,  // Changed from KablanActivitySummary
+  KanbanActivitySummary,
   SecurityMetricsSummary,
   HistoricalMetrics,
   HistoricalMetricsRequest,

@@ -77,6 +77,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   // Map of column ID to category groups for that column
   columnCategoryGroups: Map<string, CategoryGroup[]> = new Map();
   
+  // New properties for board selection
+  boards: KanbanBoard[] = [];
+  selectedBoardId: string | null = null;
+  
   @ViewChild('columnsContainer') columnsContainer!: ElementRef;
   
   private subscriptions = new Subscription();
@@ -97,29 +101,22 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     
     this.subscriptions.add(
       this.kanbanService.getBoards().subscribe(boards => {
+        this.boards = boards;
         if (boards.length > 0) {
-          this.board = boards[0]; // Just take the first board for now
-          
-          // Set current phase from board
+          // If no board selected, default to first
+          if (!this.selectedBoardId || !boards.find(b => b.id === this.selectedBoardId)) {
+            this.selectedBoardId = boards[0].id;
+          }
+          this.board = boards.find(b => b.id === this.selectedBoardId) || boards[0];
           this.currentPhase = this.board.currentPhase;
-          
-          // Group columns by phase
           this.groupColumnsByPhase();
-          
-          // Group cards by category for backlog and all other columns
           this.groupCardsByCategory();
           this.columnCategoryGroups.clear();
           this.board.columns.forEach(column => {
             this.groupCardsByCategoryForColumn(column);
           });
-          
-          // Update visible columns based on phase
           this.updateVisibleColumnsByPhase();
-          
-          // Update pagination indicators
           this.updatePaginationIndicators();
-          
-          // Update workflow step
           this.updateWorkflowStep();
         }
       })
@@ -464,5 +461,33 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     
     const column = this.board.columns.find(col => col.cards === cards);
     return column ? column.id : null;
+  }
+
+  onBoardSelect(boardId: string): void {
+    this.selectedBoardId = boardId;
+    const board = this.boards.find(b => b.id === boardId);
+    if (board) {
+      this.board = board;
+      this.currentPhase = board.currentPhase;
+      this.groupColumnsByPhase();
+      this.groupCardsByCategory();
+      this.columnCategoryGroups.clear();
+      this.board.columns.forEach(column => {
+        this.groupCardsByCategoryForColumn(column);
+      });
+      this.updateVisibleColumnsByPhase();
+      this.updatePaginationIndicators();
+      this.updateWorkflowStep();
+    }
+  }
+
+  // Getter for example boards
+  get exampleBoards(): KanbanBoard[] {
+    return this.boards.filter(b => b.name && b.name.toLowerCase().includes('example'));
+  }
+
+  // Getter for project boards
+  get projectBoards(): KanbanBoard[] {
+    return this.boards.filter(b => !b.name || !b.name.toLowerCase().includes('example'));
   }
 }

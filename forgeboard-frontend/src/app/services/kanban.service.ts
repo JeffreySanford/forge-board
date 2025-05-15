@@ -59,13 +59,12 @@ export class KanbanService implements OnDestroy {
   private forceMockData = false;
   private currentStorageType: string | null = null;
   private socket: Socket;
-
   constructor(
     private socketClient: SocketClientService,
     private backendStatusService: BackendStatusService
   ) {
-    // Initialize socket connection
-    this.socket = this.socketClient.connect('kanban');
+    // Initialize socket connection with proper namespace format
+    this.socket = this.socketClient.connect('/kanban');
     
     // Initialize connection
     this.initializeConnection();

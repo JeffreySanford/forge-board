@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { DiagnosticsService } from '../../services/diagnostics.service';
+import { DiagnosticsService } from '../../services/diagnostics.service'; // Ensure using the service-level diagnostics service
 import {
   MetricData,
   HealthTimelinePoint,

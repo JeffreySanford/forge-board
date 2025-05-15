@@ -17,7 +17,7 @@ import { Subscription } from 'rxjs';
 
 @Injectable()
 @WebSocketGateway({
-  namespace: '/diagnostics',
+  namespace: '/diagnostics', // Keep '/diagnostics' as the primary namespace
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
@@ -40,9 +40,11 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
   ) {
     this.logger.log('DiagnosticsGateway created');
   }
-  
-  afterInit() {
+    afterInit() {
     this.logger.log('Diagnostics Socket.IO server initialized with namespace /diagnostics');
+    // Note: The frontend client may attempt to connect using multiple namespace formats:
+    // '/diagnostics', 'diagnostics', '' (empty string), or '/' (root)
+    // This gateway is configured to use '/diagnostics' as the primary namespace
     
     // Emit health updates at regular intervals
     this.healthInterval = setInterval(() => {

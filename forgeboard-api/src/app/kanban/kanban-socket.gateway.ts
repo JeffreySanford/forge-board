@@ -27,7 +27,7 @@ interface MoveCardPayload {
 
 @Injectable()
 @WebSocketGateway({
-  namespace: 'kanban',
+  namespace: '/kanban',
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],

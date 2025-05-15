@@ -17,7 +17,7 @@
 </div>
 
 <div style="border-left: 5px solid #B22234; padding-left: 15px; margin: 20px 0; background-color: #F0F4FF; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-This document outlines the necessary steps to align all ForgeBoard NX project documentation, and potentially relevant frontend assets, with the recently established <a href="./VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. Achieving this alignment is crucial for maintaining consistency, professionalism, and reinforcing our brand identity.
+This document outlines the necessary steps to align all ForgeBoard NX project documentation, and potentially relevant frontend assets, with the recently established <a href="../forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md">Visual Standards & Documentation Guide</a>. Achieving this alignment is crucial for maintaining consistency, professionalism, and reinforcing our brand identity.
 </div>
 
 ## <span style="color:#B22234; font-weight:bold;">1. Comprehensive Documentation Audit & Update</span>
@@ -37,13 +37,13 @@ This document outlines the necessary steps to align all ForgeBoard NX project do
     <tr style="background-color: #F0F4FF;">
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Inventory Existing Documentation</td>
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Identify all Markdown files, JSDoc comments, and other textual documentation.</td>
-      <td style="border: 1px solid #AAB6D3; padding: 10px;"><code>README.md</code> (root), inline code comments (e.g., <code>logger.service.ts</code>), all files in <code>forgeboard-frontend/src/assets/documentation/</code> (including former <code>docs/</code> content like <code>CONTRIBUTING.md</code>, <code>API.md</code>), etc.</td>
+      <td style="border: 1px solid #AAB6D3; padding: 10px;"><code>README.md</code>, <code>CONTRIBUTING.md</code>, <code>API.md</code>, inline code comments (e.g., <code>logger.service.ts</code>), all files in <code>docs/</code>, etc.</td>
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Low</td>
     </tr>
     <tr style="background-color: #FFE8E8;">
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Apply Document Structure Standards</td>
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Update headers, implement status cards, add introduction blocks, format section headers, and include standard footers/slogans. Add relevant badges.</td>
-      <td style="border: 1px solid #AAB6D3; padding: 10px;">All Markdown documentation within <code>forgeboard-frontend/src/assets/documentation/</code>.</td>
+      <td style="border: 1px solid #AAB6D3; padding: 10px;">All Markdown documentation.</td>
       <td style="border: 1px solid #AAB6D3; padding: 10px;">Medium-High (volume dependent)</td>
     </tr>
     <tr style="background-color: #F0F4FF;">

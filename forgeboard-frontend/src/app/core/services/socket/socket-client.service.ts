@@ -38,9 +38,12 @@ export class SocketClientService implements OnDestroy {
    * @param opts Socket.IO connection options
    * @returns The socket instance
    */  connect(namespace: string = '/', opts: Record<string, unknown> = {}): Socket {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
     // Check for existing socket
-    if (this.sockets.has(namespace)) {
-      const socket = this.sockets.get(namespace);
+    if (this.sockets.has(formattedNamespace)) {
+      const socket = this.sockets.get(formattedNamespace);
       if (socket) return socket;
     }
 
@@ -54,37 +57,34 @@ export class SocketClientService implements OnDestroy {
 
     // Create the socket instance
     const socketUrl = environment.apiBaseUrl || '';
-    const path = namespace === '/' ? '' : namespace;
-    const socket = io(`${socketUrl}${path}`, options);
+    const socket = io(`${socketUrl}${formattedNamespace}`, options);
 
     // Store the socket
-    this.sockets.set(namespace, socket);
-    
-    // Initialize connection status subject
-    if (!this.connectionStatus.has(namespace)) {
-      this.connectionStatus.set(namespace, new BehaviorSubject<boolean>(socket.connected));
+    this.sockets.set(formattedNamespace, socket);
+      // Initialize connection status subject
+    if (!this.connectionStatus.has(formattedNamespace)) {
+      this.connectionStatus.set(formattedNamespace, new BehaviorSubject<boolean>(socket.connected));
     }
 
     // Handle connection events
     fromEvent(socket, 'connect')
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        console.log(`Socket connected to namespace: ${namespace}`);
-        this.connectionStatus.get(namespace)?.next(true);
+        console.log(`Socket connected to namespace: ${formattedNamespace}`);
+        this.connectionStatus.get(formattedNamespace)?.next(true);
       });
 
     fromEvent(socket, 'disconnect')
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        console.log(`Socket disconnected from namespace: ${namespace}`);
-        this.connectionStatus.get(namespace)?.next(false);
-      });
-
-    fromEvent(socket, 'connect_error')
+        console.log(`Socket disconnected from namespace: ${formattedNamespace}`);
+        this.connectionStatus.get(formattedNamespace)?.next(false);
+      });    fromEvent(socket, 'connect_error')
       .pipe(takeUntil(this.destroy$))
       .subscribe((err) => {
-        console.error(`Socket connection error on namespace ${namespace}:`, err);
-        this.connectionStatus.get(namespace)?.next(false);
+        console.error(`Socket connection error on namespace ${formattedNamespace}:`, err);
+        console.info(`Connection details: URL=${socketUrl}${formattedNamespace}, path=${options.path}`);
+        this.connectionStatus.get(formattedNamespace)?.next(false);
       });
 
     return socket;
@@ -94,11 +94,13 @@ export class SocketClientService implements OnDestroy {
    * Get a socket by namespace
    * @param namespace The namespace to get (default: '/')
    * @returns The socket instance or undefined if not connected
-   */
-  getSocket(namespace: string): Socket {
-    const socket = this.sockets.get(namespace);
+   */  getSocket(namespace: string): Socket {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    const socket = this.sockets.get(formattedNamespace);
     if (!socket) {
-      throw new Error(`Socket for namespace ${namespace} not found`);
+      throw new Error(`Socket for namespace ${formattedNamespace} not found`);
     }
     return socket;
   }
@@ -108,18 +110,21 @@ export class SocketClientService implements OnDestroy {
    * @param namespace The namespace to check (default: '/')
    * @returns Observable of connection status (true = connected)
    */  connectionState(namespace: string = '/'): Observable<boolean> {
-    if (!this.connectionStatus.has(namespace)) {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    if (!this.connectionStatus.has(formattedNamespace)) {
       let connected = false;
-      if (this.sockets.has(namespace)) {
-        const socket = this.sockets.get(namespace);
+      if (this.sockets.has(formattedNamespace)) {
+        const socket = this.sockets.get(formattedNamespace);
         if (socket) {
           connected = socket.connected;
         }
       }
-      this.connectionStatus.set(namespace, new BehaviorSubject<boolean>(connected));
+      this.connectionStatus.set(formattedNamespace, new BehaviorSubject<boolean>(connected));
     }
     
-    const connectionStatus = this.connectionStatus.get(namespace);
+    const connectionStatus = this.connectionStatus.get(formattedNamespace);
     return connectionStatus ? connectionStatus.asObservable() : new BehaviorSubject<boolean>(false).asObservable();
   }
 
@@ -128,10 +133,12 @@ export class SocketClientService implements OnDestroy {
    * @param eventName The event name to listen for
    * @param namespace The namespace to listen on (default: '/')
    * @returns Observable that emits event data
-   */
-  listen<T>(eventName: string, namespace: string = '/'): Observable<T> {
+   */  listen<T>(eventName: string, namespace: string = '/'): Observable<T> {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
     // Get or create socket for namespace
-    const socket = this.sockets.get(namespace) || this.connect(namespace);
+    const socket = this.sockets.get(formattedNamespace) || this.connect(formattedNamespace);
     
     // Create observable for event
     return new Observable<T>(observer => {
@@ -155,10 +162,12 @@ export class SocketClientService implements OnDestroy {
    * @param data The data to send
    * @param namespace The namespace to emit to (default: '/')
    * @param callback Optional callback for acknowledgements
-   */
-  emit(eventName: string, data: unknown, namespace: string = '/', callback?: (response: unknown) => void): void {
+   */  emit(eventName: string, data: unknown, namespace: string = '/', callback?: (response: unknown) => void): void {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
     // Get or create socket for namespace
-    const socket = this.sockets.get(namespace) || this.connect(namespace);
+    const socket = this.sockets.get(formattedNamespace) || this.connect(formattedNamespace);
     
     // Emit the event
     if (callback) {
@@ -171,38 +180,41 @@ export class SocketClientService implements OnDestroy {
   /**
    * Disconnect a specific socket by namespace
    * @param namespace The namespace to disconnect (default: '/')
-   */
-  disconnect(namespace: string = '/'): void {
-    const socket = this.sockets.get(namespace);
+   */  disconnect(namespace: string = '/'): void {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    const socket = this.sockets.get(formattedNamespace);
     
     if (socket) {
       socket.disconnect();
-      this.sockets.delete(namespace);
-      this.connectionStatus.get(namespace)?.next(false);
+      this.sockets.delete(formattedNamespace);
+      this.connectionStatus.get(formattedNamespace)?.next(false);
     }
   }
 
   /**
    * Disconnect a specific socket by namespace
    * @param namespace The namespace to disconnect (default: '/')
-   */
-  disconnectSocket(namespace: string): void {
-    const socket = this.sockets.get(namespace);
+   */  disconnectSocket(namespace: string): void {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    const socket = this.sockets.get(formattedNamespace);
     if (socket) {
       try {
         socket.disconnect();
-        this.sockets.delete(namespace);
-        console.log(`Socket ${namespace} disconnected and removed`);
+        this.sockets.delete(formattedNamespace);
+        console.log(`Socket ${formattedNamespace} disconnected and removed`);
       } catch (error) {
-        console.error(`Error disconnecting socket ${namespace}:`, error);
+        console.error(`Error disconnecting socket ${formattedNamespace}:`, error);
       }
     }
   }
 
   /**
    * Disconnect all sockets
-   */
-  disconnectAll(): void {
+   */  disconnectAll(): void {
     for (const [namespace, socket] of this.sockets.entries()) {
       if (socket) {
         try {
@@ -214,6 +226,68 @@ export class SocketClientService implements OnDestroy {
     }
     this.sockets.clear();
     console.log('All sockets disconnected');
+  }
+  
+  /**
+   * Attempt to reconnect a specific socket namespace
+   * @param namespace The namespace to reconnect
+   * @returns Observable that emits true if reconnected successfully
+   */  reconnect(namespace: string): Observable<boolean> {
+    // Format namespace properly with leading slash
+    const formattedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    const reconnectSubject = new BehaviorSubject<boolean>(false);
+    
+    // Get the existing socket or create a new one
+    let socket = this.sockets.get(formattedNamespace);
+    
+    if (socket) {
+      console.log(`Attempting to reconnect namespace: ${formattedNamespace}`);
+      
+      // Try to connect if not already connected
+      if (!socket.connected) {
+        socket.connect();
+        
+        // Set up a one-time connect event
+        socket.once('connect', () => {
+          console.log(`Successfully reconnected to namespace: ${formattedNamespace}`);
+          reconnectSubject.next(true);
+          reconnectSubject.complete();
+        });
+        
+        // Set up a one-time error event
+        socket.once('connect_error', (err) => {
+          console.error(`Failed to reconnect to namespace: ${formattedNamespace}`, err);
+          reconnectSubject.next(false);
+          reconnectSubject.complete();
+        });
+      } else {
+        // Already connected
+        reconnectSubject.next(true);
+        reconnectSubject.complete();
+      }
+    } else {
+      // No existing socket, try creating a new one
+      try {
+        socket = this.connect(formattedNamespace);
+        socket.once('connect', () => {
+          reconnectSubject.next(true);
+          reconnectSubject.complete();
+        });
+        
+        socket.once('connect_error', (err) => {
+          console.error(`Failed to connect to namespace: ${formattedNamespace}`, err);
+          reconnectSubject.next(false);
+          reconnectSubject.complete();
+        });
+      } catch (error) {
+        console.error(`Error creating socket for namespace: ${formattedNamespace}`, error);
+        reconnectSubject.next(false);
+        reconnectSubject.complete();
+      }
+    }
+    
+    return reconnectSubject.asObservable();
   }
 
   /**

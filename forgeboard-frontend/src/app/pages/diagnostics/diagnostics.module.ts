@@ -8,7 +8,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { DiagnosticsComponent } from './diagnostics.component';
-import { DiagnosticsService } from './diagnostics.service';
 import { JwtDiagnosticsModule } from '../../components/jwt-diagnostics/jwt-diagnostics.module'; // Import JwtDiagnosticsModule
 
 @NgModule({
@@ -19,12 +18,11 @@ import { JwtDiagnosticsModule } from '../../components/jwt-diagnostics/jwt-diagn
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatDividerModule,
-    MatProgressBarModule,
+    MatDividerModule,    MatProgressBarModule,
     MatChipsModule,
-    JwtDiagnosticsModule, // Add JwtDiagnosticsModule to imports
+    JwtDiagnosticsModule // Add JwtDiagnosticsModule to imports
   ],
   exports: [DiagnosticsComponent],
-  providers: [DiagnosticsService]
+  providers: [] // Removed page-level DiagnosticsService, now using service-level one
 })
 export class DiagnosticsModule { }

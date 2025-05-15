@@ -27,10 +27,11 @@ export interface EnhancedHealthData extends HealthData {
 @Injectable({
   providedIn: 'root'
 })
-export class DiagnosticsService implements OnDestroy {
-  private socket!: Socket; // Added definite assignment assertion  
-  private API_URL: string; // Make API_URL configurable
-  private readonly DIAGNOSTICS_NAMESPACE = 'diagnostics'; // Namespace without leading slash
+export class DiagnosticsService implements OnDestroy {  private socket!: Socket; // Added definite assignment assertion  
+  private API_URL: string; // Make API_URL configurable  
+  // List of available namespaces to try in order of preference
+  private readonly namespaces = ['/diagnostics', 'diagnostics', '', '/'];
+  private currentNamespaceIndex = 0;
 
   // Socket data subjects
   private healthUpdatesSubject = new BehaviorSubject<EnhancedHealthData | null>(null);
@@ -78,8 +79,18 @@ export class DiagnosticsService implements OnDestroy {
       }
     } else {
       this.API_URL = 'http://localhost:3000'; // Default if no relevant URL in env
+    }    // Check if we have a last successful namespace and prioritize it
+    const lastSuccessfulNamespace = localStorage.getItem('lastSuccessfulSocketNamespace');
+    if (lastSuccessfulNamespace) {
+      // Find the index of the last successful namespace
+      const index = this.namespaces.indexOf(lastSuccessfulNamespace);
+      if (index !== -1) {
+        // Move the successful namespace to the front of the array
+        this.currentNamespaceIndex = index;
+        console.log(`Using last successful namespace: ${lastSuccessfulNamespace}`);
+      }
     }
-
+    
     this.initializeSocketConnection();
 
     // Monitor backend status for reconnection
@@ -91,26 +102,45 @@ export class DiagnosticsService implements OnDestroy {
       }
     });
   }  private initializeSocketConnection(): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.disconnect();
+    // Clean up any existing socket connection
+    this.cleanupSocket();
+    
+    // Get the current namespace to try
+    const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+    const socketUrl = `${this.API_URL}`;
+    
+    console.log(`DiagnosticsService: Connecting to socket at ${socketUrl} with namespace '${currentNamespace}'`);
+    
+    let fullUrl: string;
+    if (currentNamespace === '') {
+      // Connect to root namespace
+      fullUrl = socketUrl;
+    } else if (currentNamespace === '/') {
+      // Another way to connect to root namespace
+      fullUrl = socketUrl + '/';
+    } else if (currentNamespace.startsWith('/')) {
+      // Namespace already has leading slash
+      fullUrl = socketUrl + currentNamespace;
+    } else {
+      // Add leading slash to namespace
+      fullUrl = `${socketUrl}/${currentNamespace}`;
     }
 
-    // Use the proper Socket.IO namespace format - namespace should be provided as part of the URL
-    const socketUrl = `${this.API_URL}/${this.DIAGNOSTICS_NAMESPACE}`;
-    
-    console.log(`DiagnosticsService: Connecting to socket at ${socketUrl}`);
-    
-    this.socket = io(socketUrl, {
-      path: '/socket.io',
+    this.socket = io(fullUrl, {
       transports: ['websocket'],
       reconnection: false, // Disable automatic reconnection to manage it manually
-      forceNew: true,
+      forceNew: true
     });
 
     this.connectionStatusSubject.next(false);    this.socket.on('connect', () => {
       this.connectionStatusSubject.next(true);
       this.currentReconnectAttempt = 0; // Reset reconnect attempts on successful connection
-      console.log('Connected to diagnostics socket namespace.');
+      const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+      console.log(`Successfully connected to diagnostics socket with namespace '${currentNamespace}'.`);
+      
+      // Store the successful namespace for future connections
+      localStorage.setItem('lastSuccessfulSocketNamespace', currentNamespace);
+      
       // Update backend status service to reflect connected state
       this.backendStatusService.updateGatewayStatus('diagnostics', true, false);
       this.setupSocketEventHandlers();
@@ -125,14 +155,37 @@ export class DiagnosticsService implements OnDestroy {
         // Attempt to reconnect if not a manual disconnect
         this.attemptReconnect();
       }
-    });
-
-    this.socket.on('connect_error', (error) => {
+    });    this.socket.on('connect_error', (error) => {
       this.connectionStatusSubject.next(false);
-      console.error('Diagnostics socket connection error:', error);
+      const currentNamespace = this.namespaces[this.currentNamespaceIndex];
+      console.error(`Diagnostics socket connection error with namespace '${currentNamespace}':`, error);
+      console.error('Connection details:', {
+        url: fullUrl,
+        namespace: currentNamespace,
+        baseUrl: socketUrl,
+        path: '/socket.io'
+      });
+      
+      // Check if error message indicates namespace issues
+      const errorMsg = error.toString();
+      const isNamespaceError = errorMsg.includes('Invalid namespace') || errorMsg.includes('Namespace not found');
+      
       // Update backend status service to reflect error state
       this.backendStatusService.updateGatewayStatus('diagnostics', false, false);
-      this.attemptReconnect(); // Attempt to reconnect on connection error
+      
+      // Try the next namespace if available
+      if (this.currentNamespaceIndex < this.namespaces.length - 1) {
+        this.currentNamespaceIndex++;
+        console.log(`Trying next namespace: ${this.namespaces[this.currentNamespaceIndex]}`);
+        this.initializeSocketConnection();
+      } else {
+        // Reset to the first namespace for next reconnection attempt
+        this.currentNamespaceIndex = 0;
+        if (isNamespaceError) {
+          console.warn('All namespace attempts failed. The server might be using a different namespace configuration.');
+        }
+        this.attemptReconnect(); // Attempt to reconnect after delay
+      }
     });
   }
   
@@ -219,28 +272,30 @@ export class DiagnosticsService implements OnDestroy {
 
     // Request initial data upon connection (optional, if backend sends it)
     this.socket.emit('request-initial-timeline');
-  }
-
-  private attemptReconnect(): void {
+  }  private attemptReconnect(): void {
     if (this.currentReconnectAttempt < this.maxReconnectAttempts && (!this.socket || !this.socket.connected)) {
       this.currentReconnectAttempt++;
       console.log(`Attempting to reconnect to diagnostics socket... (Attempt ${this.currentReconnectAttempt}/${this.maxReconnectAttempts})`);
+      
+      // Reset namespace index to try all namespaces again
+      this.currentNamespaceIndex = 0;
+      
       // Use a timer for delay before retrying connection
-      timer(3000 * this.currentReconnectAttempt) // Exponential backoff or fixed delay
+      timer(3000 * this.currentReconnectAttempt) // Exponential backoff
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => {
           if (!this.socket || !this.socket.connected) {
-             this.initializeSocketConnection(); // Re-initialize the connection attempt
+            this.initializeSocketConnection(); // Re-initialize the connection attempt
           }
         });
     } else if (this.currentReconnectAttempt >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached for diagnostics socket.');
     }
   }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  /**
+   * Cleans up socket connections and event listeners
+   */
+  private cleanupSocket(): void {
     if (this.socket) {
       // Remove event listeners
       this.socket.off('connect');
@@ -252,15 +307,28 @@ export class DiagnosticsService implements OnDestroy {
       this.socket.off('live-metric-update');
       this.socket.off('timeline-update');
       
-      this.socket.disconnect();
-      console.log('DiagnosticsService: Socket disconnected on destroy.');
+      // Disconnect if connected
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
+      console.log('DiagnosticsService: Socket cleaned up.');
     }
+  }  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Clean up socket connection explicitly in ngOnDestroy to satisfy ESLint rule
+    this.cleanupSocket();
+    
+    // Complete all subjects
     this.healthUpdatesSubject.complete();
     this.socketStatusSubject.complete();
     this.socketLogsSubject.complete();
-    this.liveMetricsSubject.complete(); // Added
-    this.timelinePointsSubject.complete(); // Complete the new subject
+    this.liveMetricsSubject.complete();
+    this.timelinePointsSubject.complete();
     this.connectionStatusSubject.complete();
+    
+    console.log('DiagnosticsService: Socket disconnected and service destroyed.');
   }
 
   // Public Observables
@@ -288,10 +356,10 @@ export class DiagnosticsService implements OnDestroy {
   public getTimelinePoints(): Observable<HealthTimelinePoint[]> {
     return this.timelinePointsSubject.asObservable();
   }
-  
-  // HTTP methods
+    // HTTP methods
   public getHealth(): Observable<HealthData> {
-    return this.http.get<HealthData>(`${this.API_URL}/api/diagnostics/health`).pipe( // Use API_URL for HTTP calls too, assuming /api is part of it or handled by interceptor
+    // For HTTP calls, use the apiBaseUrl from environment which includes /api path
+    return this.http.get<HealthData>(`${this.envConfig.apiBaseUrl}/diagnostics/health`).pipe(
       catchError(err => {
         console.error('Error fetching health data via HTTP', err);
         return throwError(() => err);
@@ -299,12 +367,32 @@ export class DiagnosticsService implements OnDestroy {
     );
   }
   
-  public getSocketInfo(): Observable<SocketStatusUpdate> { // Assuming this maps to a real endpoint
-    return this.http.get<SocketStatusUpdate>(`${this.API_URL}/api/diagnostics/socket-info`).pipe( // Use API_URL
+  public getSocketInfo(): Observable<SocketStatusUpdate> {
+    // For HTTP calls, use the apiBaseUrl from environment which includes /api path
+    return this.http.get<SocketStatusUpdate>(`${this.envConfig.apiBaseUrl}/diagnostics/socket-info`).pipe(
       catchError(err => {
         console.error('Error fetching socket info via HTTP', err);
         return throwError(() => err);
       })
     );
+  }
+  // Try connection with alternative namespaces if primary fails
+  private tryAlternativeNamespaces(): void {
+    console.log('Trying connection with alternative namespaces...');
+    
+    // Clean up existing socket first
+    this.cleanupSocket();
+    
+    // Move to the next namespace in the list
+    if (this.currentNamespaceIndex < this.namespaces.length - 1) {
+      this.currentNamespaceIndex++;
+      console.log(`Trying next namespace: ${this.namespaces[this.currentNamespaceIndex]}`);
+      this.initializeSocketConnection();
+    } else {
+      // If we've tried all namespaces, reset to the first one for next attempt
+      this.currentNamespaceIndex = 0;
+      console.error('All namespace attempts failed. Will retry after delay.');
+      this.attemptReconnect();
+    }
   }
 }
