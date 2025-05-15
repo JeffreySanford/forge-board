@@ -1,13 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req, Res, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Req, Res, UseGuards, Headers } from '@nestjs/common';
+import { Observable, catchError, tap } from 'rxjs';
+import { Response } from 'express';
+import { OscalService } from './oscal.service';
+import { LoggerService } from '../common/logger.service';
+import { AuditService } from '../security/audit.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/require-permissions.decorator';
-import { LoggerService } from '../common/logger.service';
-import { AuditService } from '../security/audit.service';
-import { OscalService } from './oscal.service';
-import { Observable } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
-import { Response } from 'express';
 
 @Controller('api/oscal')
 export class OscalController {
@@ -35,17 +34,10 @@ export class OscalController {
     
     return this.oscalService.getDocuments(type, limit, offset).pipe(
       tap(documents => {
-        this.logger.debug('OSCAL documents retrieved', {
-          userId: user.id,
-          count: documents.length,
-          filters: { type, limit, offset }
-        });
+        this.logger.debug(`OSCAL documents retrieved - userId: ${user.id}, count: ${documents.length}, filters: ${JSON.stringify({ type, limit, offset })}`);
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL documents', {
-          userId: user.id,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve OSCAL documents - userId: ${user.id}, error: ${err.message}`);
         throw err;
       })
     );
@@ -68,18 +60,10 @@ export class OscalController {
     
     return this.oscalService.getDocumentById(id).pipe(
       tap(document => {
-        this.logger.debug('OSCAL document retrieved', {
-          userId: user.id,
-          documentId: id,
-          documentType: document.documentType
-        });
+        this.logger.debug(`OSCAL document retrieved - userId: ${user.id}, documentId: ${id}, documentType: ${document.documentType}`);
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL document', {
-          userId: user.id,
-          documentId: id,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve OSCAL document - userId: ${user.id}, documentId: ${id}, error: ${err.message}`);
         throw err;
       })
     );
@@ -106,17 +90,14 @@ export class OscalController {
       details: { format: 'xml', download: wantsDownload },
       success: true
     });
-    
+
     this.oscalService.getDocumentAsXml(id).subscribe({
       next: xmlContent => {
-        this.logger.debug('OSCAL document XML generated', {
-          userId: user.id,
-          documentId: id
-        });
-        
+        this.logger.debug(`OSCAL document XML generated - userId: ${user.id}, documentId: ${id}`);
+
         if (wantsDownload) {
           res.setHeader('Content-Type', 'application/xml');
-          res.setHeader('Content-Disposition', `attachment; filename=oscal-document-${id}.xml`);
+          res.setHeader('Content-Disposition', `attachment; filename="oscal-document-${id}.xml"`);
         } else {
           res.setHeader('Content-Type', 'application/xml');
         }
@@ -124,11 +105,7 @@ export class OscalController {
         res.send(xmlContent);
       },
       error: err => {
-        this.logger.error('Failed to generate XML for OSCAL document', {
-          userId: user.id,
-          documentId: id,
-          error: err.message
-        });
+        this.logger.error(`Failed to generate XML for OSCAL document - userId: ${user.id}, documentId: ${id}, error: ${err.message}`);
         res.status(500).json({
           error: 'Failed to generate XML document',
           message: err.message
@@ -158,28 +135,22 @@ export class OscalController {
       details: { format: 'json', download: wantsDownload },
       success: true
     });
-    
+
     this.oscalService.getDocumentById(id).subscribe({
       next: document => {
-        this.logger.debug('OSCAL document JSON retrieved', {
-          userId: user.id,
-          documentId: id
-        });
-        
+        this.logger.debug(`OSCAL document JSON retrieved - userId: ${user.id}, documentId: ${id}`);
+
         if (wantsDownload) {
           res.setHeader('Content-Type', 'application/json');
-          res.setHeader('Content-Disposition', `attachment; filename=oscal-document-${id}.json`);
-          res.send(JSON.stringify(document, null, 2));
+          res.setHeader('Content-Disposition', `attachment; filename="oscal-document-${id}.json"`);
         } else {
-          res.json(document);
+          res.setHeader('Content-Type', 'application/json');
         }
+        
+        res.send(JSON.stringify(document, null, 2));
       },
       error: err => {
-        this.logger.error('Failed to retrieve JSON for OSCAL document', {
-          userId: user.id,
-          documentId: id,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve JSON for OSCAL document - userId: ${user.id}, documentId: ${id}, error: ${err.message}`);
         res.status(500).json({
           error: 'Failed to retrieve JSON document',
           message: err.message
@@ -194,7 +165,7 @@ export class OscalController {
   validateDocument(@Param('id') id: string, @Req() req): Observable<any> {
     const { user } = req;
     
-    // Audit the validation request
+    // Audit the API access
     this.auditService.log({
       action: 'OSCAL_DOCUMENT_VALIDATION_REQUESTED',
       actor: user.id,
@@ -205,14 +176,9 @@ export class OscalController {
     
     return this.oscalService.validateDocument(id).pipe(
       tap(result => {
-        this.logger.info('OSCAL document validation completed', {
-          userId: user.id,
-          documentId: id,
-          valid: result.valid,
-          errorCount: result.errors?.length || 0
-        });
-        
-        // Audit the validation result
+        this.logger.info(`OSCAL document validation completed - userId: ${user.id}, documentId: ${id}, valid: ${result.valid}, errorCount: ${result.errors?.length || 0}`);
+
+        // Log validation result
         this.auditService.log({
           action: 'OSCAL_DOCUMENT_VALIDATION_COMPLETED',
           actor: user.id,
@@ -226,16 +192,12 @@ export class OscalController {
         });
       }),
       catchError(err => {
-        this.logger.error('Failed to validate OSCAL document', {
-          userId: user.id,
-          documentId: id,
-          error: err.message
-        });
+        this.logger.error(`Failed to validate OSCAL document - userId: ${user.id}, documentId: ${id}, error: ${err.message}`);
         throw err;
       })
     );
   }
-
+  
   @Get('templates')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('oscal:read')
@@ -252,16 +214,10 @@ export class OscalController {
     
     return this.oscalService.getTemplates().pipe(
       tap(templates => {
-        this.logger.debug('OSCAL templates retrieved', {
-          userId: user.id,
-          count: templates.length
-        });
+        this.logger.debug(`OSCAL templates retrieved - userId: ${user.id}, count: ${templates.length}`);
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL templates', {
-          userId: user.id,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve OSCAL templates - userId: ${user.id}, error: ${err.message}`);
         throw err;
       })
     );
@@ -284,17 +240,10 @@ export class OscalController {
     
     return this.oscalService.getTemplateByType(type).pipe(
       tap(template => {
-        this.logger.debug('OSCAL template retrieved', {
-          userId: user.id,
-          templateType: type
-        });
+        this.logger.debug(`OSCAL template retrieved - userId: ${user.id}, templateType: ${type}`);
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL template', {
-          userId: user.id,
-          templateType: type,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve OSCAL template - userId: ${user.id}, templateType: ${type}, error: ${err.message}`);
         throw err;
       })
     );
@@ -316,16 +265,10 @@ export class OscalController {
     
     return this.oscalService.getBaselines().pipe(
       tap(baselines => {
-        this.logger.debug('OSCAL baselines retrieved', {
-          userId: user.id,
-          count: baselines.length
-        });
+        this.logger.debug(`OSCAL baselines retrieved - userId: ${user.id}, count: ${baselines.length}`);
       }),
       catchError(err => {
-        this.logger.error('Failed to retrieve OSCAL baselines', {
-          userId: user.id,
-          error: err.message
-        });
+        this.logger.error(`Failed to retrieve OSCAL baselines - userId: ${user.id}, error: ${err.message}`);
         throw err;
       })
     );
