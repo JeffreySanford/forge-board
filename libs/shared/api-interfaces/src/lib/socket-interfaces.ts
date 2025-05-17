@@ -110,6 +110,4 @@ export interface DiagnosticSocketEvent<TData = unknown> {
 
 // Socket response functions are now centralized in api-response.ts
 // and exported from the main index.ts file
-
-// Mark this file as a Socket module
-export const __socketInterfaces = true;
+// All types are exported individually

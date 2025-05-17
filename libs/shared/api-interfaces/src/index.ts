@@ -65,6 +65,16 @@ export {
   Tile
 } from './lib/metrics-types';
 
+// Tile types
+export {
+  TileLayoutResponse,
+  TileLayoutRequest,
+  TileVisibility,
+  TileResponse,
+  TileDragEvent,
+  MemoryData
+} from './lib/tile-types';
+
 // API interfaces
 export {
   ApiResponse,
@@ -123,7 +133,14 @@ export {
   isSocketResponse,
   isSuccessResponse,
   isErrorResponse,
-  validateSocketResponse
+  validateSocketResponse,
+  // Add the missing validation functions
+  validateHealthData,
+  validateMetricData,
+  validateHistoricalMetrics,
+  validateDiagnosticEvent,
+  validateLogResponse,
+  validateUser
 } from './lib/type-validation';
 
 // Diagnostic types
@@ -169,3 +186,16 @@ export {
   SocketInfoDto,
   DiagnosticSocketEventDto
 } from './lib/socket-info.dto';
+
+// Security event types
+export {
+  SecurityEvent,
+  SecurityEventSeverity,
+  SecurityEventStatus,
+  SecurityEventType,
+  SbomEvent,
+  ScaEvent,
+  ZapEvent,
+  SupplyChainEvent,
+  FedRampEvent
+} from './lib/security-types';

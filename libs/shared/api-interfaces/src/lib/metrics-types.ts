@@ -70,5 +70,4 @@ export interface Tile {
   type: TileType;
 }
 
-// Mark this module for export
-export const __metricsTypes = true;
+// Module marker removed, types are now exported individually

@@ -26,6 +26,5 @@ export interface DiagnosticEventResponse {
   eventType: string;
 }
 
-// Mark this module for export
-export const __diagnosticTypes = true;
+// Module marker removed, types are now exported individually
 

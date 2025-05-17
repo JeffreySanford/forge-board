@@ -75,5 +75,4 @@ export interface FedRampEvent extends SecurityEvent {
 
 // Add additional security-related types as needed
 
-// Mark this module for export
-export const __securityTypes = true;
+// Module marker removed, types are now exported individually

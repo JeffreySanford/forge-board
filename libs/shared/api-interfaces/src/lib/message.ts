@@ -39,5 +39,4 @@ export interface ActionMessage extends Message {
   actionData?: Record<string, unknown>;
 }
 
-// Mark this file as a module
-export const __messageTypes = true;
+// Module marker removed, types are now exported individually

@@ -2,8 +2,7 @@
  * Types related to logging system
  */
 
-// Mark file as having exports
-export const __logTypes = true;
+// Export all log types explicitly at the end of the file
 
 /**
  * Enum for log levels
@@ -206,3 +205,5 @@ export interface LogQueryResponse {
     bySource: Record<string, number>;
   };
 }
+
+// Module marker removed, types are now exported individually

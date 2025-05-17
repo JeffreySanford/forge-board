@@ -172,5 +172,4 @@ export type SuccessResponse<T> = ApiResponseData<T> & {
   status: StatusCode.SUCCESS;
 };
 
-// Mark this module for export
-export const __apiResponse = true;
+// Module marker removed, types are now exported individually

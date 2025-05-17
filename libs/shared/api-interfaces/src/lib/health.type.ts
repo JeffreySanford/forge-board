@@ -37,7 +37,8 @@ export interface HealthDetail {
 }
 
 /**
- * Health timeline point
+ * Health timeline point interface
+ * @deprecated Use HealthTimelinePoint from './health-timeline' instead to avoid duplication
  */
 export interface HealthTimelinePoint {
   timestamp: string;
@@ -46,5 +47,4 @@ export interface HealthTimelinePoint {
   metadata?: Record<string, unknown>;
 }
 
-// Mark this module for export
-export const __healthTypes = true;
+// Module marker removed, types are now exported individually

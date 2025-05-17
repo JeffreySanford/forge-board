@@ -33,5 +33,4 @@ export interface AuthState {
   expiresAt?: number;
 }
 
-// Mark this file as an Auth module
-export const __authInterfaces = true;
+// Module marker removed, interfaces are now exported individually

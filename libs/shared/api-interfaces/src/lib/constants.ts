@@ -51,5 +51,4 @@ export const FALLBACK_ENDPOINTS = {
   LOGS_V2: '/api/v2/logs'
 };
 
-// Mark this file as a Constants module
-export const __constants = true;
+// Module marker removed, constants are now exported individually

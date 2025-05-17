@@ -37,5 +37,4 @@ export interface UserPreferences {
   [key: string]: unknown;
 }
 
-// Mark this module for export
-export const __userTypes = true;
+// Module marker removed, types are now exported individually
