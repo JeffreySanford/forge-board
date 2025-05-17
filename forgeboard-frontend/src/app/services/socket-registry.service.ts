@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { Socket } from 'socket.io-client';
-import { HttpClient } from '@angular/common/http'; // Import HttpClient
-import { SocketInfo } from '@forge-board/shared/api-interfaces'; // Import SocketInfo
+import { HttpClient } from '@angular/common/http';
+import { SocketInfo, SocketStatusUpdate } from '@forge-board/shared/api-interfaces';
+import { catchError, map, retry } from 'rxjs/operators';
 
 interface SocketConnection {
   namespace: string;
@@ -16,9 +17,10 @@ interface SocketConnection {
 export class SocketRegistryService {
   private sockets: Map<string, SocketConnection> = new Map();
   private socketsSubject = new BehaviorSubject<SocketConnection[]>([]);
-  private apiUrl = '/api/sockets'; // Define the API URL
+  // Fix: Update API URL to use the correct path
+  private apiUrl = '/api'; // Base API URL
 
-  constructor(private http: HttpClient) { // Inject HttpClient
+  constructor(private http: HttpClient) {
     console.log('Socket Registry Service initialized');
   }
 
@@ -69,7 +71,35 @@ export class SocketRegistryService {
    * Fetches all active sockets from the backend.
    */
   getBackendActiveSockets(): Observable<SocketInfo[]> {
-    return this.http.get<SocketInfo[]>(`${this.apiUrl}/active`);
+    // Fix: Update the API path to match the backend controller
+    return this.http.get<SocketInfo[] | { activeSockets?: SocketInfo[] } | { data?: SocketInfo[] }>(`${this.apiUrl}/sockets/active`)
+      .pipe(
+        retry(1),
+        map(response => {
+          // Log the raw response for debugging
+          console.log('Raw socket response:', response);
+          
+          // Handle various response formats
+          if (Array.isArray(response)) {
+            return response;
+          } else if (response && typeof response === 'object') {
+            if ('activeSockets' in response && Array.isArray(response.activeSockets)) {
+              return response.activeSockets;
+            } else if ('data' in response && Array.isArray(response.data)) {
+              return response.data;
+            }
+          }
+          
+          // If we can't determine the format, return an empty array
+          console.warn('Unknown response format from socket API:', response);
+          return [];
+        }),
+        catchError(error => {
+          console.error('Error fetching active sockets:', error);
+          // Return an empty array instead of throwing to prevent UI errors
+          return throwError(() => new Error('Failed to load socket information'));
+        })
+      );
   }
 
   /**

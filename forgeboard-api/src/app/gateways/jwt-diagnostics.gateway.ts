@@ -64,14 +64,13 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
   
   handleConnection(client: Socket) {
     this.logger.log(`Client connected to auth diagnostics: ${client.id}`);
-    
     // Register socket
     this.socketRegistry.registerSocket(client, '/auth-diagnostics');
-    
+    // Emit connection-status for status bar
+    client.emit('connection-status', { status: 'success', data: { connected: true }, timestamp: new Date().toISOString() });
     // Send initial data
     const events = this.jwtDiagnostics.getCurrentEvents();
     const stats = this.jwtDiagnostics.getCurrentStats();
-    
     client.emit('auth-events', createSocketResponse('auth-events', events));
     client.emit('auth-stats', createSocketResponse('auth-stats', stats));
   }
@@ -117,7 +116,7 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
       // Use the JWT diagnostics service to verify the token
       const verification = this.jwtDiagnostics.verifyToken(data.token, data.options);
       
-      // Return the verification result
+      // Return the verification response
       const response: TokenVerificationResponse = {
         valid: verification.valid,
         token: data.token,

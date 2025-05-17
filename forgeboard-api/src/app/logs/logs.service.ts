@@ -45,7 +45,7 @@ export class LogsService {
         // If it's a string representation, split and parse it
         const levelStrings = (query.level as string).split(',');
         const levels = levelStrings.map(l => parseInt(l, 10));
-        filteredLogs = filteredLogs.filter(log => levels.includes(log.level));
+        filteredLogs = filteredLogs.filter(log => levels.includes(Number(log.level)));
       } else if (Array.isArray(query.level)) {
         // If it's an array of enum values
         filteredLogs = filteredLogs.filter(log => query.level && Array.isArray(query.level) && query.level.includes(log.level));

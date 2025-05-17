@@ -1,79 +1,58 @@
 /**
- * Socket event interface
+ * Socket registry types
  */
-export interface SocketEvent {
-  type: string;
-  timestamp: string | Date;
-  data?: unknown;
+
+/**
+ * Socket registry options
+ */
+export interface SocketRegistryOptions {
+  maxEvents: number;
+  logEvents: boolean;
+  persistEvents: boolean;
 }
 
 /**
- * Socket information interface
+ * Socket registry entry
  */
-export interface SocketInfo<TData = unknown> {
+export interface SocketRegistryEntry {
   id: string;
   namespace: string;
-  clientIp: string;
-  userAgent: string;
-  connectTime: string | Date;
-  disconnectTime?: string | Date;
-  lastActivity: string | Date;
-  events: DiagnosticSocketEvent<TData>[];
-  // For compatibility with existing code
-  connected?: string | Date;
-  status?: string;
+  socket: any; // Socket instance
+  connected: boolean;
+  connectedAt: Date;
+  disconnectedAt?: Date;
+  events: SocketRegistryEvent[];
 }
 
 /**
- * Socket metrics interface
+ * Socket registry event
  */
-export interface SocketMetrics {
-  totalConnections: number;
-  activeConnections: number;
-  disconnections: number;
-  errors: number;
-  messagesSent: number;
-  messagesReceived: number;
-  lastError?: Error | null; // Make lastError optional
-}
-
-/**
- * Socket status update containing active sockets and metrics
- */
-export interface SocketStatusUpdate<TData = unknown> {
-  activeSockets: SocketInfo<TData>[];
-  metrics: SocketMetrics;
-}
-
-/**
- * Socket event for diagnostics purposes
- */
-export interface DiagnosticSocketEvent<TData = unknown> {
+export interface SocketRegistryEvent {
   type: string;
-  timestamp: string | Date;
-  data?: TData;
+  timestamp: Date;
+  data?: Record<string, unknown>;
 }
 
 /**
- * Socket connection error information
+ * Socket registry
  */
-export interface SocketConnectionError {
-  message: string;
-  type: string;
-  code?: string;
-  details?: unknown;
+export interface SocketRegistry {
+  options: SocketRegistryOptions;
+  entries: Map<string, SocketRegistryEntry>;
+  registerSocket(namespace: string, socket: any): void;
+  unregisterSocket(socketId: string): void;
+  getSocket(socketId: string): any;
+  getAllSockets(): any[];
+  logEvent(socketId: string, event: string, data?: Record<string, unknown>): void;
 }
 
 /**
- * Generic socket log event
+ * Registry event types
  */
-export interface SocketLogEvent<TData = unknown> {
-  socketId: string;
-  namespace: string;
-  eventType: string;
-  timestamp: string | Date;
-  message: string;
-  data?: TData;
-  // For backward compatibility
-  type?: string;
+export enum RegistryEventTypes {
+  CONNECT = 'connect',
+  DISCONNECT = 'disconnect',
+  ERROR = 'error',
+  MESSAGE = 'message',
+  EVENT = 'event'
 }

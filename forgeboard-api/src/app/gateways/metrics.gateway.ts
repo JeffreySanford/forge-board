@@ -37,12 +37,10 @@ export class MetricsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected to metrics namespace: ${client.id}`);
-    
     // Register socket with registry
     this.socketRegistry.registerSocket(client, '/metrics');
-    
-    // Emit connection status to client
-    client.emit('connection-status', createSocketResponse('connection-status', { connected: true }));
+    // Emit connection status to client for status bar
+    client.emit('connection-status', { status: 'success', data: { connected: true }, timestamp: new Date().toISOString() });
   }
 
   handleDisconnect(client: Socket) {

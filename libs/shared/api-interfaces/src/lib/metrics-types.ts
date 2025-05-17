@@ -3,18 +3,24 @@
  */
 
 /**
- * Metric data interface
+ * Base metric data interface
  */
 export interface MetricData {
-  cpu: number;      // CPU usage percentage
-  memory: number;   // Memory usage percentage
-  disk?: number;    // Optional disk usage percentage
-  network?: number; // Optional network usage percentage
-  time: string;     // ISO timestamp
-  value?: number;   // Generic value for metrics processing
-  
-  // Allow additional properties for extended metrics
-  [key: string]: number | string | undefined;
+  id?: string;
+  timestamp: string;
+  time?: string | Date; // Add time as optional property to match existing usage
+  [key: string]: string | number | boolean | undefined | Date; // Update index signature to include Date
+}
+
+/**
+ * Extended metric data with additional system metrics
+ */
+export interface ExtendedMetricData extends MetricData {
+  cpu: number;
+  memory: number;
+  disk?: number;
+  network?: number;
+  time: string | Date;
 }
 
 /**
@@ -51,11 +57,17 @@ export interface MetricUpdate {
 }
 
 /**
- * Individual metric data point, often used in time series.
+ * Interface for tile type
  */
-export interface MetricDataPoint { // Added from metric-types.ts
-  value: number;
-  timestamp: string;
+export type TileType = 'metrics' | 'health' | 'memory' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kanban';
+
+/**
+ * Base interface for tile components
+ */
+export interface Tile {
+  id: string;
+  title: string;
+  type: TileType;
 }
 
 // Mark this module for export

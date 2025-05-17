@@ -58,8 +58,9 @@ export class LogGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected to logs: ${client.id}`);
-    this.socketRegistry?.registerSocket(client, 'logs'); // Optional: register with a central registry
-    
+    this.socketRegistry?.registerSocket(client, 'logs');
+    // Emit connection-status for status bar
+    client.emit('connection-status', { status: 'success', data: { connected: true }, timestamp: new Date().toISOString() });
     // Set default filter
     this.activeClients.set(client.id, {
       level: undefined,

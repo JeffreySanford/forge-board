@@ -1,6 +1,6 @@
 <div class="socket-dashboard-container">
   <h2>Socket Dashboard</h2>
-  <nav mat-tab-nav-bar>
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel">
     <a mat-tab-link
        routerLink="./monitoring"
        routerLinkActive #rla="routerLinkActive"
@@ -9,7 +9,9 @@
     </a>
     <!-- Add other tabs here if needed -->
   </nav>
-  <router-outlet></router-outlet>
+  <mat-tab-nav-panel #tabPanel>
+    <router-outlet></router-outlet>
+  </mat-tab-nav-panel>
 </div>
 
 <div class="container">

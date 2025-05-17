@@ -79,7 +79,8 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   
   // New properties for board selection
   boards: KanbanBoard[] = [];
-  selectedBoardId: string | null = null;
+  // Replace single selectedBoardId with an array for multi-select
+  selectedBoardIds: string[] = [];
   
   @ViewChild('columnsContainer') columnsContainer!: ElementRef;
   
@@ -95,7 +96,6 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.kanbanService.getConnectionStatus().subscribe(status => {
         this.isConnected = status;
-        console.log('[KanbanBoard] Connection status changed:', status);
       })
     );
     
@@ -103,11 +103,18 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
       this.kanbanService.getBoards().subscribe(boards => {
         this.boards = boards;
         if (boards.length > 0) {
-          // If no board selected, default to first
-          if (!this.selectedBoardId || !boards.find(b => b.id === this.selectedBoardId)) {
-            this.selectedBoardId = boards[0].id;
+          // If no boards selected, default to all
+          if (!this.selectedBoardIds.length) {
+            this.selectedBoardIds = boards.map(b => b.id);
+          } else {
+            // Remove any deselected boards that no longer exist
+            this.selectedBoardIds = this.selectedBoardIds.filter(id => boards.some(b => b.id === id));
+            if (!this.selectedBoardIds.length) {
+              this.selectedBoardIds = boards.map(b => b.id);
+            }
           }
-          this.board = boards.find(b => b.id === this.selectedBoardId) || boards[0];
+          // For single-board logic, pick the first selected
+          this.board = boards.find(b => b.id === this.selectedBoardIds[0]) || boards[0];
           this.currentPhase = this.board.currentPhase;
           this.groupColumnsByPhase();
           this.groupCardsByCategory();
@@ -135,30 +142,33 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     console.log('[KanbanBoard] Initial storage type:', this.storageType);
   }
   
+  // New getter for selectedBoards
+  get selectedBoards(): KanbanBoard[] {
+    return this.boards.filter(b => this.selectedBoardIds.includes(b.id));
+  }
+
   // Group backlog cards by category
   groupCardsByCategory(): void {
-    if (!this.board) return;
-    
-    // Find the backlog column
-    const backlogColumn = this.board.columns.find(col => col.name === 'Backlog');
-    if (!backlogColumn) return;
-    
-    // Clear existing category groups
+    if (!this.selectedBoards.length) return;
+
+    // Aggregate backlog columns from all selected boards
+    const backlogColumns = this.selectedBoards
+      .map(board => board.columns.find(col => col.name === 'Backlog'))
+      .filter(Boolean) as KanbanColumn[];
+
     this.categoryGroups = [];
-    
-    // Create a map to hold cards by category
     const cardsByCategory: { [category: string]: KanbanCard[] } = {};
-    
-    // Group cards by their category
-    backlogColumn.cards.forEach(card => {
-      const category = card.category || 'uncategorized';
-      if (!cardsByCategory[category]) {
-        cardsByCategory[category] = [];
-      }
-      cardsByCategory[category].push(card);
+
+    backlogColumns.forEach(backlogColumn => {
+      backlogColumn.cards.forEach(card => {
+        const category = card.category || 'uncategorized';
+        if (!cardsByCategory[category]) {
+          cardsByCategory[category] = [];
+        }
+        cardsByCategory[category].push(card);
+      });
     });
-    
-    // Convert map to array of category groups
+
     Object.keys(cardsByCategory).forEach(category => {
       this.categoryGroups.push({
         name: category,
@@ -167,8 +177,7 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
         expanded: true
       });
     });
-    
-    // Sort categories alphabetically by display name
+
     this.categoryGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
   }
   
@@ -263,24 +272,23 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   
   // Group columns by their phase
   groupColumnsByPhase(): void {
-    if (!this.board) return;
-    
+    if (!this.selectedBoards.length) return;
+
     this.phaseColumns.clear();
-    
-    // Initialize empty arrays for each phase
     this.allPhases.forEach(phase => {
       this.phaseColumns.set(phase, []);
     });
-    
-    // Group columns by phase
-    this.board.columns.forEach(column => {
-      // Cast column.phase to ProjectPhase to avoid type error
-      const phase = column.phase as ProjectPhase;
-      const phaseColumns = this.phaseColumns.get(phase) || [];
-      phaseColumns.push(column);
-      this.phaseColumns.set(phase, phaseColumns);
+
+    // Aggregate columns from all selected boards
+    this.selectedBoards.forEach(board => {
+      board.columns.forEach(column => {
+        const phase = column.phase as ProjectPhase;
+        const phaseColumns = this.phaseColumns.get(phase) || [];
+        phaseColumns.push(column);
+        this.phaseColumns.set(phase, phaseColumns);
+      });
     });
-    
+
     // Sort columns by order within each phase
     this.allPhases.forEach(phase => {
       const columns = this.phaseColumns.get(phase) || [];
@@ -290,12 +298,9 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   
   // Update visible columns based on current phase
   updateVisibleColumnsByPhase(): void {
-    if (!this.board) return;
-    
+    // Aggregate columns for the current phase from all selected boards
     const phaseColumns = this.phaseColumns.get(this.currentPhase) || [];
     this.totalCards = phaseColumns.length;
-    
-    // Update visible columns based on current card index and phase
     this.visibleColumns = phaseColumns.slice(
       this.currentCardIndex,
       Math.min(this.currentCardIndex + this.cardsToShow, this.totalCards)
@@ -463,9 +468,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     return column ? column.id : null;
   }
 
-  onBoardSelect(boardId: string): void {
-    this.selectedBoardId = boardId;
-    const board = this.boards.find(b => b.id === boardId);
+  onBoardSelect(selectedIds: string[]): void {
+    this.selectedBoardIds = selectedIds;
+    // Pick the first selected board as the "main" for phase, etc.
+    const board = this.boards.find(b => b.id === selectedIds[0]);
     if (board) {
       this.board = board;
       this.currentPhase = board.currentPhase;

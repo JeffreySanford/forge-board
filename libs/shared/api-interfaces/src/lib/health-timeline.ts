@@ -7,25 +7,25 @@ export interface HealthTimelinePoint {
   status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
   message: string;
   metadata?: Record<string, unknown>;
-  icon?: string; // Added optional icon
-  title?: string; // Added optional title
-  content?: string; // Added optional content (can be same as message or more detailed)
 }
 
 export interface HealthTimeline {
   points: HealthTimelinePoint[];
-  currentStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
-  predictions?: {
-    timestamp: string;
-    predictedStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
-    confidence: number;
-    metadata?: Record<string, unknown>;
-  }[];
+  latestStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 }
 
-export interface HealthTimelineFilter {
+export interface HealthTimelineRequest {
   startTime?: string;
   endTime?: string;
-  statuses?: Array<'healthy' | 'degraded' | 'unhealthy' | 'unknown'>;
   limit?: number;
+  status?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+}
+
+export interface HealthTimelineResponse {
+  timeline: HealthTimeline;
+  timespan: {
+    from: string;
+    to: string;
+  };
+  filtered: boolean;
 }

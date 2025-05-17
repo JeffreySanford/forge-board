@@ -78,6 +78,14 @@ export class KanbanService implements OnDestroy {
         this.useMockData();
       }
     });
+
+    // Listen for socket connection/disconnection events and update status
+    this.socket.on('connect', () => {
+      this.connectionStatusSubject.next(true);
+    });
+    this.socket.on('disconnect', () => {
+      this.connectionStatusSubject.next(false);
+    });
   }
 
   // Initialize connection to backend

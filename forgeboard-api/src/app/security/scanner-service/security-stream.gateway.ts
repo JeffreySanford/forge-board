@@ -11,7 +11,15 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
 import { interval, Subscription } from 'rxjs';
-import { SbomEvent, ScaEvent, ZapEvent, SupplyChainEvent, FedRampEvent } from '@forge-board/shared/api-interfaces';
+import { 
+  SbomEvent, 
+  ScaEvent, 
+  ZapEvent, 
+  SupplyChainEvent, 
+  FedRampEvent,
+  SecurityEventSeverity,
+  SecurityEventStatus 
+} from '@forge-board/shared/api-interfaces';
 
 @Injectable()
 @WebSocketGateway({
@@ -70,10 +78,10 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           id: 'sbom-1',
           timestamp: now,
           type: 'sbom', 
-          severity: 'info', // Fixed: removed 'as any', using proper value from SecurityEventSeverity
+          severity: 'info' as SecurityEventSeverity, // Now 'info' is included in SecurityEventSeverity
           source: 'syft',
-          message: 'SBOM generation complete',
-          status: 'completed', 
+          message: 'SBOM generation complete', // Valid because we added message to SecurityEvent
+          status: 'completed' as SecurityEventStatus, 
           components: 120, 
           sbomId: 'abc123'
         },
@@ -83,8 +91,8 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           type: 'sca', 
           severity: 'medium',
           source: 'grype',
-          message: 'Vulnerability scan complete',
-          status: 'complete', 
+          message: 'Vulnerability scan complete', // Valid because we added message to SecurityEvent
+          status: 'complete' as SecurityEventStatus, 
           critical: 1, 
           high: 5, 
           medium: 8, 
@@ -97,7 +105,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           severity: 'high',
           source: 'owasp-zap',
           message: 'ZAP scan complete',
-          status: 'complete', 
+          status: 'complete' as SecurityEventStatus, 
           findings: 3  // This is correct as a number
         },
         { 
@@ -107,7 +115,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           severity: 'low',
           source: 'cosign',
           message: 'Supply chain verification complete',
-          status: 'verified', 
+          status: 'verified' as SecurityEventStatus, 
           image: 'webapp:prod', 
           signed: true, 
           signer: 'Sigstore', 
@@ -120,7 +128,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           severity: 'medium',
           source: 'compliance-scan',
           message: 'FedRAMP control scan complete',
-          status: 'partial', 
+          status: 'partial' as SecurityEventStatus, 
           controlsPassed: 18, 
           controlsTotal: 20
         }
@@ -137,8 +145,8 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
         { 
           id: 'sbom-mock',
           timestamp: now,
-          type: 'sbom', // Changed from eventType to type
-          status: 'completed', 
+          type: 'sbom',
+          status: 'completed' as SecurityEventStatus, 
           components: 120, 
           sbomId: 'abc123',
           severity: 'low',
@@ -149,7 +157,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           id: 'sca-mock',
           timestamp: now,
           type: 'sca', // Changed from eventType to type 
-          status: 'complete', 
+          status: 'complete' as SecurityEventStatus, 
           critical: 1, 
           high: 5, 
           medium: 8, 
@@ -162,7 +170,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           id: 'zap-mock',
           timestamp: now,
           type: 'zap', // Changed from eventType to type
-          status: 'complete', 
+          status: 'complete' as SecurityEventStatus, 
           findings: 3, // Changed from array to number to match interface
           severity: 'high',
           source: 'owasp-zap',
@@ -172,7 +180,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           id: 'chain-mock',
           timestamp: now,
           type: 'supplyChain', // Changed from eventType to type
-          status: 'verified', 
+          status: 'verified' as SecurityEventStatus, 
           image: 'webapp:prod', 
           signed: true, 
           signer: 'Sigstore', 
@@ -185,7 +193,7 @@ export class SecurityStreamGateway implements OnGatewayInit, OnGatewayConnection
           id: 'fedramp-mock',
           timestamp: now,
           type: 'fedramp', // Changed from eventType to type
-          status: 'partial', 
+          status: 'partial' as SecurityEventStatus, 
           controlsPassed: 18, 
           controlsTotal: 20,
           severity: 'medium',

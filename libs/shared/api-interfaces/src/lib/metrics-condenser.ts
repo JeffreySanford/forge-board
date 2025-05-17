@@ -77,41 +77,32 @@ export class MetricsCondenser {
       return {
         cpu: 0,
         memory: 0,
-        time: new Date().toISOString()
+        time: new Date().toISOString(),
+        timestamp: new Date().toISOString() // Add required timestamp
       };
     }
 
-    // Count entries by level
-    const byLevel: Record<LogLevelEnum, number> = {
-      [LogLevelEnum.TRACE]: 0,
-      [LogLevelEnum.DEBUG]: 0,
-      [LogLevelEnum.INFO]: 0,
-      [LogLevelEnum.WARN]: 0,
-      [LogLevelEnum.ERROR]: 0,
-      [LogLevelEnum.FATAL]: 0
+    // Define the variables that were missing
+    const totalLogs = logs.length;
+    const counts = {
+      error: logs.filter(l => l.level === LogLevelEnum.ERROR).length,
+      warn: logs.filter(l => l.level === LogLevelEnum.WARN).length,
+      info: logs.filter(l => l.level === LogLevelEnum.INFO).length,
+      debug: logs.filter(l => l.level === LogLevelEnum.DEBUG).length
     };
 
-    // Count by source
-    const bySources: Record<string, number> = {};
-
-    // Process all logs
-    logs.forEach(log => {
-      // Increment level counter
-      byLevel[log.level]++;
-
-      // Increment source counter
-      if (log.source) {
-        bySources[log.source] = (bySources[log.source] || 0) + 1;
-      }
-    });
-
-    // Find the most frequent source
+    // Find the most common source
+    const sourceCounts: Record<string, number> = {};
     let topSource = '';
-    let topCount = 0;
-    Object.entries(bySources).forEach(([source, count]) => {
-      if (count > topCount) {
-        topSource = source;
-        topCount = count;
+    let topSourceCount = 0;
+
+    logs.forEach(log => {
+      if (log.source) {
+        sourceCounts[log.source] = (sourceCounts[log.source] || 0) + 1;
+        if (sourceCounts[log.source] > topSourceCount) {
+          topSourceCount = sourceCounts[log.source];
+          topSource = log.source;
+        }
       }
     });
 
@@ -120,13 +111,14 @@ export class MetricsCondenser {
       cpu: 0,
       memory: 0,
       time: new Date().toISOString(),
-      totalLogs: logs.length,
-      errorCount: byLevel[LogLevelEnum.ERROR] + byLevel[LogLevelEnum.FATAL],
-      warnCount: byLevel[LogLevelEnum.WARN],
-      infoCount: byLevel[LogLevelEnum.INFO],
-      debugCount: byLevel[LogLevelEnum.DEBUG] + byLevel[LogLevelEnum.TRACE],
-      topSource,
-      topSourceCount: topCount
+      timestamp: new Date().toISOString(), // Add required timestamp
+      totalLogs: totalLogs,
+      errorCount: counts.error || 0,
+      warnCount: counts.warn || 0,
+      infoCount: counts.info || 0,
+      debugCount: counts.debug || 0,
+      topSource: topSource,
+      topSourceCount: topSourceCount
     };
   }
 
@@ -402,26 +394,26 @@ export function condenseMetrics(metrics: MetricData[]): MetricData {
     return {
       time: new Date().toISOString(),
       cpu: 0,
-      memory: 0
+      memory: 0,
+      timestamp: new Date().toISOString()
     };
   }
-  
-  // Use the most recent timestamp
+
+  // Fix the issue with potentially undefined time values
   const timestamps = metrics
-    .map(m => new Date(m.time).getTime())
-    .filter(t => !isNaN(t));
-  
-  const mostRecentTimestamp = timestamps.length > 0 
-    ? new Date(Math.max(...timestamps)).toISOString()
-    : new Date().toISOString();
-  
+    .filter(m => m.time !== undefined) // Filter out undefined times
+    .map(m => new Date(m.time as string | Date).getTime());
+    
+  const mostRecentTimestamp = new Date(Math.max(...timestamps)).toISOString();
+
   // Initialize result with the timestamp
   const result: MetricData = {
     time: mostRecentTimestamp,
     cpu: 0,
-    memory: 0
+    memory: 0,
+    timestamp: mostRecentTimestamp
   };
-  
+
   // Get all unique keys from all metrics
   const allKeys = new Set<string>();
   metrics.forEach(m => {
@@ -475,8 +467,12 @@ export function processMetricsData(logs: MetricData[]): Record<string, unknown> 
     const aggregates = {
       count: logs.length,
       timeRange: {
-        start: new Date(Math.min(...logs.map(l => new Date(l.time).getTime()))).toISOString(),
-        end: new Date(Math.max(...logs.map(l => new Date(l.time).getTime()))).toISOString()
+        start: new Date(Math.min(...logs
+          .filter(l => l.time !== undefined) // Filter out logs with undefined time
+          .map(l => new Date(l.time as string | Date).getTime()))).toISOString(),
+        end: new Date(Math.max(...logs
+          .filter(l => l.time !== undefined) // Filter out logs with undefined time
+          .map(l => new Date(l.time as string | Date).getTime()))).toISOString()
       }
     };
     

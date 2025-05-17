@@ -11,7 +11,9 @@
         "outputPath": "dist/libs/shared/api-interfaces",
         "main": "libs/shared/api-interfaces/src/index.ts",
         "tsConfig": "libs/shared/api-interfaces/tsconfig.lib.json",
-        "assets": ["libs/shared/api-interfaces/*.md"]
+        "assets": ["libs/shared/api-interfaces/*.md"],
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "lint": {

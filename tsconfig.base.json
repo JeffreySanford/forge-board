@@ -14,32 +14,27 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "useDefineForClassFields": false,
     "paths": {
-      "@forge-board/shared/api-interfaces": [
-        "libs/shared/api-interfaces/src/index.ts"
-      ],
-      "@/*": ["./forgeboard-frontend/src/*"],
-      "@shims/*": ["./forgeboard-frontend/src/app/shims/*"],
-      "@services/*": ["./forgeboard-frontend/src/app/services/*"],
-      "path": ["node_modules/path-browserify"],
-      "stream": ["node_modules/stream-browserify"],
-      "crypto": ["node_modules/crypto-browserify"],
-      "os": ["node_modules/os-browserify/browser"],
-      "http": ["node_modules/stream-http"],
-      "https": ["node_modules/https-browserify"],
-      "zlib": ["node_modules/browserify-zlib/lib"],
-      "timers": ["node_modules/timers-browserify"],
-      "url": ["node_modules/url"],
-      "assert": ["node_modules/assert"],
-      "querystring": ["node_modules/querystring-es3"],
-      "events": ["node_modules/events/events.js"],
-      "fs": ["./empty-module.ts"],
-      "perf_hooks": ["./empty-module.ts"],
-      "async_hooks": ["./empty-module.ts"],
-      "repl": ["./empty-module.ts"],
-      "net": ["./empty-module.ts"]
+      "@/*": ["forgeboard-frontend/src/*"],
+      "@shims/*": ["forgeboard-frontend/src/app/shims/*"],
+      "@forge-board/shared/api-interfaces": ["libs/shared/api-interfaces/src/index.ts"],
+      "@forge-board/shared/api-interfaces/*": ["libs/shared/api-interfaces/src/*"]
     }
+  },
+  "include": [
+    "forgeboard-frontend/src/**/*.ts",
+    "forgeboard-frontend/src/**/*.html",
+    "forgeboard-frontend/src/**/*.scss",
+    "forgeboard-frontend/src/**/*.css",
+    "forgeboard-frontend/src/**/*.json"
+  ],
+  "angularCompilerOptions": {
+    "strict": true,
+    "fullTemplateTypeCheck": true,
+    "strictTemplates": true,
+    "enableIvy": true,
+    "enableResourceInlining": true,
+    "enableNgModuleTypeCheck": true
   },
   "exclude": ["node_modules", "tmp"]
 }

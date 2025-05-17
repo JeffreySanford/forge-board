@@ -157,17 +157,24 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
     const networkDelta = Math.random() * 5 - 2.5 + (this.simulatedLoad * 0.05);
     this.prevNetwork = Math.min(95, Math.max(1, this.prevNetwork + networkDelta));
     
-    const metrics = {
+    // Fix the return value to include timestamp
+    return {
       time: new Date().toISOString(),
-      cpu: Math.round(this.prevCpu * 10) / 10,
-      memory: Math.round(this.prevMemory * 10) / 10,
-      disk: Math.round(this.prevDisk * 10) / 10,
-      network: Math.round(this.prevNetwork * 10) / 10
+      timestamp: new Date().toISOString(), // Add required timestamp
+      cpu: this.randomMetric(10, 90),
+      memory: this.randomMetric(20, 80),
+      disk: this.randomMetric(10, 60),
+      network: this.randomMetric(5, 50)
     };
-    
-    // Replace console.log with proper logger
-    // this.logger.debug(`Generated new metrics at ${new Date().toISOString()}`, 'MetricsService');
-    
-    return metrics;
+  }
+
+  /**
+   * Generate a random metric value between min and max
+   * @param min Minimum value (inclusive)
+   * @param max Maximum value (inclusive)
+   * @returns Random integer between min and max
+   */
+  private randomMetric(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }

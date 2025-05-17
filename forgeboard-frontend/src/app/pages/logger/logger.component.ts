@@ -31,11 +31,11 @@ export class LoggerComponent implements OnInit, OnDestroy {
       })
     );
     
-    // this.subscription.add(
-    //   this.loggerService.getConnectionStatus().subscribe(status => {
-    //     this.isConnected = status;
-    //   })
-    // );
+    this.subscription.add(
+      this.loggerService.getConnectionStatus().subscribe(status => {
+        this.isConnected = status;
+      })
+    );
   }
   
   ngOnDestroy() {

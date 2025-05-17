@@ -1,10 +1,10 @@
 import { DiagnosticEvent} from './diagnostic-types';
-import { SocketResponse } from './socket-types';
 import { LogQueryResponse, LogResponse, LogFilter, LogEntry, LogLevelString, LogLevelEnum } from './log-types';
 import { User } from './user-types';
 import { HealthData } from './health.type';
 import { MetricData } from './metrics-types';
 import { HistoricalMetrics, SystemPerformanceSnapshot } from './historical-metrics';
+import { SocketResponse } from './api-response';
 
 export interface ValidationResult {
   valid: boolean;
@@ -161,14 +161,12 @@ export function validateDiagnosticEvent(obj: unknown): ValidationResult {
 export function isMetricData(obj: unknown): obj is MetricData {
   if (!obj || typeof obj !== 'object') return false;
   
-  const metric = obj as Partial<MetricData>;
+  const metric = obj as Record<string, unknown>;
   
   return (
-    typeof metric.cpu === 'number' &&
-    typeof metric.memory === 'number' &&
-    typeof metric.time === 'string' &&
-    typeof metric.disk === 'number' &&
-    typeof metric.network === 'number'
+    typeof metric['cpu'] === 'number' &&
+    typeof metric['memory'] === 'number' &&
+    typeof metric['time'] === 'string'
   );
 }
 
@@ -180,22 +178,16 @@ export function validateMetricData(obj: unknown): ValidationResult {
     return { valid: false, issues };
   }
   
-  const metric = obj as Partial<MetricData>;
+  const metric = obj as Record<string, unknown>;
   
-  if (metric.cpu === undefined) issues.push('Missing cpu');
-  else if (typeof metric.cpu !== 'number') issues.push('cpu must be a number');
+  if (metric['cpu'] === undefined) issues.push('Missing cpu');
+  else if (typeof metric['cpu'] !== 'number') issues.push('cpu must be a number');
   
-  if (metric.memory === undefined) issues.push('Missing memory');
-  else if (typeof metric.memory !== 'number') issues.push('memory must be a number');
+  if (metric['memory'] === undefined) issues.push('Missing memory');
+  else if (typeof metric['memory'] !== 'number') issues.push('memory must be a number');
   
-  if (!metric.time) issues.push('Missing time');
-  else if (typeof metric.time !== 'string') issues.push('time must be a string');
-  
-  if (metric.disk === undefined) issues.push('Missing disk');
-  else if (typeof metric.disk !== 'number') issues.push('disk must be a number');
-  
-  if (metric.network === undefined) issues.push('Missing network');
-  else if (typeof metric.network !== 'number') issues.push('network must be a number');
+  if (!metric['time']) issues.push('Missing time');
+  else if (typeof metric['time'] !== 'string') issues.push('time must be a string');
   
   return {
     valid: issues.length === 0,
@@ -211,18 +203,19 @@ export function isSocketResponse<T>(obj: unknown): obj is SocketResponse<T> {
   const response = obj as Partial<SocketResponse<unknown>>;
   
   return (
-    (response.status === 'success' || response.status === 'error') &&
+    (response.success === true || response.success === false) &&
     'data' in response &&
-    typeof response.timestamp === 'string'
+    typeof response.timestamp === 'string' &&
+    typeof response.event === 'string'
   );
 }
 
 export function isSuccessResponse<T>(obj: unknown): obj is SocketResponse<T> {
-  return isSocketResponse(obj) && obj.status === 'success';
+  return isSocketResponse(obj) && obj.success === true;
 }
 
 export function isErrorResponse<T>(obj: unknown): obj is SocketResponse<T> {
-  return isSocketResponse(obj) && obj.status === 'error';
+  return isSocketResponse(obj) && obj.success === false;
 }
 
 /**
@@ -261,14 +254,14 @@ export function validateSocketResponse<T>(obj: unknown): ValidationResult {
   
   const response = obj as Partial<SocketResponse<T>>;
   
-  if (response.status !== 'success' && response.status !== 'error') {
-    issues.push('status must be either "success" or "error"');
+  if (response.success !== true && response.success !== false) {
+    issues.push('success must be either true or false');
   }
   
-  if (response.status === 'error') {
+  if (response.success === false) {
     // Use type assertion with 'in' operator for safer property access
-    if (!('error' in response) || typeof response['error'] !== 'string') {
-      issues.push('error must be a string when status is "error"');
+    if (typeof response.message !== 'string') {
+      issues.push('message must be a string when success is false');
     }
   }
   
@@ -276,6 +269,12 @@ export function validateSocketResponse<T>(obj: unknown): ValidationResult {
     issues.push('Missing timestamp');
   } else if (typeof response.timestamp !== 'string') {
     issues.push('timestamp must be a string');
+  }
+  
+  if (!response.event) {
+    issues.push('Missing event property');
+  } else if (typeof response.event !== 'string') {
+    issues.push('event must be a string');
   }
   
   // Don't validate the data property itself, just check it exists
@@ -362,8 +361,8 @@ export function validateHealthData(obj: unknown): ValidationResult {
   
   if (!health.status) issues.push('Missing status');
   else if (typeof health.status !== 'string') issues.push('status must be a string');
-  else if (!['healthy', 'degraded', 'unhealthy', 'unknown', 'simulated'].includes(health.status)) {
-    issues.push('status must be one of: healthy, degraded, unhealthy, unknown, simulated');
+  else if (!['healthy', 'degraded', 'unhealthy', 'unknown', 'simulated', 'up', 'down'].includes(health.status)) {
+    issues.push('status must be one of: healthy, degraded, unhealthy, unknown, simulated, up, down');
   }
   
   if (health.uptime === undefined) issues.push('Missing uptime');
@@ -403,7 +402,7 @@ export function validateUser(obj: unknown): ValidationResult {
     return { valid: false, issues };
   }
   
-  const user = obj as Partial<User>;
+  const user = obj as Partial<User> & Record<string, unknown>;
   
   if (!user.id) issues.push('Missing id');
   else if (typeof user.id !== 'string') issues.push('id must be a string');
@@ -422,15 +421,16 @@ export function validateUser(obj: unknown): ValidationResult {
   }
   
   if (user.lastLogin !== undefined && typeof user.lastLogin !== 'string') {
-    issues.push('lastLogin must be a string if present');
+    issues.push('lastLogin must be a string if provided');
   }
   
   if (user.guestExpiry !== undefined && typeof user.guestExpiry !== 'string') {
-    issues.push('guestExpiry must be a string if present');
+    issues.push('guestExpiry must be a string if provided');
   }
   
-  if (user.preferences !== undefined && (typeof user.preferences !== 'object' || user.preferences === null)) {
-    issues.push('preferences must be an object if present');
+  if (user.preferences !== undefined && 
+      (typeof user.preferences !== 'object' || user.preferences === null)) {
+    issues.push('preferences must be an object if provided');
   }
   
   return {

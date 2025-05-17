@@ -4,12 +4,15 @@
 
 /**
  * Standard socket response format
+ * NOTE: This interface is just for reference. The canonical definition is
+ * in api-response.ts as both an interface (SocketResponseData) and a class (SocketResponse).
  */
 export interface SocketResponse<T> {
   status: 'success' | 'error';
   data: T;
   timestamp: string;
   message?: string;
+  event: string;
 }
 
 /**
@@ -105,28 +108,8 @@ export interface DiagnosticSocketEvent<TData = unknown> {
   data?: TData;
 }
 
-/**
- * Create a successful socket response
- */
-export function createSocketResponse<T>(event: string, data: T): SocketResponse<T> {
-  return {
-    status: 'success',
-    data,
-    timestamp: new Date().toISOString()
-  };
-}
-
-/**
- * Create an error socket response
- */
-export function createSocketErrorResponse<T>(message: string, data: T): SocketResponse<T> {
-  return {
-    status: 'error',
-    data,
-    message,
-    timestamp: new Date().toISOString()
-  };
-}
+// Socket response functions are now centralized in api-response.ts
+// and exported from the main index.ts file
 
 // Mark this file as a Socket module
 export const __socketInterfaces = true;

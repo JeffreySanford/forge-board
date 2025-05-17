@@ -1,75 +1,139 @@
 /**
- * Shared API interfaces library that provides types and interfaces used across frontend and backend.
- * This can be used with Swagger by referencing these types in API controllers with @ApiProperty decorators.
+ * This is the main entry point for the shared-api-interfaces library
  */
 
-// Base API interfaces
-export type { ApiResponse, UserData, ErrorResponse } from './lib/api-interfaces';
+// Export user and authentication types
+export { 
+  User, 
+  UserRole, 
+  JwtPayload,
+  AuthState
+} from './lib/user-types';
 
-// API response helpers
-export { __apiResponse } from './lib/api-response';
-export type { SuccessResponse } from './lib/api-response';
+// Health types
+export { 
+  Health, 
+  HealthData, 
+  HealthDetail, 
+  HealthStatus
+} from './lib/health.type';
 
-// Socket interfaces and helpers
-export { createSocketResponse, createErrorResponse as createSocketErrorResponse } from './lib/socket-types';
-export type { SocketResponse } from './lib/socket-types'; // SocketResponse is unique to socket-types.ts
+// Socket types
+export {
+  SOCKET_EVENTS,
+  SocketCommunication,
+  SocketMessage
+} from './lib/socket-types';
 
-// Types from socket-registry-types.ts - these are considered the canonical definitions
-export type { 
-  SocketEvent,
-  SocketInfo,
-  SocketMetrics,
-  SocketStatusUpdate,
+// Socket interface types
+export {
   SocketConnectionError,
   SocketLogEvent,
-  DiagnosticSocketEvent
+  SocketConnectionInfo,
+  SocketEvent,
+  SocketMetrics,
+  DiagnosticSocketEvent,
+  SocketInfo,
+  SocketStatusUpdate
+} from './lib/socket-interfaces';
+
+// Socket response types
+export {
+  SocketResponse,
+  SocketResponseData,
+  SocketResponseType,
+  createSocketResponse,
+  createSocketErrorResponse
+} from './lib/api-response';
+
+// Socket registry types
+export {
+  SocketRegistry,
+  SocketRegistryOptions,
+  SocketRegistryEntry,
+  RegistryEventTypes
 } from './lib/socket-registry-types';
 
-export * from './lib/socket-info.dto'; // Added export for SocketInfoDto
+// Metric types
+export {
+  MetricData,
+  ExtendedMetricData,
+  MetricResponse,
+  MetricFilter,
+  MetricUpdate,
+  TileType,
+  Tile
+} from './lib/metrics-types';
 
-// Authentication helpers (credentials and token responses)
-export { __authInterfaces } from './lib/auth-interfaces';
-export type { AuthCredentials, AuthTokenResponse } from './lib/auth-interfaces';
+// API interfaces
+export {
+  ApiResponse,
+  UserData,
+  ErrorResponse
+} from './lib/api-interfaces';
 
-// User and auth state definitions
-export { UserRole } from './lib/user-types'; // Changed from type export to direct export
-export type { User, JwtPayload, AuthState } from './lib/user-types';
-export type * from './lib/tile-types';
-export type * from './lib/health.type';
-export type { DiagnosticEvent, DiagnosticEventResponse } from './lib/diagnostic-types';
-export * from './lib/health-timeline'; // Export HealthTimelinePoint and related types
-// Removed invalid user-interfaces import
-// Export enums and functions from log-types
-export { 
-  LogLevelEnum, 
-  stringToLogLevelEnum, 
-  logLevelEnumToString,
-  // __logTypes // This specific export might be removed if individual exports are preferred
-} from './lib/log-types';
-export type { 
-  LogLevelString,  
-  LogResponse, 
-  LogStreamUpdate, // Ensure LogStreamUpdate is exported
-  LogStatsResult, 
-  LogQueryResponse, 
-  LogEntry, 
+// Auth interfaces
+export {
+  AuthCredentials,
+  AuthTokenResponse,
+  AuthState as AuthStateInterface
+} from './lib/auth-interfaces';
+
+// Socket utilities
+export {
+  SocketEventData,
+  SocketClientOptions,
+  SocketHandler,
+  SocketEventRegistry,
+  SocketConnectionStatus,
+  SocketClient,
+  SocketMessageHandler,
+  createSocketEventPayload,
+  parseSocketResponse,
+  isSocketConnected,
+  parseSocketError,
+  formatSocketError,
+  createLogSocketResponse
+} from './lib/utils/socket-utils';
+
+// Log types
+export {
+  LogLevelEnum,
+  LogLevelString,
+  LogEntry,
+  DisplayLogEntry,
+  DisplayLogEntryExtended,
   LogDto,
-  LogFilter // Export LogFilter from log-types
+  LogFilter,
+  ExtendedLogFilter,
+  LogResponse,
+  LogStreamUpdate,
+  LogStatsResult,
+  LogQueryResponse,
+  stringToLogLevelEnum,
+  logLevelEnumToString
 } from './lib/log-types';
 
-export type {
-  SecurityEventSeverity,
-  SecurityEventStatus,
-  SecurityEvent,
-  SbomEvent,
-  ScaEvent,
-  ZapEvent,
-  SupplyChainEvent,
-  FedRampEvent
-} from './lib/security-event';
+// Type validation utilities
+export {
+  ValidationResult,
+  TypeValidationError,
+  TypeValidator,
+  validateType,
+  isSocketResponse,
+  isSuccessResponse,
+  isErrorResponse,
+  validateSocketResponse
+} from './lib/type-validation';
 
-// Export historical metrics types
-export type {
+// Diagnostic types
+export {
+  DiagnosticEvent,
+  DiagnosticEventResponse
+} from './lib/diagnostic-types';
+
+// Historical metrics
+export {
   MetricsInterval,
   MetricsSource,
   MetricsDataPoint,
@@ -84,35 +148,24 @@ export type {
   MetricsVisualizationConfig
 } from './lib/historical-metrics';
 
-// Export metrics condenser
-export { MetricsCondenser } from './lib/metrics-condenser';
-
-// Re-export all type definitions so they can be imported from the library's root
-export * from './lib/api-response';
-export type { MetricData } from './lib/metrics-types'; // Explicit re-export
-export * from './lib/metrics-types'; // Ensure new metrics-types.ts is exported
-export * from './lib/socket-types';
-export * from './lib/user-types';
-export * from './lib/tile-types';
-export * from './lib/security-event';
-
-// Import and re-export log-helpers
-export * from './lib/log-helpers';
-
-// Export type validation utilities
+// Health timeline
 export {
-  validateMetricData,
-  validateHealthData,
-  validateUser,
-  typeValidators,
-  registerTypeValidator,
-  safeStringify,
-  validateHistoricalMetrics,
-  validateSystemPerformance
-} from './lib/type-validation';
+  HealthTimelinePoint,
+  HealthTimeline,
+  HealthTimelineRequest,
+  HealthTimelineResponse
+} from './lib/health-timeline';
 
-// Export additional type validation types
-export type { ValidationResult, TypeValidator } from './lib/type-validation';
+// Message types
+export {
+  Message,
+  SystemBroadcast,
+  UserMessage,
+  ActionMessage
+} from './lib/message';
 
-// Export ValidatedTypes
-export type { ValidatedTypes } from './lib/type-validation';
+// Socket info DTOs
+export {
+  SocketInfoDto,
+  DiagnosticSocketEventDto
+} from './lib/socket-info.dto';

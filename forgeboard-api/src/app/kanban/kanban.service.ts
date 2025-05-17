@@ -1,316 +1,144 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  KanbanBoardDto, 
-  CardDto, 
-  ColumnDto, 
-  CreateBoardDto, 
-  CreateColumnDto, 
-  CreateCardDto, 
-  MoveCardDto,
-} from './dto/kanban.dto';
+import { KanbanBoardDto, CardDto, ColumnDto, CreateBoardDto, CreateColumnDto, CreateCardDto, MoveCardDto } from './dto/kanban.dto';
 import { LoggerService } from '../logger/logger.service';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class KanbanService {
-  // Storage type - can be changed to reflect different backends
-  private storageType: 'memory' | 'localStorage' | 'mongodb' | 'blockchain' = 'memory';
-  
-  // In-memory storage since we're not using MongoDB in the API version
-  private boards: KanbanBoardDto[] = [
-    {
-      id: '1',
-      name: 'Planning Board',
-      currentPhase: 'planning',
-      phases: {
-        inception: {
-          active: true,
-          startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-          completionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        planning: {
-          active: true,
-          startDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        design: {
-          active: false,
-        },
-        development: {
-          active: false,
-        },
-        testing: {
-          active: false,
-        },
-        completion: {
-          active: false,
-        }
-      },
-      columns: [
-        {
-          id: 'col1',
-          name: 'Backlog',
-          order: 0,
-          phase: 'planning',
-          cards: [
-            {
-              id: 'card1',
-              title: 'Create API documentation',
-              description: 'Write comprehensive API docs for all endpoints',
-              priority: 'medium',
-              tags: ['documentation', 'api'],
-              assignee: 'John Doe',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ]
-        },
-        {
-          id: 'col2',
-          name: 'In Progress',
-          order: 1,
-          phase: 'planning',
-          cards: []
-        },
-        {
-          id: 'col3',
-          name: 'Done',
-          order: 2,
-          phase: 'planning',
-          cards: []
-        }
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  ];
+  private readonly logger: LoggerService;
+  private readonly boards$ = new BehaviorSubject<KanbanBoardDto[]>([]);
+  // Use 'in-memory' to match frontend expectations
+  private readonly storageType$ = new BehaviorSubject<string>('in-memory');
 
-  constructor(private readonly logger: LoggerService) {}
+  constructor(logger: LoggerService) {
+    this.logger = logger;
+    // Optionally, initialize with mock data or load from persistent storage
+    this.boards$.next([]);
+    // Optionally, ensure storageType is always correct
+    this.storageType$.next('in-memory');
+  }
 
-  // Get the current storage type
+  getBoards$(): Observable<KanbanBoardDto[]> {
+    return this.boards$.asObservable();
+  }
+
+  getStorageType$(): Observable<string> {
+    return this.storageType$.asObservable();
+  }
+
   getStorageType(): string {
-    this.logger.info(`Getting storage type: ${this.storageType}`, 'KanbanService', { storageType: this.storageType });
-    return this.storageType;
+    return this.storageType$.value;
   }
 
-  // Check storage connection
-  checkStorageConnection(): boolean {
-    // This could be expanded to check MongoDB connection if that backend is used
-    this.logger.info(`Checking storage connection for type: ${this.storageType}`, 'KanbanService', { storageType: this.storageType });
-    return true;
+  setStorageType(type: string): void {
+    // Only allow 'in-memory' for now
+    this.storageType$.next('in-memory');
+    this.logger.info(`Storage type set to: in-memory`, 'KanbanService');
   }
 
-  // Get all boards
-  async getBoards(): Promise<KanbanBoardDto[]> {
-    this.logger.info(`Getting boards from ${this.storageType} storage`, 'KanbanService', { 
-      storageType: this.storageType,
-      boardCount: this.boards.length 
-    });
-    return this.boards;
+  checkStorageConnection(): Observable<boolean> {
+    // Always "connected" for in-memory
+    return of(true);
   }
 
-  // Get a specific board by ID
-  async getBoardById(id: string): Promise<KanbanBoardDto> {
-    this.logger.debug(`Looking for board with ID: ${id}`, 'KanbanService', { boardId: id });
-    
-    const board = this.boards.find(b => b.id === id);
-    if (!board) {
-      this.logger.warning(`Board with ID "${id}" not found`, 'KanbanService', { boardId: id });
-      throw new NotFoundException(`Board with ID "${id}" not found`);
-    }
-    
-    this.logger.debug(`Found board: ${board.name}`, 'KanbanService', { 
-      boardId: id, 
-      boardName: board.name 
-    });
-    return board;
+  getBoardById$(id: string): Observable<KanbanBoardDto> {
+    return new BehaviorSubject(this.findBoardOrThrow(id)).asObservable();
   }
 
-  // Create a new board
-  async createBoard(createBoardDto: CreateBoardDto): Promise<KanbanBoardDto> {
-    this.logger.info(`Creating new board: ${createBoardDto.name}`, 'KanbanService', { 
-      boardName: createBoardDto.name 
-    });
-    
+  createBoard(createBoardDto: CreateBoardDto): void {
+    const now = new Date().toISOString();
     const newBoard: KanbanBoardDto = {
       id: uuidv4(),
       name: createBoardDto.name,
       columns: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    this.boards.push(newBoard);
-    
-    this.logger.info(`Board created with ID: ${newBoard.id}`, 'KanbanService', { 
-      boardId: newBoard.id, 
-      boardName: newBoard.name 
-    });
-    return newBoard;
-  }
-
-  // Add a column to a board
-  async addColumn(boardId: string, createColumnDto: CreateColumnDto): Promise<KanbanBoardDto> {
-    this.logger.info(`Adding column to board ${boardId}`, 'KanbanService', { 
-      boardId, 
-      columnName: createColumnDto.name 
-    });
-    
-    const board = await this.getBoardById(boardId);
-    
-    const newColumn: ColumnDto = {
-      id: uuidv4(),
-      name: createColumnDto.name,
-      order: createColumnDto.order || board.columns.length,
-      phase: createColumnDto.phase,
-      cards: []
-    };
-    
-    board.columns.push(newColumn);
-    board.updatedAt = new Date().toISOString();
-    
-    this.logger.info(`Column ${newColumn.name} added with ID ${newColumn.id}`, 'KanbanService', {
-      boardId,
-      columnId: newColumn.id,
-      columnName: newColumn.name
-    });
-    
-    return board;
-  }
-
-  // Add a card to a column
-  async addCard(boardId: string, columnId: string, createCardDto: CreateCardDto): Promise<KanbanBoardDto> {
-    this.logger.info(`Adding card to column ${columnId} in board ${boardId}`, 'KanbanService', {
-      boardId,
-      columnId,
-      cardTitle: createCardDto.title
-    });
-    
-    const board = await this.getBoardById(boardId);
-    
-    const column = board.columns.find(col => col.id === columnId);
-    if (!column) {
-      this.logger.warning(`Column with ID "${columnId}" not found`, 'KanbanService', { 
-        boardId, 
-        columnId 
-      });
-      throw new NotFoundException(`Column with ID "${columnId}" not found`);
-    }
-    
-    const now = new Date().toISOString();
-    const newCard: CardDto = {
-      id: uuidv4(),
-      title: createCardDto.title,
-      description: createCardDto.description,
-      priority: createCardDto.priority || 'medium',
-      tags: createCardDto.tags || [],
-      assignee: createCardDto.assignee,
       createdAt: now,
       updatedAt: now
     };
-    
-    column.cards.push(newCard);
-    board.updatedAt = now;
-    
-    this.logger.info(`Card "${newCard.title}" added with ID ${newCard.id}`, 'KanbanService', {
-      boardId,
-      columnId,
-      cardId: newCard.id,
-      cardTitle: newCard.title
-    });
-    
-    return board;
+    const boards = [...this.boards$.value, newBoard];
+    this.boards$.next(boards);
+    this.logger.info(`Board created: ${newBoard.name}`, 'KanbanService');
   }
 
-  // Move a card within a board
-  async moveCard(boardId: string, moveCardDto: MoveCardDto): Promise<KanbanBoardDto> {
-    const { cardId, sourceColumnId, targetColumnId, sourceIndex, targetIndex } = moveCardDto;
-    
-    this.logger.info(`Moving card ${cardId} from column ${sourceColumnId} to ${targetColumnId}`, 'KanbanService', {
-      boardId,
-      cardId,
-      sourceColumnId,
-      targetColumnId,
-      sourceIndex,
-      targetIndex
+  addColumn(boardId: string, createColumnDto: CreateColumnDto): void {
+    const boards = this.boards$.value.map(board => {
+      if (board.id !== boardId) return board;
+      const newColumn: ColumnDto = {
+        id: uuidv4(),
+        name: createColumnDto.name,
+        order: createColumnDto.order || board.columns.length,
+        phase: createColumnDto.phase,
+        cards: []
+      };
+      return {
+        ...board,
+        columns: [...board.columns, newColumn],
+        updatedAt: new Date().toISOString()
+      };
     });
-    
-    // Find the board
-    const boardIndex = this.boards.findIndex(b => b.id === boardId);
-    if (boardIndex === -1) {
-      this.logger.warning(`Board with ID "${boardId}" not found`, 'KanbanService', { boardId });
-      throw new NotFoundException(`Board with ID "${boardId}" not found`);
-    }
-    
-    // Create a deep copy to avoid mutating the original
-    const board = JSON.parse(JSON.stringify(this.boards[boardIndex])) as KanbanBoardDto;
-    
-    // Find source column
-    const sourceColumn = board.columns.find(col => col.id === sourceColumnId);
-    if (!sourceColumn) {
-      this.logger.warning(`Column with ID "${sourceColumnId}" not found`, 'KanbanService', { 
-        boardId, 
-        sourceColumnId 
+    this.boards$.next(boards);
+    this.logger.info(`Column added to board ${boardId}: ${createColumnDto.name}`, 'KanbanService');
+  }
+
+  addCard(boardId: string, columnId: string, createCardDto: CreateCardDto): void {
+    const boards = this.boards$.value.map(board => {
+      if (board.id !== boardId) return board;
+      const columns = board.columns.map(col => {
+        if (col.id !== columnId) return col;
+        const now = new Date().toISOString();
+        const newCard: CardDto = {
+          id: uuidv4(),
+          title: createCardDto.title,
+          description: createCardDto.description,
+          priority: createCardDto.priority || 'medium',
+          tags: createCardDto.tags || [],
+          assignee: createCardDto.assignee,
+          createdAt: now,
+          updatedAt: now
+        };
+        return { ...col, cards: [...col.cards, newCard] };
       });
-      throw new NotFoundException(`Column with ID "${sourceColumnId}" not found`);
-    }
-    
-    // Find card index in source column if not provided
-    const actualSourceIndex = sourceIndex >= 0 ? sourceIndex : 
-      sourceColumn.cards.findIndex(card => card.id === cardId);
-    
-    if (actualSourceIndex === -1) {
-      this.logger.warning(`Card with ID "${cardId}" not found in source column`, 'KanbanService', {
-        boardId,
-        sourceColumnId,
-        cardId
+      return { ...board, columns, updatedAt: new Date().toISOString() };
+    });
+    this.boards$.next(boards);
+    this.logger.info(`Card added to board ${boardId}, column ${columnId}: ${createCardDto.title}`, 'KanbanService');
+  }
+
+  moveCard(boardId: string, moveCardDto: MoveCardDto): void {
+    const { cardId, sourceColumnId, targetColumnId, sourceIndex, targetIndex } = moveCardDto;
+    const boards = this.boards$.value.map(board => {
+      if (board.id !== boardId) return board;
+      let cardToMove: CardDto | undefined;
+      const columns = board.columns.map(col => {
+        if (col.id === sourceColumnId) {
+          const idx = sourceIndex !== undefined && sourceIndex >= 0
+            ? sourceIndex
+            : col.cards.findIndex(card => card.id === cardId);
+          if (idx === -1) throw new NotFoundException(`Card with ID "${cardId}" not found`);
+          [cardToMove] = col.cards.splice(idx, 1);
+          return { ...col, cards: [...col.cards] };
+        }
+        return col;
+      }).map(col => {
+        if (col.id === targetColumnId && cardToMove) {
+          col.cards.splice(targetIndex, 0, { ...cardToMove, updatedAt: new Date().toISOString() });
+        }
+        return col;
       });
-      throw new NotFoundException(`Card with ID "${cardId}" not found in source column`);
-    }
-    
-    // Get the card to move
-    const [cardToMove] = sourceColumn.cards.splice(actualSourceIndex, 1);
-    
-    // Update the card's timestamp
-    cardToMove.updatedAt = new Date().toISOString();
-    
-    // If moving to same column
-    if (sourceColumnId === targetColumnId) {
-      sourceColumn.cards.splice(targetIndex, 0, cardToMove);
-      this.logger.info(`Card ${cardId} moved within same column to position ${targetIndex}`, 'KanbanService', {
-        boardId,
-        columnId: sourceColumnId,
-        cardId,
-        newPosition: targetIndex
-      });
-    } else {
-      // Find target column
-      const targetColumn = board.columns.find(col => col.id === targetColumnId);
-      if (!targetColumn) {
-        this.logger.warning(`Column with ID "${targetColumnId}" not found`, 'KanbanService', { 
-          boardId, 
-          targetColumnId 
-        });
-        throw new NotFoundException(`Column with ID "${targetColumnId}" not found`);
-      }
-      
-      // Insert card at target position
-      targetColumn.cards.splice(targetIndex, 0, cardToMove);
-      
-      this.logger.info(`Card ${cardId} moved from column ${sourceColumnId} to ${targetColumnId} at position ${targetIndex}`, 'KanbanService', {
-        boardId,
-        cardId,
-        sourceColumnId,
-        targetColumnId,
-        targetIndex
-      });
-    }
-    
-    // Update the board's timestamp
-    board.updatedAt = new Date().toISOString();
-    
-    // Update the board in our storage
-    this.boards[boardIndex] = board;
-    
+      return { ...board, columns, updatedAt: new Date().toISOString() };
+    });
+    this.boards$.next(boards);
+    this.logger.info(`Card moved in board ${boardId}: ${cardId} from ${sourceColumnId} to ${targetColumnId}`, 'KanbanService');
+  }
+
+  getBoardsValue(): KanbanBoardDto[] {
+    return this.boards$.value;
+  }
+
+  // Helper
+  private findBoardOrThrow(id: string): KanbanBoardDto {
+    const board = this.boards$.value.find(b => b.id === id);
+    if (!board) throw new NotFoundException(`Board with ID "${id}" not found`);
     return board;
   }
 }

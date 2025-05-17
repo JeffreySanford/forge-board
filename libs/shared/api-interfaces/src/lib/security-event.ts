@@ -6,16 +6,25 @@ export type SecurityEventSeverity = 'info' | 'low' | 'medium' | 'high' | 'critic
 export type SecurityEventStatus = 'pending' | 'processing' | 'completed' | 'complete' | 'failed' | 'verified' | 'partial';
 
 /**
- * Base security event interface
+ * Security event types
+ */
+export type SecurityEventType = 'sbom' | 'sca' | 'zap' | 'supplyChain' | 'fedramp';
+
+/**
+ * Security event interface
  */
 export interface SecurityEvent {
   id: string;
-  timestamp: string;
-  type: string;
+  type: SecurityEventType; 
   severity: SecurityEventSeverity;
+  title?: string;
+  description?: string;
+  timestamp: string;
+  data?: Record<string, unknown>;
   source: string;
-  message: string;
-  status: SecurityEventStatus;
+  verified?: boolean;
+  message?: string;
+  status?: string;
 }
 
 /**
@@ -28,6 +37,8 @@ export interface SbomEvent extends SecurityEvent {
   format?: 'cyclonedx' | 'spdx';
   version?: string;
   valid?: boolean;
+  message?: string;
+  status?: string;
 }
 
 /**
@@ -39,6 +50,8 @@ export interface ScaEvent extends SecurityEvent {
   high: number;
   medium: number;
   low: number;
+  message?: string;
+  status?: string;
 }
 
 /**
@@ -47,6 +60,8 @@ export interface ScaEvent extends SecurityEvent {
 export interface ZapEvent extends SecurityEvent {
   type: 'zap';
   findings: number;
+  message?: string;
+  status?: string;
 }
 
 /**
@@ -59,6 +74,8 @@ export interface SupplyChainEvent extends SecurityEvent {
   signer: string;
   verified: boolean;
   rekorEntry?: string;
+  message?: string;
+  status?: string;
 }
 
 /**
@@ -70,4 +87,6 @@ export interface FedRampEvent extends SecurityEvent {
   controlsTotal: number;
   complianceStatus?: 'compliant' | 'nonCompliant' | 'partial';
   impact?: 'low' | 'moderate' | 'high';
+  message?: string;
+  status?: string;
 }

@@ -6,15 +6,15 @@
 export const __logTypes = true;
 
 /**
- * Log level enumeration
+ * Enum for log levels
  */
 export enum LogLevelEnum {
-  TRACE = 0,
-  DEBUG = 1,
-  INFO = 2,
-  WARN = 3,
-  ERROR = 4,
-  FATAL = 5
+  TRACE = 'trace', // Add the missing TRACE enum
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error',
+  FATAL = 'fatal' // Add the missing FATAL enum
 }
 
 /**
@@ -55,7 +55,7 @@ export function logLevelEnumToString(level: LogLevelEnum): LogLevelString {
 }
 
 /**
- * Log entry interface
+ * Base log entry interface
  */
 export interface LogEntry {
   // Core fields that are always required
@@ -84,6 +84,22 @@ export interface LogEntry {
   stackTrace?: string; // Optional stack trace
   tags?: string[]; // Optional tags
   eventId?: string; // Correlation ID
+}
+
+/**
+ * Extended log entry with display properties
+ */
+export interface DisplayLogEntry extends LogEntry {
+  displayMessage?: string;
+  formattedTimestamp?: string;
+}
+
+/**
+ * Extended display log entry
+ */
+export interface DisplayLogEntryExtended extends DisplayLogEntry {
+  details?: Record<string, unknown>;
+  message: string;
 }
 
 /**
@@ -123,6 +139,21 @@ export interface LogFilter {
 }
 
 /**
+ * Extended log filter with additional options
+ */
+export interface ExtendedLogFilter extends LogFilter {
+  contexts?: string[];
+  sources?: string[];
+  tags?: string[];
+  startTime?: string;
+  endTime?: string;
+  offset?: number;
+  loglevels?: LogLevelEnum[];
+  afterTimestamp?: string;
+  limit?: number;
+}
+
+/**
  * Response structure for log requests
  */
 export interface LogResponse {
@@ -148,9 +179,14 @@ export interface LogStreamUpdate {
  * Result structure for log statistics
  */
 export interface LogStatsResult {
-  totalCount: number;
+  totalLogs: number;
   byLevel: Record<LogLevelEnum, number>; // Use LogLevelEnum as key
   bySource: Record<string, number>;
+  timeRange?: {
+    earliest: string;
+    latest: string;
+  };
+  totalCount?: number; // Add for compatibility
 }
 
 /**

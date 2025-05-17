@@ -33,12 +33,25 @@ export class LoggerService implements OnDestroy {
   // Current log filter
   private filter: LogFilter = {};
   mockDataGeneration = false;
+
+  // Connection status subject
+  private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   
   constructor(
     private http: HttpClient,
     private logDispatchService: LogDispatchService
   ) {
     this.initSocketConnection();
+    
+    // Emit connection status based on socket events
+    if (this.socket) {
+      this.socket.on('connect', () => {
+        this.connectionStatusSubject.next(true);
+      });
+      this.socket.on('disconnect', () => {
+        this.connectionStatusSubject.next(false);
+      });
+    }
   }
   
   ngOnDestroy(): void {
@@ -472,5 +485,9 @@ export class LoggerService implements OnDestroy {
   filterWithBasicFilter(filter: LogFilter): LogEntry[] {
     const currentLogs = this.logsSubject.getValue();
     return this.applyFilter(currentLogs, filter);
+  }
+
+  getConnectionStatus(): Observable<boolean> {
+    return this.connectionStatusSubject.asObservable();
   }
 }

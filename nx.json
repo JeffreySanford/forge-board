@@ -76,7 +76,13 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
       "options": {
-        "allowedCommonJsDependencies": ["@nestjs/microservices", "class-transformer/storage"],
+        "allowedCommonJsDependencies": [
+          "@nestjs/microservices", 
+          "class-transformer/storage",
+          "socket.io-client",
+          "chart.js", 
+          "moment"
+        ],
         "preserveSymlinks": true
       }
     },
@@ -88,11 +94,20 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
     "serve": {
       "dependsOn": ["^build"]
     },
     "e2e-ci--**/*": {
       "dependsOn": ["^build"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "cache": true
     }
   },
   "generators": {
@@ -108,7 +123,11 @@
   },
   "projects": {
     "forgeboard-frontend": {
-      "tags": []
+      "tags": [],
+      "implicitDependencies": ["shared-api-interfaces"]
+    },
+    "shared-api-interfaces": {
+      "tags": ["scope:shared", "type:util"]
     }
   }
 }

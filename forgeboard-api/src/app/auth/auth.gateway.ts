@@ -43,6 +43,8 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     this.logger.log(`Client connected: ${client.id}`);
     // Register the socket with the registry service
     this.socketRegistry.registerSocket(client, 'auth');
+    // Emit connection-status for status bar
+    client.emit('connection-status', { status: 'success', data: { connected: true }, timestamp: new Date().toISOString() });
     
     // Check token if provided in handshake
     const token = client.handshake.auth?.token;

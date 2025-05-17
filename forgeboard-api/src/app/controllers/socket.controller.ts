@@ -3,7 +3,8 @@ import { SocketRegistryService } from '../socket/socket-registry.service';
 import { SocketLoggerService } from '../socket/socket-logger.service';
 import { SocketInfo, SocketMetrics, SocketLogEvent } from '@forge-board/shared/api-interfaces';
 
-@Controller('sockets')
+// Fix: Change the controller path to match frontend expectations
+@Controller('api/sockets')
 export class SocketController {
   constructor(
     private readonly socketRegistry: SocketRegistryService,
@@ -16,6 +17,12 @@ export class SocketController {
       activeSockets: this.socketRegistry.getActiveSockets(),
       metrics: this.socketRegistry.getMetrics()
     };
+  }
+
+  // Fix: Add a dedicated endpoint for active sockets
+  @Get('active')
+  getActiveSockets(): SocketInfo[] {
+    return this.socketRegistry.getActiveSockets();
   }
 
   @Get('logs')
@@ -32,7 +39,6 @@ export class SocketController {
 
   @Get(':id')
   getSocketDetails(@Param('id') id: string): SocketInfo | undefined {
-    // Fix: Use getSocketInfo method instead of getSocketById
     return this.socketRegistry.getActiveSockets().find(socket => socket.id === id);
   }
 }

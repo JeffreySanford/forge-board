@@ -1,55 +1,79 @@
 /**
- * Library internal index file
- * 
- * This file re-exports all type definitions from the library's internal modules.
- * The main index.ts in the parent directory selectively re-exports these for consumers.
+ * This is the main entry point for all types in the library
  */
 
-// Core API interfaces
-export * from './api-interfaces';
+// Export user and authentication types
+export * from './user-types';
 
-// Socket related types
-export { 
-  SocketStatus,
+// Export health-related types
+export * from './health.type';
+
+// Export socket-related types
+export {
   SOCKET_EVENTS,
-  // SocketEvent is exported from socket-registry-types.ts, not socket-types.ts
-  SocketResponse,
-  createSocketResponse,
-  createErrorResponse,
-  socketTypes
+  SocketCommunication,
+  SocketMessage
 } from './socket-types';
 
-// Socket registry types
-export { 
+// Export socket interfaces with explicit selections to avoid conflicts
+export {
+  SocketConnectionInfo,
+  SocketEvent,
+  SocketMetrics,
+  DiagnosticSocketEvent,
   SocketInfo,
-  SocketMetrics, 
   SocketLogEvent,
   SocketStatusUpdate,
-  SocketConnectionError,
-  DiagnosticSocketEvent
-} from './socket-registry-types';
+  SocketConnectionError
+} from './socket-interfaces';
 
-// Logging types
+// Export socket registry types
+export * from './socket-registry-types';
+
+// Export socket utilities
+export {
+  SocketEventData,
+  SocketClientOptions,
+  SocketHandler,
+  SocketEventRegistry,
+  SocketConnectionStatus,
+  SocketClient,
+  SocketMessageHandler,
+  createSocketEventPayload,
+  parseSocketResponse,
+  isSocketConnected,
+  parseSocketError,
+  formatSocketError,
+  createLogSocketResponse
+} from './utils/socket-utils';
+
+// Export socket response type from api-response.ts (this is our canonical implementation)
+export {
+  SocketResponse,
+  SocketResponseData,
+  SocketResponseType,
+  createSocketResponse,
+  createSocketErrorResponse
+} from './api-response';
+
+// Export metrics-related types
+export * from './metrics-types';
+export * from './metrics-condenser';
+export * from './historical-metrics';
+
+// Export log types
 export * from './log-types';
 
-// Metrics and diagnostics
-export {  
-  MetricData, 
-  MetricUpdate,
-  MetricFilter,
-  MetricResponse
-} from './metrics-types';
+// Export API interfaces
+export * from './api-interfaces';
 
-export * from './diagnostic-types';
-export * from './health.type'; // Added export for HealthData and related types
-export * from './health-timeline'; // Added export for HealthTimelinePoint and related types
+// Selectively export from auth-interfaces to avoid AuthState conflict
+export {
+  AuthCredentials,
+  AuthTokenResponse,
+  // Rename AuthState from auth-interfaces to avoid conflict
+  AuthState as AuthStateInterface
+} from './auth-interfaces';
 
-// Tile UI components
-export * from './tile-types';
-
-// Type validation utilities
+// Export validation utilities
 export * from './type-validation';
-
-// User and authentication - exported explicitly to avoid conflicts
-export * from './user-types';
-// Remove non-existent module - user interfaces are likely already exported from user-types.ts

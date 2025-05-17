@@ -7,8 +7,8 @@
           <div class="board-title layout-row layout-align-start-center" style="gap: 16px; min-width: 0; flex: 1 1 300px;">
             <h2 class="truncate" style="margin: 0; min-width: 0;">{{ board.name || 'Planning Board' }}</h2>
             <mat-form-field appearance="outline" color="primary" class="board-selector" style="min-width: 220px;">
-              <mat-label>Project Board</mat-label>
-              <mat-select [value]="selectedBoardId" (selectionChange)="onBoardSelect($event.value)">
+              <mat-label>Project Board(s)</mat-label>
+              <mat-select [value]="selectedBoardIds" (selectionChange)="onBoardSelect($event.value)" multiple>
                 <mat-optgroup label="Example Boards" *ngIf="exampleBoards.length">
                   <mat-option *ngFor="let b of exampleBoards" [value]="b.id">
                     <mat-icon style="vertical-align: middle; margin-right: 8px;">school</mat-icon>

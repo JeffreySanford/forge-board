@@ -87,7 +87,7 @@ export interface Environment {
     /**
      * MongoDB connection options
      */
-    options: Record<string, any>;
+    options: Record<string, unknown>;
   };
   
   /**
@@ -103,7 +103,17 @@ export interface Environment {
   /**
    * Path for logs endpoint (default is 'logs')
    */
-  logsPath: string;
+  logsPath?: string;
+  
+  /**
+   * Application version
+   */
+  version?: string;
+  
+  /**
+   * Build identifier
+   */
+  build?: string;
 }
 
 /**

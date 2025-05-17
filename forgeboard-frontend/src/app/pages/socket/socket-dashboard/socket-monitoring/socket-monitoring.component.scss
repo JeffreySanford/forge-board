@@ -55,7 +55,103 @@
 
 /* SCSS for SocketMonitoringComponent */
 .socket-monitoring-container {
-  padding: 20px;
+  padding: 16px;
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+
+    mat-spinner {
+      margin-bottom: 16px;
+    }
+  }
+
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #f44336;
+
+    mat-icon {
+      font-size: 48px;
+      height: 48px;
+      width: 48px;
+      margin-bottom: 16px;
+    }
+
+    span {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: rgba(0, 0, 0, 0.54);
+
+    mat-icon {
+      font-size: 48px;
+      height: 48px;
+      width: 48px;
+      margin-bottom: 16px;
+    }
+  }
+
+  .sockets-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+
+    .socket-card {
+      .events-section {
+        margin-top: 16px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        padding-top: 8px;
+
+        h4 {
+          margin-bottom: 8px;
+        }
+
+        .events-list {
+          .event-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+
+            .event-type {
+              font-weight: 500;
+            }
+
+            .event-time {
+              color: rgba(0, 0, 0, 0.54);
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 .error-message {

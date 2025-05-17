@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, Input, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, ViewChild, ElementRef, Input, OnInit, OnDestroy, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { UserData } from '../../services/user-data.service';
 import { BackendStatusService, BackendStatusSummary } from '../../services/backend-status.service';
 import { DiagnosticsService, EnhancedHealthData } from '../../services/diagnostics.service';
@@ -146,7 +146,8 @@ export class FooterComponent implements OnInit, OnDestroy {
 
   constructor(
     private backendStatusService: BackendStatusService,
-    private diagnosticsService: DiagnosticsService
+    private diagnosticsService: DiagnosticsService,
+    private cdr: ChangeDetectorRef // Inject ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -300,19 +301,23 @@ export class FooterComponent implements OnInit, OnDestroy {
       const apiStatus = this.systemStatus.find(s => s.name === 'API');
       if (apiStatus) {
         apiStatus.status = this.backendStatus.allConnected ? 'healthy' : 'degraded';
-        apiStatus.lastUpdated = new Date();
-        
-        // Set appropriate animation class
+        // Use setTimeout to update lastUpdated after change detection
+        setTimeout(() => {
+          apiStatus.lastUpdated = new Date();
+          this.cdr.markForCheck();
+        });
         apiStatus.animationClass = this.backendStatus.allConnected ? 'pulse-green' : 'pulse-yellow';
       }
       
       // Update Socket status
       const socketStatus = this.systemStatus.find(s => s.name === 'Socket');
       if (socketStatus) {
-        // Check if any gateway is using mock data
         const usingMockData = this.backendStatus.anyMockData;
         socketStatus.status = usingMockData ? 'degraded' : 'healthy';
-        socketStatus.lastUpdated = new Date();
+        setTimeout(() => {
+          socketStatus.lastUpdated = new Date();
+          this.cdr.markForCheck();
+        });
         socketStatus.animationClass = usingMockData ? 'pulse-yellow' : 'pulse-green';
       }
 
@@ -342,7 +347,10 @@ export class FooterComponent implements OnInit, OnDestroy {
             dbStatus.animationClass = 'flicker-blue';
             break;
         }
-        dbStatus.lastUpdated = new Date();
+        setTimeout(() => {
+          dbStatus.lastUpdated = new Date();
+          this.cdr.markForCheck();
+        });
       }
 
       // Update databaseStatus

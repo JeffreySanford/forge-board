@@ -10,21 +10,50 @@ A sovereign monitoring and management dashboard with comprehensive data provenan
 
 ## Documentation
 
-All project documentation is stored in the **assets/documentation** folder. This documentation is dynamically loaded and displayed in the application's Documentation page.
+Welcome to the ForgeBoard documentation! This repository contains comprehensive guides, architecture references, API documentation, and project resources for the ForgeBoard platform.
 
-To add new documentation:
-1. Add markdown (.md) files to the `forgeboard-frontend/src/assets/documentation` directory
-2. Organize files in subdirectories to create documentation categories
-3. The documentation will be automatically loaded and displayed in the Documentation page
+### 📚 Documentation Index
 
-Key documentation files:
-- `DATABASE.md` - MongoDB configuration and data model documentation
-- `ENVIRONMENT-CONFIGURATION.md` - Environment variables and configuration
-- `AUTHENTICATION.md` - User authentication and authorization
-- `API-DOCUMENTATION.md` - API endpoints and WebSocket namespaces
-- `SOCKET-SERVICES-GUIDE.md` - Socket.IO services architecture
+- [API Documentation](./forgeboard-frontend/src/assets/documentation/API-DOCUMENTATION.md)
+- [Frontend-API Architecture](./forgeboard-frontend/src/assets/documentation/FRONTEND-API-ARCHITECTURE.md)
+- [Layout System](./forgeboard-frontend/src/assets/documentation/LAYOUT.md)
+- [Visual Standards](./forgeboard-frontend/src/assets/documentation/VISUAL-STANDARDS.md)
+- [Authentication](./forgeboard-frontend/src/assets/documentation/AUTHENTICATION.md)
+- [Coding Standards](./forgeboard-frontend/src/assets/documentation/CODING-STANDARDS.md)
+- [Test Patterns](./forgeboard-frontend/src/assets/documentation/TEST-PATTERNS.md)
+- [Socket Client Usage](./forgeboard-frontend/src/assets/documentation/socket-client-usage.md)
+- [Gateways](./forgeboard-frontend/src/assets/documentation/gateways.md)
 
-For API-specific documentation, please see the Swagger UI at `/api` when the server is running.
+### 📂 Documentation Directory
+
+All documentation files are located in [`forgeboard-frontend/src/assets/documentation/`](./forgeboard-frontend/src/assets/documentation/).
+
+You will find:
+
+- **Architecture Guides**: System design, frontend-backend integration, and layout.
+- **API References**: REST endpoints, WebSocket namespaces, and usage examples.
+- **Security & Compliance**: Authentication, security dashboard, and FedRAMP documentation.
+- **Development Standards**: Coding standards, test patterns, and visual guidelines.
+- **Socket & Gateway Docs**: Guides for real-time communication and gateway architecture.
+- **Business & Marketing**: Small business opportunities, benefits, and marketing materials.
+
+### 📝 How to Use
+
+- Browse the [documentation folder](./forgeboard-frontend/src/assets/documentation/) for all available guides.
+- Each Markdown file covers a specific topic or feature.
+- For a template to create new documentation, see [`_TEMPLATE.md`](./forgeboard-frontend/src/assets/documentation/_TEMPLATE.md).
+
+### 🛠️ Contributing
+
+To add or update documentation:
+
+1. Copy the header and footer from [`_TEMPLATE.md`](./forgeboard-frontend/src/assets/documentation/_TEMPLATE.md).
+2. Place new Markdown files in the documentation directory.
+3. Link to new files from this README or the documentation index as appropriate.
+
+---
+
+For more information about ForgeBoard, visit the [project homepage](https://www.truenorthinsights.com) or contact [support@truenorthinsights.com](mailto:support@truenorthinsights.com).
 
 ## Features
 
@@ -102,4 +131,3 @@ ForgeBoard supports two database options:
 </div>
 
 For detailed configuration information, see [DATABASE.md](forgeboard-frontend/src/assets/documentation/DATABASE.md).
-```

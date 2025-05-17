@@ -462,7 +462,8 @@ POST /api/metrics/register
    * Load README.md as the first tab
    */
   loadMainReadme(): void {
-    this.docService.getDocumentationByPath('/README.md')
+    // Always use 'README.md' relative to documentation base path
+    this.docService.getDocumentationByPath('README.md')
       .subscribe({
         next: (content) => {
           // Add README as first tab
@@ -472,22 +473,21 @@ POST /api/metrics/register
             content: '',
             isMarkdown: true,
             renderedContent: this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content)),
-            path: '/README.md'
+            path: 'README.md'
           });
         },
         error: () => {
-          // If README.md not found at root, try in assets/documentation
-          this.docService.getDocumentationByPath('README.md')
-            .subscribe(content => {
-              this.dynamicTabs.unshift({
-                label: 'README',
-                icon: 'description',
-                content: '',
-                isMarkdown: true,
-                renderedContent: this.sanitizer.bypassSecurityTrustHtml(this.markdownToHtml(content)),
-                path: 'README.md'
-              });
-            });
+          // Only add a "Welcome" tab if README.md is missing
+          this.dynamicTabs.unshift({
+            label: 'Welcome',
+            icon: 'info',
+            content: '',
+            isMarkdown: true,
+            renderedContent: this.sanitizer.bypassSecurityTrustHtml(
+              '<h2>Welcome to ForgeBoard Documentation</h2><p>No <code>README.md</code> found in <code>assets/documentation/</code>.<br>Please add a README.md file for a custom introduction.</p>'
+            ),
+            path: ''
+          });
         }
       });
   }

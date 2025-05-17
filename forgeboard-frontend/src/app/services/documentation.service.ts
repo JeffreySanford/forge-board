@@ -211,11 +211,18 @@ export class DocumentationService {
    * Get documentation file content by path
    */
   getDocumentationByPath(path: string): Observable<string> {
-    const fullPath = path.startsWith(this.basePath) ? path : this.basePath + path;
+    // Normalize path to avoid double slashes
+    let fullPath = path.startsWith(this.basePath) ? path : this.basePath + path;
+    fullPath = fullPath.replace(/\/{2,}/g, '/'); // Replace double slashes with single
     return this.http.get(fullPath, { responseType: 'text' })
       .pipe(
         catchError(err => {
-          console.error(`Failed to load documentation file: ${path}`, err);
+          if (path === 'README.md' || path.endsWith('/README.md')) {
+            // Only log a warning for missing README.md
+            console.warn(`README.md not found at: ${fullPath}`);
+          } else {
+            console.error(`Failed to load documentation file: ${path}`, err);
+          }
           return of(`# Error Loading Documentation\n\nUnable to load the requested documentation file at path: **${path}**.\n\nPlease check that the file exists in the assets/documentation directory.`);
         })
       );

@@ -77,7 +77,8 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
       'connect',
       `Client connected from ${client.handshake.address}`
     );
-    
+    // Emit connection-status for status bar
+    client.emit('connection-status', { status: 'success', data: { connected: true }, timestamp: new Date().toISOString() });
     // Send initial health data
     const health = this.diagnosticsService.getHealth();
     client.emit('health-update', { type: 'health-update', payload: health, timestamp: new Date().toISOString(), success: true });

@@ -1,15 +1,11 @@
 /**
- * User related types and interfaces
+ * User and authentication related types
  */
 
 /**
  * User role enum
  */
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  GUEST = 'guest'
-}
+export type UserRole = 'admin' | 'user' | 'guest';
 
 /**
  * User interface
@@ -25,81 +21,22 @@ export interface User {
 }
 
 /**
- * User registration request
- */
-export interface UserRegistrationRequest {
-  username: string;
-  password: string;
-  email?: string;
-}
-
-/**
- * User login request
- */
-export interface UserLoginRequest {
-  username: string;
-  password: string;
-}
-
-/**
- * User login response
- */
-export interface UserLoginResponse {
-  token: string;
-  user: User;
-}
-
-/**
- * Authentication state interface
- */
-export interface AuthState {
-  /**
-   * Currently authenticated user
-   */
-  user: User | null;
-  
-  /**
-   * Authentication token
-   */
-  token: string | null;
-  
-  /**
-   * Whether authentication is in progress
-   */
-  loading: boolean;
-  
-  /**
-   * Authentication error if any
-   */
-  error: string | null;
-}
-
-/**
  * JWT payload structure
  */
 export interface JwtPayload {
-  /**
-   * Subject (user ID)
-   */
   sub: string;
-  
-  /**
-   * Username
-   */
   username: string;
-  
-  /**
-   * User role
-   */
   role: UserRole;
-  
-  /**
-   * Issued at timestamp
-   */
-  iat?: number;
-  
-  /**
-   * Expiration timestamp
-   */
-  exp?: number;
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Auth state interface
+ */
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  loading?: boolean;
+  error?: string | null;
 }

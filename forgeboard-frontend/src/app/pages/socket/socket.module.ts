@@ -8,8 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-// Import MatTooltipModule if SocketMonitoringComponent or other children use it.
-// import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 const routes: Routes = [
   {
@@ -35,8 +34,8 @@ const routes: Routes = [
     MatProgressSpinnerModule,
     MatCardModule,
     MatIconModule,
-    MatButtonModule
-    // MatTooltipModule,
+    MatButtonModule,
+    MatTooltipModule
   ],
   exports: [
     SocketDashboardComponent, // Export if it's used elsewhere directly

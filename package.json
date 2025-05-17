@@ -94,7 +94,7 @@
     "timers-browserify": "^2.0.12",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
-    "tslib": "^2.3.0",
+    "tslib": "^2.8.1",
     "typescript": "~5.7.2",
     "url": "^0.11.4",
     "util": "^0.12.5",

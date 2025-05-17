@@ -329,15 +329,30 @@ export interface DiagnosticResult<T> {
 
 ### 🔌 Socket Management
 
-#### `SocketRegistration`
-Registered socket entry.
+#### `SocketInfo`
+Information about a socket connection, typically returned from the server.
 
 ```typescript
-interface SocketRegistration {
+export interface SocketInfo<TData = unknown> {
+  id: string;
   namespace: string;
-  socket: Socket;
-  registeredAt: Date;
-  lastActivity?: Date;
+  clientIp: string;
+  userAgent: string;
+  connectTime: Date | string;
+  lastActivity: Date | string;
+  disconnectTime?: Date | string;
+  events: DiagnosticSocketEvent<TData>[];
+}
+```
+
+#### `DiagnosticSocketEvent`
+Records events that occur on a socket.
+
+```typescript
+export interface DiagnosticSocketEvent<TData = unknown> {
+  type: string;
+  timestamp: Date | string;
+  data?: TData;
 }
 ```
 
@@ -345,11 +360,23 @@ interface SocketRegistration {
 Metrics about socket usage.
 
 ```typescript
-interface SocketMetrics {
+export interface SocketMetrics {
   totalConnections: number;
   activeConnections: number;
-  messageRate: number;
-  bytesTransferred: number;
+  disconnections: number;
+  messagesSent: number;
+  messagesReceived: number;
+  errors: number;
+}
+```
+
+#### `SocketStatusUpdate`
+Complete socket status including active connections and metrics.
+
+```typescript
+export interface SocketStatusUpdate<TData = unknown> {
+  activeSockets: SocketInfo<TData>[];
+  metrics: SocketMetrics;
 }
 ```
 
