@@ -14,13 +14,14 @@ export interface LogFetchResponse extends LogQueryResponse {
   total: number;
 }
 
-// Assuming DisplayLogEntry is a defined type, possibly similar to LogEntry but for UI
-export interface DisplayLogEntry extends LogEntry {
-  // ... any additional UI-specific properties ...
+// Import DisplayLogEntry from shared library and extend it with UI-specific properties
+import { DisplayLogEntry as BaseDisplayLogEntry } from '@forge-board/shared/api-interfaces';
+
+export interface DisplayLogEntry extends BaseDisplayLogEntry {
   isSelected?: boolean;
   matchesFilter?: boolean;
-  displayTimestamp?: string; // Example: for formatted time
-  // Removed 'data' if it was here, use 'details' from LogEntry
+  displayTimestamp?: string; 
+  clientProcessedAt?: string;
 }
 
 // Define a more specific type for the payload of 'log-stream' events

@@ -1,7 +1,8 @@
 import { Component, ViewChild, ElementRef, Input, OnInit, OnDestroy, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { UserData } from '../../services/user-data.service';
 import { BackendStatusService, BackendStatusSummary } from '../../services/backend-status.service';
-import { DiagnosticsService, EnhancedHealthData } from '../../services/diagnostics.service';
+import { DiagnosticsService } from '../../services/diagnostics.service';
+import { EnhancedHealthData } from '../../models/enhanced-health.model';
 import { Subscription, interval } from 'rxjs';
 
 // Define interfaces for navigator connection and performance memory

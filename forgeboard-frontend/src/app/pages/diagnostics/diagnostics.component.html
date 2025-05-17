@@ -166,11 +166,10 @@
     <h3>Live Metrics</h3>
     <div class="metrics-display">
       <ng-container *ngIf="liveMetrics$ | async as metrics; else loadingMetrics">
-        <div *ngIf="metrics; else waitingForData">
-          <p><strong>CPU Usage:</strong> {{ metrics.cpu.toFixed(2) }}%</p>
-          <p><strong>Memory Usage:</strong> {{ metrics.memory.toFixed(2) }}%</p>
-          <p *ngIf="metrics.disk !== undefined"><strong>Disk Usage:</strong> {{ metrics.disk.toFixed(2) }}%</p>
-          <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ metrics.network.toFixed(2) }}%</p>
+        <div *ngIf="metrics; else waitingForData">          <p><strong>CPU Usage:</strong> {{ formatMetricValue(metrics.cpu) }}%</p>
+          <p><strong>Memory Usage:</strong> {{ formatMetricValue(metrics.memory) }}%</p>
+          <p *ngIf="metrics.disk !== undefined"><strong>Disk Usage:</strong> {{ formatMetricValue(metrics.disk) }}%</p>
+          <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ formatMetricValue(metrics.network) }}%</p>
           <p><strong>Last Update:</strong> {{ metrics.time | date:'mediumTime' }}</p>
           <p *ngIf="metrics.value !== undefined"><strong>Value:</strong> {{ metrics['value'] }}</p>
           <!-- You can add more specific fields if your MetricData has them -->

@@ -8,21 +8,17 @@ import { Environment } from '../../environments/environment.interface'; // Impor
 
 import { BackendStatusService, BackendStatusSummary } from './backend-status.service'; // Added BackendStatusSummary
 import { TypeDiagnosticsService } from './type-diagnostics.service';
+import { EnhancedHealthData } from '../models/enhanced-health.model';
+import { EnhancedHealthTimelinePoint } from '../models/enhanced-health-timeline.model';
 
 import {
   HealthData,
   SocketLogEvent,
   SocketStatusUpdate,
   MetricData,
-  HealthTimelinePoint, // Added HealthTimelinePoint
+  HealthTimelinePoint,
   SocketResponse // Import SocketResponse from shared
 } from '@forge-board/shared/api-interfaces';
-
-// Extended health data type
-export interface EnhancedHealthData extends HealthData {
-  clientProcessedTimestamp?: string;
-  isSimulated?: boolean;
-}
 
 @Injectable({
   providedIn: 'root'
@@ -38,7 +34,7 @@ export class DiagnosticsService implements OnDestroy {  private socket!: Socket;
   private socketStatusSubject = new BehaviorSubject<SocketStatusUpdate | null>(null);
   private socketLogsSubject = new BehaviorSubject<SocketLogEvent[]>([]);
   private liveMetricsSubject = new BehaviorSubject<MetricData | null>(null); // Added for live metrics
-  private timelinePointsSubject = new BehaviorSubject<HealthTimelinePoint[]>([]); // New Subject for timeline points
+  private timelinePointsSubject = new BehaviorSubject<EnhancedHealthTimelinePoint[]>([]); // Enhanced timeline points
 
   // Connection status
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
@@ -252,22 +248,26 @@ export class DiagnosticsService implements OnDestroy {  private socket!: Socket;
     });
     this.socket.on('live-metric-update', (data: SocketResponse<MetricData> | MetricData) => {
       handleResponse<MetricData>(data, this.liveMetricsSubject);
-    });
-
-    // Listen for timeline updates
+    });    // Listen for timeline updates
     this.socket.on('timeline-update', (receivedData: SocketResponse<HealthTimelinePoint[]> | HealthTimelinePoint[]) => {
       let actualData: HealthTimelinePoint[] | null = null;
-      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData && 'status' in receivedData) {
-        const socketResp = receivedData as SocketResponse<HealthTimelinePoint[]>;
-        if (socketResp.status === 'success') {
-          actualData = socketResp.data;
+      
+      // Extract actual data from response
+      if (receivedData && typeof receivedData === 'object' && 'data' in receivedData && 'event' in receivedData) {
+        const adaptedResponse = adaptSocketResponse<HealthTimelinePoint[]>(receivedData);
+        if (isSuccessResponse(adaptedResponse)) {
+          actualData = adaptedResponse.data;
         } else {
-          console.error(`Timeline update error for event ${socketResp.event}: ${socketResp.message}`);
+          console.error(`Timeline update error: ${adaptedResponse.message || 'Unknown error'}`);
         }
       } else {
+        // Direct array (not wrapped in response)
         actualData = receivedData as HealthTimelinePoint[];
       }
-      this.timelinePointsSubject.next(actualData || []); // Ensure it's an array
+      
+      // Convert to enhanced timeline points with UI properties
+      const enhancedData = this.mapToEnhancedTimelinePoints(actualData || []);
+      this.timelinePointsSubject.next(enhancedData);
     });
 
     // Request initial data upon connection (optional, if backend sends it)
@@ -351,10 +351,74 @@ export class DiagnosticsService implements OnDestroy {  private socket!: Socket;
   public getConnectionStatus(): Observable<boolean> {
     return this.connectionStatusSubject.asObservable();
   }
-  
-  // New method to get timeline points
-  public getTimelinePoints(): Observable<HealthTimelinePoint[]> {
+    // Get enhanced timeline points with UI-specific properties
+  public getTimelinePoints(): Observable<EnhancedHealthTimelinePoint[]> {
     return this.timelinePointsSubject.asObservable();
+  }
+  
+  /**
+   * Convert basic health timeline points to enhanced ones with UI properties
+   */
+  private mapToEnhancedTimelinePoints(points: HealthTimelinePoint[]): EnhancedHealthTimelinePoint[] {
+    return points.map(point => {
+      const enhanced: EnhancedHealthTimelinePoint = {
+        ...point,
+        icon: this.getIconForStatus(point.status),
+        title: this.getTitleForStatus(point.status),
+        content: point.message,
+        type: this.getTypeForStatus(point.status),
+        showDetails: false
+      };
+      return enhanced;
+    });
+  }
+  
+  /**
+   * Get appropriate icon based on health status
+   */
+  private getIconForStatus(status: string): string {
+    switch (status) {
+      case 'healthy':
+        return 'check_circle';
+      case 'degraded':
+        return 'warning';
+      case 'unhealthy':
+        return 'error';
+      default:
+        return 'help';
+    }
+  }
+  
+  /**
+   * Get appropriate title based on health status
+   */
+  private getTitleForStatus(status: string): string {
+    switch (status) {
+      case 'healthy':
+        return 'System Healthy';
+      case 'degraded':
+        return 'Performance Degraded';
+      case 'unhealthy':
+        return 'System Issue Detected';
+      default:
+        return 'Status Unknown';
+    }
+  }
+  
+  /**
+   * Get appropriate type for styling based on health status
+   */
+  private getTypeForStatus(status: string): 'info' | 'warning' | 'error' | 'success' {
+    switch (status) {
+      case 'healthy':
+        return 'success';
+      case 'degraded':
+        return 'warning';
+      case 'unhealthy':
+        return 'error';
+      default:
+        return 'info';
+    }
   }
     // HTTP methods
   public getHealth(): Observable<HealthData> {

@@ -4,8 +4,8 @@ import { Observable, BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-// Import the shim only for types and fallback
-import { performance } from '../shims/perf-hooks';
+// Import from our browser compatibility layer
+import { performance } from '../utils/browser-compat';
 
 export interface TimingData {
   name: string;

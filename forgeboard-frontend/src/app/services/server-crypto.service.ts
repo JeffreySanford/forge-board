@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, from } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '@/environments/environment';
-import * as cryptoShim from '@shims/crypto';
+import { CryptoService } from '@forge-board/shared/api-interfaces';
 import { BackendStatusService } from './backend-status.service';
 
 interface HashResponse {
@@ -25,31 +25,20 @@ export class ServerCryptoService {
 
   /**
    * Create a hash using the server when possible
-   */
-  createHash(algorithm: string, data: string, encoding: 'hex' | 'base64' = 'hex'): Observable<string> {
+   */  createHash(algorithm: string, data: string, encoding: 'hex' | 'base64' = 'hex'): Observable<string> {
     const url = `${environment.apiBaseUrl}/crypto/hash`;
     
     return this.http.post<HashResponse>(url, { algorithm, data, encoding }).pipe(
       map(response => response.hash),
       catchError(error => {
-        console.warn('Server crypto unavailable, falling back to shim', error);
+        console.warn('Server crypto unavailable, falling back to shared implementation', error);
         this.backendStatusService.updateGatewayStatus('crypto', false, true);
         
         try {
-          // Use the crypto shim as fallback
-          const hash = cryptoShim.createHash(algorithm);
-          hash.update(data);
-          
-          // Convert Promise to Observable using from() instead of of()
-          return from(hash.digest(encoding).then((result: string | Uint8Array) => {
-            // Convert to string if it's a Uint8Array
-            if (result instanceof Uint8Array) {
-              return new TextDecoder().decode(result);
-            }
-            return result as string;
-          }));
+          // Use the shared crypto implementation as fallback
+          return CryptoService.createHashObservable(algorithm, data, encoding);
         } catch (shimError) {
-          console.error('Crypto shim error:', shimError);
+          console.error('Crypto service error:', shimError);
           throw shimError;
         }
       })

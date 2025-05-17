@@ -3,12 +3,13 @@ import { BehaviorSubject, Subscription } from 'rxjs';
 import { DiagnosticsService } from '../../services/diagnostics.service'; // Ensure using the service-level diagnostics service
 import {
   MetricData,
-  HealthTimelinePoint,
   SocketInfo,
   HealthData,
   SocketMetrics,
   SocketLogEvent
 } from '@forge-board/shared/api-interfaces';
+import { EnhancedHealthTimelinePoint } from '../../models/enhanced-health-timeline.model';
+import { safeToFixed, formatMetricValue } from '../../utils/metric-helpers';
 
 @Component({
   selector: 'app-diagnostics',
@@ -28,7 +29,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   gateways: string[] = [];
   errors: string[] = [];
 
-  timelinePoints: HealthTimelinePoint[] = [];
+  timelinePoints: EnhancedHealthTimelinePoint[] = [];
   socketMetrics: SocketMetrics = { totalConnections: 0, activeConnections: 0, disconnections: 0, errors: 0, messagesSent: 0, messagesReceived: 0 };
   activeSockets: SocketInfo[] = [];
   socketLogs: SocketLogEvent[] = [];
@@ -135,13 +136,21 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       return `${seconds}s`;
     }  }
   // formatUptime function already defined above
-  
-  getEventTypeClass(type: string): string {
+    getEventTypeClass(type: string): string {
     switch (type) {
       case 'error': return 'event-error';
       case 'warning': return 'event-warning';
       case 'info': return 'event-info';
       default: return 'event-default';
     }
+  }
+
+  /**
+   * Format a metric value safely for display
+   * @param value The value to format
+   * @returns Formatted string value with 2 decimal places
+   */
+  formatMetricValue(value: string | number | boolean | Date | undefined | null): string {
+    return formatMetricValue(value, 2);
   }
 }

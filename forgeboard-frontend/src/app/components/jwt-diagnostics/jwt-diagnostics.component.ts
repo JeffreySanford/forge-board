@@ -3,7 +3,8 @@ import {
   JwtDiagnosticsService, 
   AuthDiagnosticEvent, 
   AuthStats 
-} from '../../services/jwt-diagnostics.service';
+} from '@forge-board/shared/services';
+import { JwtPayload } from '@forge-board/shared/api-interfaces';
 import { Subscription } from 'rxjs';
 
 @Component({

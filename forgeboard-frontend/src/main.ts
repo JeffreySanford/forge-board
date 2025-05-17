@@ -4,11 +4,8 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
 
-// Import and initialize shims
-import { initializeShims } from './app/shims';
-
-// Initialize Node.js module shims for browser environment
-initializeShims();
+// Browser compatibility is handled by polyfills.ts
+// No additional initialization needed here
 
 if (environment.production) {
   enableProdMode();

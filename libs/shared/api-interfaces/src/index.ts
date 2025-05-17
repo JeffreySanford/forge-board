@@ -2,6 +2,13 @@
  * This is the main entry point for the shared-api-interfaces library
  */
 
+// Export crypto service
+export {
+  CryptoService,
+  HashResult,
+  RandomBytesResult
+} from './lib/crypto';
+
 // Export user and authentication types
 export { 
   User, 
@@ -199,3 +206,5 @@ export {
   SupplyChainEvent,
   FedRampEvent
 } from './lib/security-types';
+
+export * from './lib/jwt/jwt-diagnostics.service';

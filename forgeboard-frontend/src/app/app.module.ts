@@ -23,6 +23,7 @@ import { DocumentationModule } from './pages/documentation/documentation.module'
 import { SecurityDashboardModule } from './pages/security-dashboard/security-dashboard.module';
 
 // Core modules
+import { CoreModule } from './core/core.module';  // Import CoreModule
 import { SoundModule } from './core/sounds/sound.module';  // Add the SoundModule
 
 // Angular Material modules
@@ -83,6 +84,9 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     MatButtonToggleModule,
     MatProgressBarModule,
     DragDropModule,
+    
+    // Core module (must be imported first)
+    CoreModule,
     
     // Feature modules
     KanbanBoardModule,

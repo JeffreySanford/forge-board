@@ -21,6 +21,13 @@ export interface ExtendedMetricData extends MetricData {
   disk?: number;
   network?: number;
   time: string | Date;
+  responseTime?: number;
+  activeUsers?: number;
+  systemLoad?: string;
+  diskReadRate?: number;
+  diskWriteRate?: number;
+  processMemory?: number;
+  requestRate?: number;
 }
 
 /**

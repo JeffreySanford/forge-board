@@ -6,16 +6,8 @@ import { MetricsService } from '../../services/metrics.service';
 import { BackendStatusService } from '../../services/backend-status.service';
 import { RefreshIntervalService } from '../../services/refresh-interval.service';
 
-// Define extended metric data interface
-interface ExtendedMetricData extends MetricData {
-  responseTime?: number;
-  activeUsers?: number;
-  systemLoad?: string;
-  diskReadRate?: number;
-  diskWriteRate?: number;
-  processMemory?: number;
-  requestRate?: number;
-}
+// Use ExtendedMetricData from the shared library
+import { MetricData, ExtendedMetricData } from '@forge-board/shared/api-interfaces';
 
 @Component({
   selector: 'app-metric',

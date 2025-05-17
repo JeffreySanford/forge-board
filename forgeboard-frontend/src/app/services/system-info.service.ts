@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '@/environments/environment';
-import * as osShim from '@shims/os';
+import { os as osShim } from '../utils/browser-compat';
 import { BackendStatusService } from './backend-status.service';
 
 interface SystemInfo {

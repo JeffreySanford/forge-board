@@ -8,14 +8,14 @@ export interface Environment {
   production: boolean;
   
   /**
-   * API URL (e.g., http://localhost:3000/api)
+   * API URL (e.g., http://localhost:3000/api) - computed getter property
    */
-  apiUrl?: string;
+  readonly apiUrl?: string;
   
   /**
-   * Socket URL (e.g., http://localhost:3000)
+   * Socket URL (e.g., http://localhost:3000) - computed getter property
    */
-  socketUrl?: string;
+  readonly socketUrl?: string;
   
   /**
    * API base URL (e.g., http://localhost:3000/api)

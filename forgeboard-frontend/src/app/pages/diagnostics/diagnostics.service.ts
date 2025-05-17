@@ -4,6 +4,7 @@ import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { io, Socket } from 'socket.io-client';
 import { SocketResponse } from '@forge-board/shared/api-interfaces';
+import { adaptSocketResponse, isSuccessResponse } from '../../utils/socket-adapter';
 
 // Socket Information Types
 export interface SocketInfo {
@@ -161,22 +162,24 @@ export class DiagnosticsService implements OnDestroy {  // API URLs
       console.error('Diagnostics socket connection error:', err);
       this.connectionStatusSubject.next(false);
     });
-    
-    this.socket.on('socket-status', (response: SocketResponse<SocketStatusUpdate>) => {
-      if (response.status === 'success') {
-        this.socketStatusSubject.next(response.data);
+      this.socket.on('socket-status', (response: SocketResponse<SocketStatusUpdate>) => {
+      const adaptedResponse = adaptSocketResponse<SocketStatusUpdate>(response);
+      if (isSuccessResponse(adaptedResponse)) {
+        this.socketStatusSubject.next(adaptedResponse.data);
       }
     });
     
     this.socket.on('socket-logs', (response: SocketResponse<SocketLogEvent[]>) => {
-      if (response.status === 'success') {
-        this.socketLogsSubject.next(response.data);
+      const adaptedResponse = adaptSocketResponse<SocketLogEvent[]>(response);
+      if (isSuccessResponse(adaptedResponse)) {
+        this.socketLogsSubject.next(adaptedResponse.data);
       }
     });
     
     this.socket.on('health-update', (response: SocketResponse<HealthData>) => {
-      if (response.status === 'success') {
-        this.healthSubject.next(response.data);
+      const adaptedResponse = adaptSocketResponse<HealthData>(response);
+      if (isSuccessResponse(adaptedResponse)) {
+        this.healthSubject.next(adaptedResponse.data);
       }
     });
   }

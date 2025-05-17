@@ -1,14 +1,26 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../tsconfig.base.json",
   "include": [
     "src/**/*.ts",
     "src/**/*.html",
     "src/**/*.json",
-    "src/**/*.ts",
     "src/**/*.scss"
   ],
   "compilerOptions": {
-    "composite": true
+    "target": "es2022",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": "src",
+    "composite": false
   },
-  "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts"]
+  "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/app/shims/**/*.ts"]
 }
