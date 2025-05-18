@@ -1,6 +1,14 @@
 import { NgModule, Optional, SkipSelf } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SocketClientService } from './services/socket/socket-client.service';
+import { HttpClientModule } from '@angular/common/http';
+
+// Import service barrels
+import * as authServices from './services/auth';
+import * as monitoringServices from './services/monitoring';
+import * as socketServices from './services/socket';
+import * as stateServices from './services/state';
+import * as uiServices from './services/ui';
+import * as utilServices from './services/utils';
 
 /**
  * Core module that provides singleton services for the application
@@ -8,9 +16,16 @@ import { SocketClientService } from './services/socket/socket-client.service';
 @NgModule({
   imports: [
     CommonModule,
+    HttpClientModule
   ],
   providers: [
-    SocketClientService,
+    // Spread all services from barrels
+    ...Object.values(authServices),
+    ...Object.values(monitoringServices),
+    ...Object.values(socketServices),
+    ...Object.values(stateServices),
+    ...Object.values(uiServices),
+    ...Object.values(utilServices)
   ]
 })
 export class CoreModule {

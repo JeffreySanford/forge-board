@@ -2,78 +2,104 @@
  * This is the main entry point for all types in the library
  */
 
-// Export user and authentication types
-export * from './user-types';
+// User types
+export * from './user/user.interface';
 
-// Export health-related types
-export * from './health.type';
+// Health related exports
+export * from './health/health.interface';
+// health-timeline file is missing, removing this export
+export * from './health/historical.metric.interface';
 
-// Export socket-related types
-export {
-  SOCKET_EVENTS,
-  SocketCommunication,
-  SocketMessage
-} from './socket-types';
-
-// Export socket interfaces with explicit selections to avoid conflicts
-export {
-  SocketConnectionInfo,
-  SocketEvent,
-  SocketMetrics,
-  DiagnosticSocketEvent,
-  SocketInfo,
-  SocketLogEvent,
-  SocketStatusUpdate,
-  SocketConnectionError
-} from './socket-interfaces';
-
-// Export socket registry types
-export * from './socket-registry-types';
-
-// Export socket utilities
-export {
-  SocketEventData,
-  SocketClientOptions,
-  SocketHandler,
-  SocketEventRegistry,
-  SocketConnectionStatus,
-  SocketClient,
-  SocketMessageHandler,
-  createSocketEventPayload,
-  parseSocketResponse,
-  isSocketConnected,
-  parseSocketError,
-  formatSocketError,
-  createLogSocketResponse
-} from './utils/socket-utils';
-
-// Export socket response type from api-response.ts (this is our canonical implementation)
+// Socket related exports
 export {
   SocketResponse,
   SocketResponseData,
-  SocketResponseType,
+  SocketEvent,
   createSocketResponse,
-  createSocketErrorResponse
-} from './api-response';
+  createSocketEventResponse,
+  createSocketErrorResponse,
+  adaptSocketResponse,
+  isSuccessResponse
+} from './socket/socket.interface';
 
-// Export metrics-related types
-export * from './metrics-types';
-export * from './metrics-condenser';
-export * from './historical-metrics';
+// API related exports
+export * from './api/api.interface';
 
-// Export log types
-export * from './log-types';
+// Metric related exports
+export * from './metric/metric.interface';
+export * from './metric/metric.condenser';
 
-// Export API interfaces
-export * from './api-interfaces';
+// Log related exports
+export * from './log/log-types';
+export * from './log/log-helpers';
 
-// Selectively export from auth-interfaces to avoid AuthState conflict
+// Message related exports
+export * from './message';
+
+// Auth related exports
+export * from './auth/auth-interfaces';
+
+// JWT related exports - renamed exports to avoid duplicates
+export { 
+  JwtClaims,
+  UserJwtPayload,
+  RefreshTokenRequest,
+  // Renamed to avoid conflict with AuthTokenResponse from auth-interfaces
+  AuthTokenResponse as JwtAuthTokenResponse 
+} from './jwt/jwt.interface';
+export * from './jwt/jwt-diagnostics.service';
+
+// Security related exports
+export * from './security/security.interface';
+// Export with rename to avoid duplicates
+// Since security.event.ts and security.interface.ts have overlapping types
+
+// Validation related exports
 export {
-  AuthCredentials,
-  AuthTokenResponse,
-  // Rename AuthState from auth-interfaces to avoid conflict
-  AuthState as AuthStateInterface
-} from './auth-interfaces';
+  ValidationResult,
+  TypeValidationError,
+  Log,
+  TypeValidator,
+  ValidatedTypes,
+  typeValidators,
+  registerTypeValidator,
+  validateType,
+  createTypeValidationError,
+  isDiagnosticEvent,
+  validateDiagnosticEvent,
+  isMetric,
+  validateMetricData,
+  isSocketResponse,
+  isErrorResponse,
+  safeStringify,
+  validateSocketResponse,
+  validateLogResponse,
+  isHealthData,
+  validateHealthData,
+  isUser,
+  validateUser,
+  validateHistoricalMetrics,
+  validateSystemPerformance
+} from './validation/validation.interface';
 
-// Export validation utilities
-export * from './type-validation';
+// Tile related exports 
+// Rename TileType to avoid conflict with metric.interface
+export {
+  // Renamed to avoid conflict with TileType from metric.interface
+  TileType as TileTyEnum,
+  TileDragEvent,
+  TileLayoutResponse,
+  TileLayoutRequest,
+  TileVisibility,
+  TileResponse,
+  MemoryData
+} from './tile/tile.interface';
+
+// Sound related exports
+export * from './sound/sound-types';
+
+// Diagnostic related exports
+export * from './diagnostic/diagnostic.interface.';
+
+// Crypto related exports
+export * from './crypto/crypto.interface';

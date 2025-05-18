@@ -1,13 +1,12 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
-import { Observable, Subscription, of, timer } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { Observable, Subscription, of } from 'rxjs';
 import { catchError, tap, retryWhen, scan, delayWhen } from 'rxjs/operators';
-import { MetricData } from '@forge-board/shared/api-interfaces';
-import { MetricsService } from '../../services/metrics.service';
-import { BackendStatusService } from '../../services/backend-status.service';
-import { RefreshIntervalService } from '../../services/refresh-interval.service';
+import { MetricsService } from '../../core/services/monitoring/metrics.service';
+import { SoundService, SoundType } from '../../core/sounds/sound.service';
 
-// Use ExtendedMetricData from the shared library
-import { MetricData, ExtendedMetricData } from '@forge-board/shared/api-interfaces';
+// Keep only this import for Metric
+import { Metric, ExtendedMetricData } from '@forge-board/shared/api-interfaces';
 
 @Component({
   selector: 'app-metric',
@@ -15,8 +14,8 @@ import { MetricData, ExtendedMetricData } from '@forge-board/shared/api-interfac
   styleUrls: ['./metric.component.scss'],
   standalone: false
 })
-export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
-  metrics$: Observable<ExtendedMetricData>; // Changed from MetricData to ExtendedMetricData
+export class MetricComponent implements OnInit, OnDestroy {
+  metrics$: Observable<ExtendedMetricData>; // Changed from Metric to ExtendedMetricData
   refreshInterval: number = 3000; // Default refresh interval changed to 3000ms (3 seconds)
   chartData: number[] = [];
   memoryData: number[] = [];
@@ -39,13 +38,11 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
   private diskIOWriteRate = Math.floor(Math.random() * 300) + 50; // KB/s
   private processMemoryValue = Math.floor(Math.random() * 1024) + 256; // MB
   
-  @ViewChild('chart') chartElement!: ElementRef<HTMLDivElement>;
   private subscription = new Subscription();
   
   constructor(
     private metricsService: MetricsService,
-    private backendStatusService: BackendStatusService,
-    private refreshIntervalService: RefreshIntervalService
+    private soundService: SoundService
   ) {
     this.metrics$ = this.metricsService.getMetricsStream();
     
@@ -56,11 +53,11 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     // Get the current global interval
-    this.refreshInterval = this.refreshIntervalService.getInterval();
+    this.refreshInterval = this.metricsService.getInterval();
     
     // Subscribe to interval changes
     this.subscription.add(
-      this.refreshIntervalService.getIntervalObservable().subscribe(interval => {
+      this.metricsService.getIntervalObservable().subscribe(interval => {
         this.refreshInterval = interval;
       })
     );
@@ -88,10 +85,8 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
         // Handle errors without breaking the stream
         catchError(error => {
           console.warn('Error in metrics stream (falling back to mock data):', error);
-          // Notify backend status service about metrics failure
-          this.backendStatusService.updateGatewayStatus('metrics', false, true);
           // Return empty metrics to avoid breaking the subscription
-          return of({ cpu: 0, memory: 0, time: new Date().toISOString() } as MetricData);
+          return of({ cpu: 0, memory: 0, time: new Date().toISOString() } as Metric);
         })
       ).subscribe(metrics => {
         if (metrics) {
@@ -119,7 +114,7 @@ export class MetricComponent implements OnInit, OnDestroy, AfterViewInit {
     );
       // Subscribe to backend status to check if we're using mock data
     this.subscription.add(
-      this.backendStatusService.getStatusSummary().subscribe(status => {
+      this.metricsService.getStatusSummary().subscribe(status => {
         this.usingMockData = status.anyMockData;
       })
     );

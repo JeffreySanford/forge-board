@@ -150,7 +150,7 @@ This namespace provides real-time system performance metrics.
 
 | Event | Description | Data Structure |
 |-------|-------------|----------------|
-| `system-metrics` | Real-time system metrics update | `MetricData` |
+| `system-metrics` | Real-time system metrics update | `Metric` |
 
 **Client → Server:**
 
@@ -570,7 +570,7 @@ npm install @forge-board/shared/api-interfaces
 - UserRole               — `'admin' | 'user' | 'guest'`
 - JwtPayload             — JWT claims interface
 - AuthState              — In‑memory auth state (user, token)
-- MetricData             — System metric item
+- Metric             — System metric item
 - MetricResponse         — Metric REST response wrapper
 - MetricFilter           — Metric query parameters
 - MetricUpdate           — Metric batch format

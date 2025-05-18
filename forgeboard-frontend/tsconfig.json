@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "target": "es2022",
+    "composite": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
@@ -10,16 +11,24 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "paths": {
+      "@app/services/*": ["src/app/services/*"],
+      "@app/core/services/*": ["src/app/core/services/*"]
+    }
   },
   "files": [],
   "include": [
     "**/*.ts",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "**/*.json",
+    "**/*.html",
+    "**/*.scss",
+    "**/*.md",
   ],
   "references": [
     {
-      "path": "./tsconfig.editor.new.json"
+      "path": "./tsconfig.editor.json"
     },
     {
       "path": "./tsconfig.app.json"
@@ -27,5 +36,13 @@
     {
       "path": "./tsconfig.spec.json"
     }
-  ]
+  ],
+  "angularCompilerOptions": {
+    "strict": true,
+    "fullTemplateTypeCheck": true,
+    "strictTemplates": true,
+    "enableIvy": true,
+    "enableResourceInlining": true,
+    "enableNgModuleTypeCheck": true
+  }
 }

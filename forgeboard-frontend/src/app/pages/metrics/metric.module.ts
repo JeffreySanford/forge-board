@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 
 import { MetricComponent } from './metric.component';
 import { DiagnosticsComponent } from './diagnostics/diagnostics.component';
-import { MetricsService } from '../../services/metrics.service';
+import { MetricsService } from '../../core/services/monitoring/metrics.service';
 import { BackendStatusService } from '../../services/backend-status.service';
 import { RefreshIntervalService } from '../../services/refresh-interval.service';
 
@@ -29,7 +29,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatTooltipModule
   ],
   providers: [
-    MetricsService, // Ensure services are provided if not already provided in root
+    MetricsService, // Provided from core
     BackendStatusService,
     RefreshIntervalService
   ],

@@ -172,7 +172,7 @@
           <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ formatMetricValue(metrics.network) }}%</p>
           <p><strong>Last Update:</strong> {{ metrics.time | date:'mediumTime' }}</p>
           <p *ngIf="metrics.value !== undefined"><strong>Value:</strong> {{ metrics['value'] }}</p>
-          <!-- You can add more specific fields if your MetricData has them -->
+          <!-- You can add more specific fields if your Metric has them -->
         </div>
         <ng-template #waitingForData>
           <p>Waiting for live metrics data...</p>

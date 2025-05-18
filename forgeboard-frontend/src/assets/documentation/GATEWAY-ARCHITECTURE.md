@@ -151,7 +151,7 @@ ForgeBoard gateways leverage the **shared API interfaces library** to ensure typ
 
 Key shared elements used by gateways:
 
-- **Data Type Interfaces**: Strongly-typed interfaces for all data exchanged with clients (e.g., `MetricData`, `HealthData`, `LogEntry`)
+- **Data Type Interfaces**: Strongly-typed interfaces for all data exchanged with clients (e.g., `Metric`, `HealthData`, `LogEntry`)
 - **Response Wrappers**: Standardized response structures using `SocketResponse<T>` for consistent client handling
 - **Helper Functions**: Utility functions like `createSocketResponse()` for standardized message formatting
 - **Type Validators**: Runtime validation functions to ensure data integrity
@@ -160,12 +160,12 @@ Key shared elements used by gateways:
 
 ```typescript
 // From backend gateway:
-import { createSocketResponse, MetricData } from '@forge-board/shared/api-interfaces';
+import { createSocketResponse, Metric } from '@forge-board/shared/api-interfaces';
 
 @SubscribeMessage('subscribe-metrics')
 handleSubscribeMetrics(client: Socket) {
   // Type safety enforced by shared interfaces
-  const metrics: MetricData = {
+  const metrics: Metric = {
     cpu: 45.2,
     memory: 62.8,
     timestamp: new Date().toISOString()
@@ -182,9 +182,9 @@ handleSubscribeMetrics(client: Socket) {
 
 ```typescript
 // From frontend service:
-import { MetricData, SocketResponse } from '@forge-board/shared/api-interfaces';
+import { Metric, SocketResponse } from '@forge-board/shared/api-interfaces';
 
-socket.on('metrics-data', (response: SocketResponse<MetricData>) => {
+socket.on('metrics-data', (response: SocketResponse<Metric>) => {
   if (response.status === 'success') {
     // Type-safe access to metrics data
     this.currentCpu = response.data.cpu;

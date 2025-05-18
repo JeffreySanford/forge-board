@@ -39,4 +39,3 @@ export interface ActionMessage extends Message {
   actionData?: Record<string, unknown>;
 }
 
-// Module marker removed, types are now exported individually

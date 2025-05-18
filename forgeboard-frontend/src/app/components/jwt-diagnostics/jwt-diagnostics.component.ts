@@ -1,11 +1,154 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Injectable } from '@angular/core';
+import { Observable, Subscription, of } from 'rxjs';
 import { 
   JwtDiagnosticsService, 
-  AuthDiagnosticEvent, 
-  AuthStats 
-} from '@forge-board/shared/services';
-import { JwtPayload } from '@forge-board/shared/api-interfaces';
-import { Subscription } from 'rxjs';
+  AuthStats,
+  AuthDiagnosticEvent,
+  JwtVerificationResult,
+  TokenVerificationOptions,
+  JwtPayload // Import JwtPayload from the jwt-diagnostics.service
+} from '@forge-board/shared/api-interfaces';
+
+// Local implementation that will be injected
+@Injectable({
+  providedIn: 'root'
+})
+export class JwtDiagnosticsServiceImpl implements JwtDiagnosticsService {
+  // Mock data for connection status
+  private connected = false;
+
+  // Simple mock implementation for development
+  getAuthStats(): Observable<AuthStats> {
+    return new Observable<AuthStats>(observer => {
+      observer.next({
+        totalAttempts: 0,
+        successCount: 0,
+        failCount: 0,
+        lastActivity: new Date().toISOString(),
+        activeTokens: 0,
+        tokenVerifications: 0,
+        failedVerifications: 0
+      });
+    });
+  }
+  
+  getCurrentStats(): AuthStats {
+    return {
+      totalAttempts: 0,
+      successCount: 0,
+      failCount: 0,
+      lastActivity: new Date().toISOString(),
+      activeTokens: 0,
+      tokenVerifications: 0,
+      failedVerifications: 0
+    };
+  }
+  
+  getAuthEvents(): Observable<AuthDiagnosticEvent[]> {
+    return new Observable<AuthDiagnosticEvent[]>(observer => {
+      observer.next([]);
+    });
+  }
+  
+  getCurrentEvents(): AuthDiagnosticEvent[] {
+    return [];
+  }
+  
+  // Implementing the missing required methods from JwtDiagnosticsService
+  getToken(): string | null {
+    return null;
+  }
+
+  putToken(token: string): void {
+    console.log('Mock putToken called with:', token);
+  }
+
+  // Updated method signature to match the interface
+  decodeToken<T extends JwtPayload = JwtPayload>(token?: string): T | null {
+    if (!token) return null;
+    
+    try {
+      // Fixed implementation to correctly handle the typing
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      
+      const decodedPayload = JSON.parse(atob(payload)) as T;
+      
+      // Check if token is expired
+      if ('exp' in decodedPayload && typeof decodedPayload.exp === 'number' && 
+          decodedPayload.exp * 1000 < Date.now()) {
+        return null;
+      }
+      
+      return decodedPayload;
+    } catch (e) {
+      console.error('Failed to decode token:', e);
+      return null;
+    }
+  }
+
+  isTokenValid(): boolean {
+    return false;
+  }
+
+  clearToken(): void {
+    console.log('Mock clearToken called');
+  }
+  
+  verifyToken(token: string, options?: TokenVerificationOptions): JwtVerificationResult {
+    return {
+      valid: false,
+      error: 'Not implemented in frontend service'
+    };
+  }
+
+  // Additional methods that are being called in the component
+  getConnectionStatus(): Observable<boolean> {
+    return of(this.connected);
+  }
+
+  // HTTP fallback methods
+  getAuthEventsHttp(): Observable<AuthDiagnosticEvent[]> {
+    return of([]);
+  }
+
+  getAuthStatsHttp(): Observable<AuthStats> {
+    return of(this.getCurrentStats());
+  }
+  
+  // Implement additional methods from enhanced service
+  getTokenExpiration(): Date | null {
+    return null;
+  }
+  
+  logAuthEvent(event: Partial<AuthDiagnosticEvent>): void {
+    console.log('Mock logAuthEvent called with:', event);
+  }
+  
+  refreshToken(): Observable<string | null> {
+    return of(null);
+  }
+  
+  getUserInfo(): Observable<{id: string, username: string} | null> {
+    return of(null);
+  }
+  
+  getTimeUntilExpiration(): number {
+    return 0;
+  }
+  
+  hasClaim(claimName: string, expectedValue?: any): boolean {
+    return false;
+  }
+  
+  getSubject(): string | null {
+    return null;
+  }
+  
+  recordVerificationMetric(success: boolean, errorCode?: string): void {
+    console.log('Mock recordVerificationMetric called:', { success, errorCode });
+  }
+}
 
 @Component({
   selector: 'app-jwt-diagnostics',
@@ -229,7 +372,9 @@ export class JwtDiagnosticsComponent implements OnInit, OnDestroy {
     successCount: 0,
     failCount: 0,
     lastActivity: '',
-    activeTokens: 0
+    activeTokens: 0,
+    tokenVerifications: 0,
+    failedVerifications: 0
   };
   
   // Table column configuration
@@ -241,7 +386,7 @@ export class JwtDiagnosticsComponent implements OnInit, OnDestroy {
   // Subscriptions to clean up
   private subscriptions = new Subscription();
   
-  constructor(private jwtDiagnostics: JwtDiagnosticsService) { }
+  constructor(private jwtDiagnostics: JwtDiagnosticsServiceImpl) { }
   
   ngOnInit(): void {
     // Subscribe to auth events
@@ -329,3 +474,5 @@ export class JwtDiagnosticsComponent implements OnInit, OnDestroy {
     alert(`Event ID: ${event.id}\nType: ${event.type}\nTimestamp: ${event.timestamp}${event.errorMessage ? '\nError: ' + event.errorMessage : ''}`);
   }
 }
+
+// Note: This component is a mock implementation and should be replaced with actual service calls and logic.

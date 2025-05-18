@@ -43,12 +43,9 @@ export const TILE_TYPES = {
   KANBAN: 'kanban'  // Tile type for Kanban
 };
 
-// Add new fallback endpoints with full URLs
 export const FALLBACK_ENDPOINTS = {
-  // Use relative paths instead of hardcoded localhost URLs
   LOGS: '/api/logs',
   LOGS_MOCK: '/api/mock-data/logs', 
   LOGS_V2: '/api/v2/logs'
 };
 
-// Module marker removed, constants are now exported individually

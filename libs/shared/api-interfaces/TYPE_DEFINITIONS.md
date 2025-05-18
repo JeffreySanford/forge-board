@@ -4,7 +4,7 @@ This document provides an overview of the key interfaces and types defined withi
 
 ## <span style="color: #4CAF50;">Core API Structures</span>
 
-Located primarily in `api-interfaces.ts` and `api-response.ts`.
+Located primarily in `api/api.interface.ts`.
 
 -   **`ApiResponse<T>`**: The fundamental wrapper for all API responses.
     -   `success: boolean`
@@ -25,14 +25,14 @@ Located primarily in `api-interfaces.ts` and `api-response.ts`.
 
 ## <span style="color: #2196F3;">Socket Communication</span>
 
-Defined across `socket-types.ts` and `socket-registry-types.ts`.
+Defined in `socket/socket.interface.ts` and related files.
 
--   **`SocketStatus` (enum)**: Represents the state of a socket connection (e.g., `CONNECTED`, `DISCONNECTED`).
+-   **`SocketConnectionStatus` (enum)**: Represents the state of a socket connection (e.g., `CONNECTED`, `DISCONNECTED`).
 -   **`SOCKET_EVENTS` (const object)**: Defines standard socket event names (e.g., `CONNECT`, `MESSAGE`).
 -   **`SocketResponse<T>`**: Wrapper for data sent over sockets.
-    -   `event: string`
+    -   `event?: string`
     -   `status: 'success' | 'error'`
-    -   `data: T`
+    -   `data: T | null`
     -   `message?: string`
     -   `timestamp: string`
 -   **`SocketEvent`**: Generic socket event structure.
@@ -63,9 +63,9 @@ Found in `auth-interfaces.ts` and `user-types.ts`.
 
 ## <span style="color: #9C27B0;">Metrics & Diagnostics</span>
 
-Located in `metrics-types.ts`, `diagnostic-types.ts`, `health.type.ts`, `health-timeline.ts`.
+Located in `metric/metric.interface.ts`, `diagnostic/diagnostic.interface.ts`, `health/health.interface.ts`.
 
--   **`MetricData`**: Interface for individual metric data points.
+-   **`Metric`**: Interface for individual metric data points.
     -   `cpu: number`
     -   `memory: number`
     -   `disk?: number`
@@ -117,9 +117,30 @@ Found in `tile-types.ts`.
 
 ## <span style="color: #607D8B;">Historical Data & Others</span>
 
--   **`HistoricalMetrics`**: (`historical-metrics.ts`) For time-series metric data.
--   **`SecurityEvent`**: (`security-event.ts`) For security-related events.
--   **`TypeValidator` & `ValidationResult`**: (`type-validation.ts`) Utilities for runtime type checking.
+-   **`HistoricalMetrics`**: (`health/historical.metric.interface.ts`) For time-series metric data.
+-   **`SecurityEvent`**: (`security/security.interface.ts`) For security-related events.
+-   **`TypeValidator` & `ValidationResult`**: (`validation/validation.interface.ts`) Utilities for runtime type checking.
+
+## <span style="color: #673AB7;">Cryptography</span>
+
+Defined in `crypto/crypto.interface.ts`.
+
+-   **`HashResult`**: Result of a cryptographic hash operation.
+    -   `hash: string`
+    -   `algorithm: string`
+    -   `encoding: string`
+    -   `salt?: string`
+-   **`RandomBytesResult`**: Result of a random bytes generation operation.
+    -   `bytes: string`
+    -   `size: number`
+    -   `encoding?: string`
+-   **`CryptoService`**: Interface for cryptographic operations.
+    -   `createHash(algorithm: string, data: string, encoding?: string): Promise<HashResult>`
+    -   `randomBytes(size: number, encoding?: string): Promise<RandomBytesResult>`
+    -   `generateHash(input: string, salt?: string): Promise<HashResult>`
+    -   `compareHash(input: string, hash: string, salt: string): Promise<boolean>`
+    -   `generateRandomBytes(size?: number): Promise<RandomBytesResult>`
+    -   `generateToken(length?: number): Promise<string>`
 
 ---
 This document is a high-level guide. Always refer to the source code for the most precise definitions.

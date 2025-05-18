@@ -1,3 +1,6 @@
+import { SocketResponse } from '@forge-board/shared/api-interfaces';
+export { SocketResponse };
+
 /**
  * Log level enum (internal representation)
  */
@@ -8,16 +11,6 @@ export enum LogLevel {
   WARN = 'warn',
   ERROR = 'error',
   FATAL = 'fatal'
-}
-
-/**
- * Socket response for log operations
- */
-export interface SocketResponse<T> {
-  status: 'success' | 'error';
-  message?: string;
-  data: T;
-  timestamp?: string;
 }
 
 /**

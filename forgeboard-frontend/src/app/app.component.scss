@@ -1018,10 +1018,7 @@ html, body {
    AUDIO SYSTEM NOTE
    ========================================================================== */
 /* 
-   TODO: Audio ambient system requires:
-   2. assets/sounds/typewriter/ambient-stars-and-stripes-forever-vocals.mp3
-   
-   Create fallback silencers for these in the preloadAudioElements method
+   TODO: Audio fallback system requires robust fallbacks
    to prevent console errors when files are missing.
 */
 

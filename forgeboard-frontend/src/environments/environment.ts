@@ -12,6 +12,7 @@ export const environment: Environment = {
   logsPath: 'assets/logs',
   version: '1.0.0',
   build: 'development',
+  JWTKEY: 'your_jwt_key_here',
   // Adding apiUrl as an alias for apiBaseUrl to fix references
   get apiUrl() { return this.apiBaseUrl; },
   get socketUrl() { return this.socketBaseUrl; },

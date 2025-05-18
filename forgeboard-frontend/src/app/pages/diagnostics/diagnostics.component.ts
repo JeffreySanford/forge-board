@@ -2,14 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subscription } from 'rxjs';
 import { DiagnosticsService } from '../../services/diagnostics.service'; // Ensure using the service-level diagnostics service
 import {
-  MetricData,
+  Metric,
   SocketInfo,
   HealthData,
   SocketMetrics,
   SocketLogEvent
 } from '@forge-board/shared/api-interfaces';
 import { EnhancedHealthTimelinePoint } from '../../models/enhanced-health-timeline.model';
-import { safeToFixed, formatMetricValue } from '../../utils/metric-helpers';
+import { safeToFixed, formatMetricValue } from '../../utils/metric.interface';
 
 @Component({
   selector: 'app-diagnostics',
@@ -18,7 +18,7 @@ import { safeToFixed, formatMetricValue } from '../../utils/metric-helpers';
   standalone: false
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
-  liveMetrics$ = new BehaviorSubject<MetricData | null>(null);
+  liveMetrics$ = new BehaviorSubject<Metric | null>(null);
   healthData: HealthData | null = null;
   health: { status: string; uptime: number } = { status: 'unknown', uptime: 0 };
   socketStatus = 'disconnected';

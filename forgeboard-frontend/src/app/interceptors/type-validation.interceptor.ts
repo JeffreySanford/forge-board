@@ -14,7 +14,7 @@ import { TypeDiagnosticsService } from '../services/type-diagnostics.service';
 export class TypeValidationInterceptor implements HttpInterceptor {
   // Map of URL patterns to expected response types
   private urlTypeMap: Record<string, string> = {
-    '/api/metrics': 'MetricData',
+    '/api/metrics': 'Metric',
     '/api/diagnostics/health': 'HealthData',
     '/api/logs$': 'LogQueryResponse',
     // Add more mappings as needed

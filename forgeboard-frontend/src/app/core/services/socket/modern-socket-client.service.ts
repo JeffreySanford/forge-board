@@ -1,237 +1,144 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, fromEvent, share, takeUntil } from 'rxjs';
-import { io, Socket } from 'socket.io-client';
+import { Injectable } from '@angular/core';
+import { Socket, io } from 'socket.io-client';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { SocketClientService } from './socket-client.service';
 import { environment } from '../../../../environments/environment';
 
 /**
- * Modern Angular/Nx SocketIO wrapper service with improved browser compatibility
- * This service provides a cleaner way to work with Socket.IO in an Angular application
- * and handles browser compatibility issues with Node.js built-ins
+ * Modern implementation of the SocketClientService with enhanced features
+ * For environments that support advanced browser APIs
  */
 @Injectable({
   providedIn: 'root'
 })
-export class ModernSocketClientService implements OnDestroy {
-  /**
-   * Map of active socket connections by namespace
-   */
-  private sockets: Map<string, Socket> = new Map();
-  
-  /**
-   * Connection status by namespace
-   */
-  private connectionStatus: Map<string, BehaviorSubject<boolean>> = new Map();
-  
-  /**
-   * Destroy subject for cleaning up subscriptions
-   */
-  private destroy$ = new Subject<void>();
+export class ModernSocketClientService implements SocketClientService {
+  private sockets = new Map<string, Socket>();
+  private connectionStatus = new Map<string, BehaviorSubject<boolean>>();
+  private readonly socketUrl = environment.socketBaseUrl || 'http://localhost:3000';
 
-  constructor() {
-    console.log('ModernSocketClientService initialized');
-  }
+  constructor() {}
 
   /**
-   * Connect to a socket namespace
-   * @param namespace The namespace to connect to (default: '/')
-   * @param opts Socket.IO connection options
-   * @returns The socket instance
-   */  connect(namespace: string = '/', opts: Record<string, unknown> = {}): Socket {
-    // Check for existing socket
-    if (this.sockets.has(namespace)) {
-      const socket = this.sockets.get(namespace);
-      if (socket) return socket;
+   * Connect to a specific namespace
+   * @param namespace The namespace to connect to
+   * @returns Socket connection
+   */
+  connect(namespace: string): Socket {
+    const normalizedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    // Return existing socket if already connected
+    if (this.sockets.has(normalizedNamespace)) {
+      return this.sockets.get(normalizedNamespace)!;
     }
-
-    // Configure browser-friendly transport options
-    // This helps avoid Node.js modules like http, fs, etc.
-    const defaultOpts = {
-      // Change from /api/socket.io to /socket.io to match server expectations
-      path: '/socket.io',
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      forceNew: false,
+    
+    // Create socket connection with enhanced options
+    const socket = io(`${this.socketUrl}${normalizedNamespace}`, {
+      transports: ['websocket'],
+      reconnection: true,
       reconnectionAttempts: 5,
-      timeout: 10000,
-      // These options help with browser compatibility
-      upgrade: true,
-      rememberUpgrade: true
-    };
-    
-    const options = { ...defaultOpts, ...opts };
-    
-    // Create URL including namespace
-    const url = this.buildUrl(namespace);
-    
-    try {
-      // Create socket with browser-compatible options
-      const socket = io(url, options);
-
-      // Store socket instance
-      this.sockets.set(namespace, socket);
-      
-      // Initialize connection status
-      if (!this.connectionStatus.has(namespace)) {
-        this.connectionStatus.set(namespace, new BehaviorSubject<boolean>(false));
+      reconnectionDelay: 1000,
+      autoConnect: true,
+      withCredentials: true,
+      auth: {
+        token: this.getAuthToken()
       }
+    });
+    
+    // Set up status tracking
+    if (!this.connectionStatus.has(normalizedNamespace)) {
+      this.connectionStatus.set(normalizedNamespace, new BehaviorSubject<boolean>(false));
+    }
+    
+    const statusSubject = this.connectionStatus.get(normalizedNamespace)!;
+    
+    // Set up event listeners
+    socket.on('connect', () => {
+      console.log(`ModernSocketClient: Connected to ${normalizedNamespace}`);
+      statusSubject.next(true);
       
-      // Update connection status on connect/disconnect events
-      this.setupConnectionHandlers(socket, namespace);
-      
-      return socket;
-    } catch (error) {
-      console.error('Socket connection error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Listen to an event on a specific namespace
-   * @param eventName Event to listen for
-   * @param namespace Socket namespace (default: '/')
-   * @returns Observable of event data
-   */
-  fromEvent<T>(eventName: string, namespace: string = '/'): Observable<T> {
-    // Get or create socket for this namespace
-    const socket = this.getOrCreateSocket(namespace);
-    
-    // Create observable from socket event
-    return fromEvent<T>(socket, eventName).pipe(
-      takeUntil(this.destroy$),
-      share() // Share the observable between multiple subscribers
-    );
-  }
-
-  /**
-   * Emit an event to a specific namespace
-   * @param eventName Event name to emit
-   * @param data Data to send
-   * @param namespace Socket namespace (default: '/')
-   */  emit(eventName: string, data: unknown, namespace: string = '/'): void {
-    const socket = this.getOrCreateSocket(namespace);
-    socket.emit(eventName, data);
-  }
-
-  /**
-   * Get connection status observable for a namespace
-   * @param namespace Socket namespace (default: '/')
-   * @returns Observable of connection status (true = connected)
-   */  getStatus(namespace: string = '/'): Observable<boolean> {
-    // Get or create the connection status
-    if (!this.connectionStatus.has(namespace)) {
-      this.getOrCreateSocket(namespace);
-    }
-    
-    const connectionStatus = this.connectionStatus.get(namespace);
-    return connectionStatus ? connectionStatus.asObservable() : new BehaviorSubject<boolean>(false).asObservable();
-  }
-
-  /**
-   * Check if a socket is connected
-   * @param namespace Socket namespace (default: '/')
-   * @returns True if connected
-   */
-  isConnected(namespace: string = '/'): boolean {
-    if (!this.sockets.has(namespace)) {
-      return false;
-    }
-    
-    const socket = this.sockets.get(namespace);
-    return socket ? socket.connected : false;
-  }
-
-  /**
-   * Disconnect a specific socket
-   * @param namespace Socket namespace (default: '/')
-   */  disconnect(namespace: string = '/'): void {
-    if (this.sockets.has(namespace)) {
-      const socket = this.sockets.get(namespace);
-      if (socket) {
-        socket.disconnect();
-        this.sockets.delete(namespace);
-        
-        if (this.connectionStatus.has(namespace)) {
-          const connectionStatus = this.connectionStatus.get(namespace);
-          if (connectionStatus) {
-            connectionStatus.next(false);
-          }
+      // Use BroadcastChannel API for cross-tab communication
+      if ('BroadcastChannel' in window) {
+        try {
+          const bc = new BroadcastChannel('socket-status');
+          bc.postMessage({ namespace: normalizedNamespace, status: 'connected' });
+          bc.close();
+        } catch (e) {
+          console.warn('Failed to use BroadcastChannel', e);
         }
       }
-    }
-  }
-
-  /**
-   * Disconnect all sockets
-   */
-  disconnectAll(): void {
-    this.sockets.forEach((socket, namespace) => {
-      this.disconnect(namespace);
     });
-  }
-
-  /**
-   * Clean up resources on service destruction
-   */
-  ngOnDestroy(): void {
-    this.disconnectAll();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  /**
-   * Build the socket URL with namespace
-   */  private buildUrl(namespace: string): string {
-    const baseUrl = environment.apiBaseUrl || window.location.origin;
     
-    // Ensure namespace starts with a /
-    if (!namespace.startsWith('/')) {
-      namespace = '/' + namespace;
-    }
+    socket.on('disconnect', () => {
+      console.log(`ModernSocketClient: Disconnected from ${normalizedNamespace}`);
+      statusSubject.next(false);
+    });
     
-    // Return the complete URL with namespace appended
-    return `${baseUrl}${namespace}`;
-  }
-
-  /**
-   * Get an existing socket or create a new one
-   * @param namespace Socket namespace
-   */  private getOrCreateSocket(namespace: string = '/'): Socket {
-    if (!this.sockets.has(namespace)) {
-      this.connect(namespace);
-    }
+    // Store socket
+    this.sockets.set(normalizedNamespace, socket);
     
-    const socket = this.sockets.get(namespace);
-    if (!socket) {
-      // If for some reason the socket wasn't created, create it now
-      return this.connect(namespace);
-    }
     return socket;
   }
 
   /**
-   * Set up connection status handlers for a socket
-   * @param socket Socket instance
-   * @param namespace Socket namespace
-   */  private setupConnectionHandlers(socket: Socket, namespace: string): void {
-    const statusSubject = this.connectionStatus.get(namespace);
-    if (!statusSubject) {
-      console.error(`No status subject found for namespace: ${namespace}`);
-      return;
+   * Disconnect from a specific namespace
+   * @param namespace The namespace to disconnect from
+   */
+  disconnect(namespace: string): void {
+    const normalizedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    if (this.sockets.has(normalizedNamespace)) {
+      const socket = this.sockets.get(normalizedNamespace)!;
+      
+      // Clean up event listeners
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      
+      // Disconnect socket
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      
+      // Update status
+      const statusSubject = this.connectionStatus.get(normalizedNamespace);
+      if (statusSubject) {
+        statusSubject.next(false);
+      }
+      
+      // Remove from maps
+      this.sockets.delete(normalizedNamespace);
+    }
+  }
+
+  /**
+   * Get connection status for a namespace
+   * @param namespace The socket namespace
+   * @returns Observable of connection status
+   */
+  getConnectionStatus(namespace: string): Observable<boolean> {
+    const normalizedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    
+    if (!this.connectionStatus.has(normalizedNamespace)) {
+      this.connectionStatus.set(normalizedNamespace, new BehaviorSubject<boolean>(false));
     }
     
-    socket.on('connect', () => {
-      console.log(`Socket connected: ${namespace}`);
-      statusSubject.next(true);
-    });
-    
-    socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${namespace}`);
-      statusSubject.next(false);
-    });
-    
-    socket.on('connect_error', (error: Error | unknown) => {
-      console.error(`Socket connection error (${namespace}):`, error);
-      statusSubject.next(false);
-    });
+    return this.connectionStatus.get(normalizedNamespace)!.asObservable();
+  }
+
+  /**
+   * Get socket instance for a namespace
+   * @param namespace The socket namespace
+   * @returns Socket instance or null
+   */
+  getSocket(namespace: string): Socket | null {
+    const normalizedNamespace = namespace.startsWith('/') ? namespace : `/${namespace}`;
+    return this.sockets.get(normalizedNamespace) || null;
+  }
+
+  /**
+   * Get authentication token for socket connections
+   */
+  private getAuthToken(): string | null {
+    return localStorage.getItem('token');
   }
 }

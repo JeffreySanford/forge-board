@@ -1,7 +1,7 @@
 import { Component, OnInit, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import * as d3 from 'd3';
-import { MetricsService } from '../../../../services/metrics.service';
+import { MetricsService } from '../../../core/services/monitoring/metrics.service';
 import { Tile } from '../shared/tile.interface';
 
 // Import NumberValue from d3-scale for explicit typing

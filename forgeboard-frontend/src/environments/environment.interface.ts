@@ -28,10 +28,12 @@ export interface Environment {
   socketBaseUrl: string;
   
   /**
-   * JWT token for current user (set at runtime)
+   * JWT Key for signing tokens
+   * This should be kept secret and not exposed in the frontend.
+   * In production, use a secure vault.
    */
-  encryptedJwtToken?: string;
-  
+  JWTKEY?: string;
+
   /**
    * Default JWT token for guest access
    */

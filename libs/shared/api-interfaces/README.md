@@ -22,14 +22,14 @@ This library provides a centralized collection of TypeScript interfaces and type
 2.  **Importing Types**: In your frontend or backend TypeScript files, you can import the necessary types directly from the library's entry point:
 
     ```typescript
-    import type { User, ApiResponse, MetricData } from '@forge-board/api-interfaces';
+    import type { User, ApiResponse, Metric } from '@forge-board/api-interfaces';
 
     // Example usage in a service
     async function fetchUserData(userId: string): Promise<ApiResponse<User>> {
       // ... implementation ...
     }
 
-    function processMetrics(data: MetricData): void {
+    function processMetrics(data: Metric): void {
       // ... implementation ...
     }
     ```
@@ -41,7 +41,7 @@ This library covers a wide range of data structures, including but not limited t
 -   **Core API**: Base response structures (`ApiResponse`, `SuccessResponse`).
 -   **Authentication**: Credentials, tokens, and authentication states (`AuthCredentials`, `User`, `JwtPayload`).
 -   **Sockets**: Real-time communication event types and payloads (`SocketResponse`, `SocketEvent`, `SocketInfo`).
--   **Metrics & Diagnostics**: System health, performance metrics, and diagnostic event data (`MetricData`, `HealthTimelinePoint`, `DiagnosticEvent`).
+-   **Metrics & Diagnostics**: System health, performance metrics, and diagnostic event data (`Metric`, `HealthTimelinePoint`, `DiagnosticEvent`).
 -   **Logging**: Log entry structures and filtering options (`LogEntry`, `LogFilter`).
 -   **User Management**: User profiles and roles (`User`, `UserRole`).
 

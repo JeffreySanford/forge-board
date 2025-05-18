@@ -48,6 +48,7 @@ import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
 import { TypeValidationInterceptor } from './interceptors/type-validation.interceptor';
 import { ProjectConfigService } from './services/project-config.service';
 import { TypeDiagnosticsService } from './services/type-diagnostics.service';
+import { ServiceCompatibilityModule } from './services/service-compatibility.module';
 
 // Feature modules
 import { ConnectionStatusIndicatorModule } from './components/connection-status-indicator/connection-status-indicator.module';
@@ -99,7 +100,8 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     DocumentationModule,
     SecurityDashboardModule,
     ConnectionStatusIndicatorModule,
-    SoundModule // Import SoundModule here
+    SoundModule, // Import SoundModule here
+    ServiceCompatibilityModule,
   ],
   providers: [
     DatePipe, // Add DatePipe to providers

@@ -1,8 +1,8 @@
 import { Component, ElementRef, OnInit, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { Subscription, interval } from 'rxjs';
 import * as d3 from 'd3';
-import { MetricData } from '@forge-board/shared/api-interfaces';
-import { MetricsService } from '../../../../services/metrics.service';
+import { Metric } from '@forge-board/shared/api-interfaces';
+import { MetricsService } from '../../../core/services/monitoring/metrics.service';
 import { Tile } from '@forge-board/shared/api-interfaces';
 
 // Define proper interfaces for our component
@@ -129,7 +129,7 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
   /**
    * Update the health data using metrics
    */
-  private updateHealthData(metrics: MetricData): void {
+  private updateHealthData(metrics: Metric): void {
     // Update CPU health
     const cpuIndex = this.healthData.findIndex(d => d.category === 'CPU');
     if (cpuIndex >= 0 && metrics.cpu !== undefined) {

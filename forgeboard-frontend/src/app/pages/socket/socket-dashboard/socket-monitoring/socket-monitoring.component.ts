@@ -1,5 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
+import { SocketService } from '../../../../services/socket.service';
 import { SocketRegistryService } from '../../../../services/socket-registry.service';
+import { SocketEvent } from '../../../../services/socket.service';
 import { SocketInfo } from '@forge-board/shared/api-interfaces';
 import { finalize, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -20,7 +23,10 @@ export class SocketMonitoringComponent implements OnInit, OnDestroy {
   private retryCount = 0;
   private maxRetries = 3;
 
-  constructor(private socketRegistryService: SocketRegistryService) { }
+  constructor(
+    private socketService: SocketService,
+    private socketRegistryService: SocketRegistryService
+  ) { }
 
   ngOnInit(): void {
     this.fetchActiveSockets();

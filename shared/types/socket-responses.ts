@@ -1,13 +1,9 @@
-import { User } from '@forge-board/shared/api-interfaces';
+import { User, SocketResponse } from '@forge-board/shared/api-interfaces';
 
 /**
  * Base response interface for all socket responses
  */
-export interface SocketResponse {
-  success: boolean;
-  timestamp: string;
-  requestId?: string;
-}
+export { SocketResponse };
 
 /**
  * Error response for socket communications

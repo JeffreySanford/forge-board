@@ -4,7 +4,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": true,
-    "composite": false,
+    "composite": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -22,13 +22,6 @@
       "@forge-board/shared/api-interfaces/*": ["libs/shared/api-interfaces/src/*"]
     }
   },
-  "include": [
-    "forgeboard-frontend/src/**/*.ts",
-    "forgeboard-frontend/src/**/*.html",
-    "forgeboard-frontend/src/**/*.scss",
-    "forgeboard-frontend/src/**/*.css",
-    "forgeboard-frontend/src/**/*.json"
-  ],
   "angularCompilerOptions": {
     "strict": true,
     "fullTemplateTypeCheck": true,

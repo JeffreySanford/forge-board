@@ -5,7 +5,8 @@
     "types": ["node"],
     "lib": ["es2020", "dom"],
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "composite": true
   },
   "angularCompilerOptions": {
     "enableIvy": true,

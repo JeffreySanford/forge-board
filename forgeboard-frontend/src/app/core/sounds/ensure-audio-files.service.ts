@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 
 // Define sound categories and their required files
 export const REQUIRED_SOUNDS: Record<string, string[]> = {
-  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3', 'ambient.mp3'],
+  typewriter: ['keystrike.mp3', 'ding.mp3', 'return.mp3'],
 };
 
 // Minimal valid MP3 with silence as fallback sound (base64 encoded)

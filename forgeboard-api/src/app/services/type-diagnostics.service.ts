@@ -19,7 +19,7 @@ interface CustomValidatedTypes {
   SocketLogEventResponseQueryBatch: Record<string, unknown>;
   // Remove LogBatchResponse from custom types
   LogQueryResponse: import('@forge-board/shared/api-interfaces').LogQueryResponse;
-  MetricData: import('@forge-board/shared/api-interfaces').MetricData;
+  Metric: import('@forge-board/shared/api-interfaces').Metric;
   LogEvent: Record<string, unknown>;
   LogEventResponse: Record<string, unknown>;
   LogEventResponseBatch: Record<string, unknown>;
@@ -50,7 +50,7 @@ export class TypeDiagnosticsService {
       this.registerValidator<'HealthData'>('HealthData', validateHealthData);
       // Remove batch validator registration
       // this.registerValidator<'LogBatchResponse'>('LogBatchResponse', validateLogBatchResponse);
-      this.registerValidator<'MetricData'>('MetricData', validateMetricData);
+      this.registerValidator<'Metric'>('Metric', validateMetricData);
       
       // Log success after initialization
       this.logger.log(`Successfully initialized ${this.validators.size} validators`);

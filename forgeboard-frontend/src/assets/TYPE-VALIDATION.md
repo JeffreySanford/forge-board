@@ -47,7 +47,7 @@ A debug UI component that displays validation results in real-time:
 constructor(private typeDiagnostics: TypeDiagnosticsService) {
   // Register validators for types used in this service
   this.typeDiagnostics.registerValidator('HealthData', this.validateHealthData);
-  this.typeDiagnostics.registerValidator('MetricData', isMetricData);
+  this.typeDiagnostics.registerValidator('Metric', isMetricData);
 }
 
 // Custom validator function
@@ -93,9 +93,9 @@ try {
 
 ```typescript
 // Try validation without throwing
-const { value, result } = this.typeDiagnostics.tryValidateType<MetricData>(
+const { value, result } = this.typeDiagnostics.tryValidateType<Metric>(
   data,
-  'MetricData',
+  'Metric',
   'MetricsService.processMetrics'
 );
 

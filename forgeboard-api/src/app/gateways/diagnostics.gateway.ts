@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { DiagnosticEvent, MetricData, createSocketResponse } from '@forge-board/shared/api-interfaces';
+import { DiagnosticEvent, Metric, createSocketResponse } from '@forge-board/shared/api-interfaces';
 import { DiagnosticsService } from '../diagnostics/diagnostics.service';
 import { SocketRegistryService } from '../socket/socket-registry.service';
 import { SocketLoggerService } from '../socket/socket-logger.service';
@@ -55,7 +55,7 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
     // Subscribe to metrics updates and emit them
     if (this.metricsService) {
       this.metricsSubscription = this.metricsService.getMetrics().subscribe(
-        (metricData: MetricData) => {
+        (metricData: Metric) => {
           this.server.emit('live-metric-update', { type: 'live-metric-update', payload: metricData, timestamp: new Date().toISOString(), success: true });
         },
         (error) => {

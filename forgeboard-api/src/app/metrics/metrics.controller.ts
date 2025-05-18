@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, Logger } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
-import type { MetricData, MetricResponse } from '@forge-board/shared/api-interfaces';
+import type { Metric, MetricResponse } from '@forge-board/shared/api-interfaces';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
   
   @Get()
-  getMetrics(): Observable<MetricData> {
+  getMetrics(): Observable<Metric> {
     this.logger.log('GET /metrics');
     // Return the observable stream directly
     return this.metricsService.getMetrics();
@@ -51,7 +51,7 @@ export class MetricsController {
   }
 
   @Post('register')
-  registerMetric(@Body() metric: MetricData): Observable<MetricResponse> {
+  registerMetric(@Body() metric: Metric): Observable<MetricResponse> {
     // In a real application, you'd validate and store it
     return of({
       success: true,

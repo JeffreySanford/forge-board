@@ -306,3 +306,39 @@ export class SocketClientService implements OnDestroy {
     this.disconnectAll();
   }
 }
+
+/**
+ * Interface for socket client services
+ * Implemented by both browser and modern socket clients
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export abstract class SocketClientService {
+  /**
+   * Connect to a specific namespace
+   * @param namespace The namespace to connect to
+   * @returns Socket connection
+   */
+  abstract connect(namespace: string): Socket;
+  
+  /**
+   * Disconnect from a specific namespace
+   * @param namespace The namespace to disconnect from
+   */
+  abstract disconnect(namespace: string): void;
+  
+  /**
+   * Get connection status for a specific namespace
+   * @param namespace The namespace to check
+   * @returns Observable of connection status
+   */
+  abstract getConnectionStatus(namespace: string): Observable<boolean>;
+  
+  /**
+   * Get socket for a specific namespace
+   * @param namespace The namespace to get
+   * @returns Socket or null if not connected
+   */
+  abstract getSocket(namespace: string): Socket | null;
+}

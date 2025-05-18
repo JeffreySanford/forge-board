@@ -8,6 +8,7 @@
   ],
   "compilerOptions": {
     "target": "es2022",
+
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
@@ -20,7 +21,15 @@
     "declaration": true,
     "declarationMap": true,
     "rootDir": "src",
-    "composite": false
+    "composite": true
+  },
+  "angularCompilerOptions": {
+    "enableIvy": true,
+    "strict": true,
+    "fullTemplateTypeCheck": true,
+    "strictTemplates": true,
+    "enableResourceInlining": true,
+    "enableNgModuleTypeCheck": true
   },
   "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/app/shims/**/*.ts"]
 }
