@@ -1,6 +1,6 @@
 import { MetricsDataPoint, SystemPerformanceSnapshot, LogActivitySummary, MetricsInterval } from '../health/historical.metric.interface';
 import { Metric } from './metric.interface';
-import { LogEntry, LogLevelEnum } from '../log/log-types';
+import { LogEntry, LogLevelEnum } from '../log/log.interface';
 
 /**
  * Utility class for condensing metrics data for historical storage

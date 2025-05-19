@@ -20,6 +20,9 @@ export * from '../../../forgeboard-frontend/src/app/utils/token-encryption';
 // Core services
 export * from './core';
 
+// Socket response types
+export * from '../../../shared/types/socket-responses';
+
 /**
  * Reexport shared types specifically for services 
  * This provides better discoverability for service-related types
@@ -44,7 +47,12 @@ export {
   
   // Type validation
   TypeValidator,
-  ValidationResult
+  ValidationResult,
+  
+  // Crypto related types
+  HashResult,
+  RandomBytesResult,
+  CryptoService as ICryptoService
 } from '@forge-board/shared/api-interfaces';
 
 /**

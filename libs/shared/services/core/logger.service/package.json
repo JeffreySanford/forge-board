@@ -1,0 +1,9 @@
+{
+  "name": "@forge-board/shared/services/core/logger.service",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "@forge-board/shared/services/core": "*"
+  }
+}

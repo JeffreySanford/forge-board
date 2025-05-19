@@ -1,6 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SocketInfo, SocketMetrics, SocketLogEvent } from '@forge-board/shared/api-interfaces';
+import { SocketEvent } from '@forge-board/shared/api-interfaces';
+
+// Define the interfaces locally since they're not properly exported from shared library
+interface SocketInfo {
+  id: string;
+  namespace: string;
+  clientIp: string;
+  userAgent: string;
+  connectTime: string;
+  lastActivity: string;
+  disconnectTime?: string;
+  events: SocketEvent[];
+}
+
+interface SocketLogEvent {
+  socketId: string;
+  namespace: string;
+  eventType: string;
+  timestamp: string;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+interface SocketMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  disconnections: number;
+  messagesSent: number;
+  messagesReceived: number;
+  errors: number;
+  lastError: Error | null;
+}
 
 @Injectable()
 export class SocketRegistryService {
@@ -13,7 +44,7 @@ export class SocketRegistryService {
     messagesSent: 0,
     messagesReceived: 0,
     errors: 0,
-    lastError: null // This is now valid with our updated interface
+    lastError: null
   };
   private socketLogs: SocketLogEvent[] = [];
   private connectionHistory: SocketInfo[] = [];

@@ -1,0 +1,9 @@
+{
+  "name": "@forge-board/shared/diagnostics-types",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@forge-board/shared/api-interfaces": "*"
+  }
+}

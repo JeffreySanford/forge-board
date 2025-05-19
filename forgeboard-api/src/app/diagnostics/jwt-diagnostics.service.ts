@@ -1,6 +1,15 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { BehaviorSubject, Observable, shareReplay } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
+import { 
+  JwtDiagnosticEvent, 
+  AuthStats,
+  AuthDiagnosticEvent
+} from '@forge-board/shared/diagnostics.types';
+import { 
+  JwtVerificationResult, 
+  TokenVerificationOptions 
+} from '@forge-board/shared/api-interfaces';
 
 // Define a type for JWT payload
 interface JwtPayload {
@@ -21,47 +30,8 @@ export type AuthEventType =
   | 'token-validate-fail'
   | 'logout';
 
-/**
- * Authentication diagnostic event
- */
-export interface AuthDiagnosticEvent {
-  id: string;
-  type: AuthEventType;
-  username?: string;
-  timestamp: string;
-  success: boolean;
-  errorMessage?: string;
-  metadata?: Record<string, unknown>;
-}
-
-/**
- * Authentication statistics interface
- */
-export interface AuthStats {
-  totalAttempts: number;
-  successCount: number;
-  failCount: number;
-  lastActivity: string;
-  activeTokens: number;
-  tokenVerifications: number;
-  failedVerifications: number;
-}
-
-// Type for token verification options
-export interface TokenVerificationOptions {
-  ignoreExpiration?: boolean;
-  audience?: string | string[];
-  issuer?: string;
-}
-
-// Interface for verification result
-export interface JwtVerificationResult {
-  valid: boolean;
-  payload?: Record<string, unknown>;
-  expiresAt?: string;
-  issuedAt?: string;
-  error?: string;
-}
+// Re-export from shared types 
+export { JwtDiagnosticEvent, AuthStats, AuthDiagnosticEvent } from '@forge-board/shared/diagnostics.types';
 
 /**
  * JWT Authentication diagnostics service
@@ -70,12 +40,6 @@ export interface JwtVerificationResult {
  * - Authentication events (login success/failure, token validations)
  * - Authentication statistics
  * - Token verification utilities
- * 
- * @example
- * // Subscribe to authentication statistics
- * jwtDiagnosticsService.getAuthStats().subscribe(stats => {
- *   console.log(`Success rate: ${stats.successCount / stats.totalAttempts * 100}%`);
- * });
  */
 @Injectable()
 export class JwtDiagnosticsService implements OnModuleDestroy {

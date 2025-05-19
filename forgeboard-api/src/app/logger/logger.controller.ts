@@ -185,7 +185,7 @@ export class LoggerController {
       
       return {
         status: true,
-        deletedCount: result,
+        deletedCount: Number(result),
         message: `Successfully deleted ${result} log entries`,
         timestamp: new Date().toISOString()
       };

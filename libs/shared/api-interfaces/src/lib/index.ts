@@ -3,103 +3,139 @@
  */
 
 // User types
-export * from './user/user.interface';
+export { UserRole } from './user/user.interface';
+export { User, UserPreferences } from './user/user.interface';
 
 // Health related exports
-export * from './health/health.interface';
-// health-timeline file is missing, removing this export
-export * from './health/historical.metric.interface';
-
-// Socket related exports
-export {
-  SocketResponse,
-  SocketResponseData,
-  SocketEvent,
-  createSocketResponse,
-  createSocketEventResponse,
-  createSocketErrorResponse,
-  adaptSocketResponse,
-  isSuccessResponse
-} from './socket/socket.interface';
-
-// API related exports
-export * from './api/api.interface';
+export { HealthStatus } from './health/health.interface';
+export { Health, HealthData } from './health/health.interface';
 
 // Metric related exports
-export * from './metric/metric.interface';
-export * from './metric/metric.condenser';
+export { Metric, ExtendedMetric, MetricResponse, MetricFilter, MetricUpdate } from './metric/metric.interface';
+// Import and re-export historical metric interfaces
+import { HistoricalHealthMetrics } from './health/historical.metric.interface';
+export { 
+  SystemPerformanceSnapshot, 
+  MetricsDataPoint, 
+  MetricsSeries, 
+  MetricsInterval,
+  MetricsSource,
+  ExtendedHealthData,
+  LogActivitySummary,
+  KanbanActivitySummary,
+  SecurityMetricsSummary
+} from './health/historical.metric.interface';
+export { HistoricalHealthMetrics };
+export type HistoricalMetrics = HistoricalHealthMetrics;
 
 // Log related exports
-export * from './log/log-types';
-export * from './log/log-helpers';
+export { 
+  LogLevelEnum, 
+  stringToLogLevelEnum, 
+  logLevelEnumToString,
+  LogLevelString, 
+  LogEntry, 
+  LogDto, 
+  LogFilter, 
+  LogQueryResponse, 
+  LogStatsResult,
+  LogResponse,
+  LogStreamUpdate,
+  ExtendedLogFilter,
+  DisplayLogEntry,
+  DisplayLogEntryExtended
+} from './log/log.interface';
 
 // Message related exports
-export * from './message';
+export type { Message } from './message';
 
 // Auth related exports
-export * from './auth/auth-interfaces';
+export { AuthCredentials, AuthTokenResponse, AuthState } from './auth/auth-interfaces';
+export { AuthTokenResponse as AuthTokenResponseJwt } from './auth/auth-interfaces';
 
-// JWT related exports - renamed exports to avoid duplicates
-export { 
-  JwtClaims,
-  UserJwtPayload,
-  RefreshTokenRequest,
-  // Renamed to avoid conflict with AuthTokenResponse from auth-interfaces
-  AuthTokenResponse as JwtAuthTokenResponse 
-} from './jwt/jwt.interface';
-export * from './jwt/jwt-diagnostics.service';
+// JWT related exports
+export { JwtClaims, UserJwtPayload, RefreshTokenRequest, JwtVerificationResult, TokenVerificationOptions } from './jwt/jwt.interface';
 
 // Security related exports
-export * from './security/security.interface';
-// Export with rename to avoid duplicates
-// Since security.event.ts and security.interface.ts have overlapping types
+export { SecurityEventSeverity, SecurityEventStatus, SecurityEventType, SecurityEvent, SbomEvent, ScaEvent, ZapEvent, SupplyChainEvent, FedRampEvent } from './security/security.interface';
 
-// Validation related exports
-export {
-  ValidationResult,
-  TypeValidationError,
-  Log,
-  TypeValidator,
-  ValidatedTypes,
-  typeValidators,
-  registerTypeValidator,
-  validateType,
-  createTypeValidationError,
-  isDiagnosticEvent,
-  validateDiagnosticEvent,
-  isMetric,
-  validateMetricData,
-  isSocketResponse,
+// Socket related exports
+export { 
+  SocketResponse, 
+  SocketResponseData, 
+  SocketEvent, 
+  SocketLogEvent, 
+  SocketInfo, 
+  SocketInfoDto, 
+  SocketMetrics, 
+  SocketStatusUpdate, 
+  DiagnosticSocketEvent,
+  LogSocketResponse,
+  createSocketResponse,
+  createSocketErrorResponse,
+  createSocketEventResponse,
+  isSuccessResponse,
   isErrorResponse,
-  safeStringify,
-  validateSocketResponse,
-  validateLogResponse,
-  isHealthData,
-  validateHealthData,
-  isUser,
-  validateUser,
-  validateHistoricalMetrics,
-  validateSystemPerformance
-} from './validation/validation.interface';
-
-// Tile related exports 
-// Rename TileType to avoid conflict with metric.interface
-export {
-  // Renamed to avoid conflict with TileType from metric.interface
-  TileType as TileTyEnum,
-  TileDragEvent,
-  TileLayoutResponse,
-  TileLayoutRequest,
-  TileVisibility,
-  TileResponse,
-  MemoryData
-} from './tile/tile.interface';
-
-// Sound related exports
-export * from './sound/sound-types';
+  adaptSocketResponse
+} from './socket/socket.interface';
 
 // Diagnostic related exports
-export * from './diagnostic/diagnostic.interface.';
+export { 
+  DiagnosticEvent,
+  DiagnosticTimelineEvent,
+  DiagnosticEventResponse,
+  JwtDiagnosticEvent,
+  AuthStats, 
+  AuthDiagnosticEvent,
+  TypeDiagnosticEvent
+} from './diagnostic/diagnostic.interface';
 
 // Crypto related exports
-export * from './crypto/crypto.interface';
+export type { HashResult, RandomBytesResult, CryptoService } from './crypto/crypto.interface';
+
+// Validation related exports
+export { 
+  validateHealthData, 
+  validateMetricData, 
+  validateSocketResponse, 
+  validateLogResponse, 
+  isHealthData, 
+  isUser,
+  validateDiagnosticEvent,
+  validateHistoricalMetrics,
+  validateSystemPerformance,
+  validateType,
+  validateUser,
+  isDiagnosticEvent,
+  isMetric,
+  isSocketResponse,
+  createTypeValidationError,
+  typeValidators,
+  registerTypeValidator,
+  safeStringify,
+  ValidationResult,
+  TypeValidator,
+  TypeValidationError
+} from './validation/validation.interface';
+
+// Constants
+export { API_ENDPOINTS, SOCKET_NAMESPACES, TILE_TYPES, FALLBACK_ENDPOINTS } from './constants';
+
+// Tile related exports
+export { 
+  TileType,
+  TileLayoutResponse,
+  Tile,
+  TileDragEvent
+} from './tile/tile.interface';
+
+// API related exports
+export { ApiResponse } from './api/api-response.interface';
+
+/**
+ * Internal exports for the API interfaces library
+ */
+
+export * from './diagnostic/diagnostic.interface';
+export * from './jwt/jwt-diagnostics.service';
+export * from './validation/validation.interface';

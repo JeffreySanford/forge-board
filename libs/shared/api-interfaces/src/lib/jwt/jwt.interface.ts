@@ -52,3 +52,24 @@ export interface AuthTokenResponse {
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
+
+/**
+ * JWT verification result interface
+ */
+export interface JwtVerificationResult {
+    valid: boolean;
+    payload?: UserJwtPayload;
+    error?: string;
+    expired?: boolean;
+}
+
+/**
+ * Token verification options
+ */
+export interface TokenVerificationOptions {
+    ignoreExpiration?: boolean;
+    audience?: string | string[];
+    issuer?: string;
+    algorithms?: string[];
+    clockTolerance?: number;
+}

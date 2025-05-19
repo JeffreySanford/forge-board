@@ -1,13 +1,15 @@
 import { Component, OnInit, OnDestroy, Injectable } from '@angular/core';
 import { Observable, Subscription, of } from 'rxjs';
 import { 
-  JwtDiagnosticsService, 
-  AuthStats,
-  AuthDiagnosticEvent,
+  JwtDiagnosticsService,
+  JwtPayload,
   JwtVerificationResult,
-  TokenVerificationOptions,
-  JwtPayload // Import JwtPayload from the jwt-diagnostics.service
+  TokenVerificationOptions
 } from '@forge-board/shared/api-interfaces';
+import { 
+  JwtDiagnosticEvent, 
+  AuthStats 
+} from '@forge-board/shared/diagnostics.types';
 
 // Local implementation that will be injected
 @Injectable({

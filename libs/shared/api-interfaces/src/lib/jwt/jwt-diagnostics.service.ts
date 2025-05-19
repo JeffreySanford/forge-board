@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { JwtDiagnosticEvent, AuthStats, AuthDiagnosticEvent } from '../diagnostic/diagnostic.interface';
 
 export interface JwtPayload {
     sub?: string; // subject (user id)
@@ -8,26 +9,6 @@ export interface JwtPayload {
     username?: string; // username
     role?: string; // user role
     [key: string]: any; // additional custom claims
-}
-
-export interface AuthStats {
-  totalAttempts: number;
-  successCount: number;
-  failCount: number;
-  lastActivity: string;
-  activeTokens: number;
-  tokenVerifications: number;
-  failedVerifications: number;
-}
-
-export interface AuthDiagnosticEvent {
-  id: string;
-  type: string;
-  username?: string;
-  timestamp: string;
-  success: boolean;
-  errorMessage?: string;
-  metadata?: Record<string, unknown>;
 }
 
 export interface JwtVerificationResult {

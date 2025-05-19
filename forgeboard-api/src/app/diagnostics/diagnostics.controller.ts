@@ -1,16 +1,8 @@
 import { Controller, Get, Post, Body, Inject, Logger } from '@nestjs/common';
 import { DiagnosticsService } from './diagnostics.service';
-import { DiagnosticsGateway } from '../gateways/diagnostics.gateway';
-import type { DiagnosticEvent } from '@forge-board/shared/api-interfaces';
+import { DiagnosticsGateway } from './diagnostics.gateway';
+import { DiagnosticEvent, DiagnosticEventResponse } from '@forge-board/shared/diagnostics.types';
 import { HealthData } from '@forge-board/shared/api-interfaces';
-
-// Define DiagnosticEventResponse interface
-export interface DiagnosticEventResponse {
-  success: boolean;
-  timestamp: string;
-  id: string;
-  eventType: string;
-}
 
 @Controller('diagnostics')
 export class DiagnosticsController {

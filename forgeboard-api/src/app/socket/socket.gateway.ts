@@ -9,7 +9,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { SocketRegistryService } from './socket-registry.service';
 import { SocketLoggerService } from './socket-logger.service';
-import { createSocketResponse } from '@forge-board/shared/api-interfaces';
+import { createSocketResponse } from '../utils/socket-utils';
 
 @WebSocketGateway({
   cors: {
@@ -96,8 +96,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         disk: 55 + Math.random() * 10,
         network: 30 + Math.random() * 20
       };
-      
-      client.emit('system-metrics', createSocketResponse('system-metrics', mockMetrics));
+        client.emit('system-metrics', createSocketResponse('system-metrics', mockMetrics));
       this.socketRegistry.incrementMessageSent();
     });
     

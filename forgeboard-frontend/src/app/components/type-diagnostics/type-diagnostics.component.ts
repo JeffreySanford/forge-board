@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { TypeDiagnosticsService, TypeDiagnosticEvent } from '../../services/type-diagnostics.service';
+import { TypeDiagnosticsService } from '../../services/type-diagnostics.service';
+import { TypeDiagnosticEvent } from '@forge-board/shared/diagnostics.types';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,7 +14,7 @@ import { MatChipsModule } from '@angular/material/chips';
   selector: 'app-type-diagnostics',
   templateUrl: './type-diagnostics.component.html',
   styleUrls: ['./type-diagnostics.component.scss'],
-  standalone: true, // Set standalone to true
+  standalone: true,
   imports: [
     CommonModule,
     MatCardModule,

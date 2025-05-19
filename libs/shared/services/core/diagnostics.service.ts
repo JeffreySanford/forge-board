@@ -2,7 +2,8 @@
 // This class is not decorated with Angular or NestJS decorators.
 // It can be extended or composed in framework-specific services.
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { HealthData, DiagnosticEvent } from '@forge-board/shared/api-interfaces';
+import { DiagnosticEvent, DiagnosticTimelineEvent } from '@forge-board/shared/diagnostics.types';
+import { HealthData } from '@forge-board/shared/api-interfaces';
 
 export class SharedDiagnosticsService {
   protected healthSubject = new BehaviorSubject<HealthData>({
@@ -12,6 +13,9 @@ export class SharedDiagnosticsService {
     details: {}
   });
 
+  protected diagnosticEventsSubject = new BehaviorSubject<DiagnosticEvent[]>([]);
+  protected timelineSubject = new BehaviorSubject<DiagnosticTimelineEvent[]>([]);
+  
   getHealthUpdates(): Observable<HealthData> {
     return this.healthSubject.asObservable();
   }
@@ -22,6 +26,16 @@ export class SharedDiagnosticsService {
 
   registerDiagnosticEvent(event: DiagnosticEvent): void {
     // No-op in shared; override in platform-specific service
+    const events = this.diagnosticEventsSubject.getValue();
+    this.diagnosticEventsSubject.next([event, ...events]);
+  }
+
+  getDiagnosticEvents(): Observable<DiagnosticEvent[]> {
+    return this.diagnosticEventsSubject.asObservable();
+  }
+
+  getTimelineEvents(): Observable<DiagnosticTimelineEvent[]> {
+    return this.timelineSubject.asObservable();
   }
 
   getHealth(): Observable<HealthData> {

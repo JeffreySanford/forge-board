@@ -6,9 +6,6 @@
  * It consolidates functionality from previously separate files.
  */
 
-// Remove unused import
-// import { StatusCode } from './consolidated-api';
-
 /**
  * Standard socket response format for type safety
  */
@@ -52,6 +49,25 @@ export interface SocketLogEvent {
 }
 
 /**
+ * Specialized socket response for log-related operations
+ */
+export interface LogSocketResponse<T> extends SocketResponse<T> {
+  source: 'logger' | 'system';
+  requestId?: string;
+}
+
+/**
+ * Updates sent over socket connections for real-time log streaming
+ */
+export interface LogStreamUpdate {
+  log?: Record<string, unknown>;
+  logs?: Record<string, unknown>[];
+  totalCount: number;
+  append?: boolean;
+  stats?: Record<string, number>;
+}
+
+/**
  * Socket metrics interface for tracking socket service performance
  */
 export interface SocketMetrics {
@@ -61,6 +77,15 @@ export interface SocketMetrics {
   messagesReceived: number;
   errors: number;
   averageLatency: number;
+  disconnections: number;
+}
+
+/**
+ * Socket status update interface
+ */
+export interface SocketStatusUpdate<TData = unknown> {
+  activeSockets: SocketInfo<TData>[];
+  metrics: SocketMetrics;
 }
 
 /**
@@ -72,21 +97,49 @@ export interface SocketInfo<TMetadata = unknown> {
   connected: boolean;
   connectionTime: Date;
   lastActivity: Date;
+  disconnectTime?: Date;
+  clientIp?: string;
+  userAgent?: string;
+  events?: SocketEvent[];
   metadata?: TMetadata;
+}
+
+/**
+ * Data transfer object for socket info
+ */
+export interface SocketInfoDto {
+  id: string;
+  namespace: string;
+  connected: boolean;
+  connectionTime: string;
+  lastActivity?: string;
+  disconnectTime?: string;
+  clientIp?: string;
+  userAgent?: string;
+  eventCount?: number;
+}
+
+/**
+ * Diagnostic socket event interface
+ */
+export interface DiagnosticSocketEvent<TData = unknown> {
+  type: string;
+  timestamp: Date;
+  data?: TData;
 }
 
 /**
  * Create a standardized socket response object
  * 
- * @param data The response data
  * @param event The event name
+ * @param data The response data
  * @param status The response status, defaults to 'success'
  * @param message Optional message to include
  * @returns A complete socket response object
  */
 export function createSocketResponse<T>(
-  data: T, 
   event: string,
+  data: T,
   status: 'success' | 'error' = 'success',
   message?: string
 ): SocketResponse<T> {
@@ -153,6 +206,16 @@ export function createSocketErrorResponse<T>(
  */
 export function isSuccessResponse<T>(response: { status: 'success' | 'error', data: T | null }): response is { status: 'success', data: T } {
   return response.status === 'success' && response.data !== null;
+}
+
+/**
+ * Helper to check if a response is an error response
+ * 
+ * @param response The socket response to check
+ * @returns Type guard ensuring data is null
+ */
+export function isErrorResponse<T>(response: { status: 'success' | 'error', data: T | null }): response is { status: 'error', data: T | null } {
+  return response.status === 'error';
 }
 
 /**

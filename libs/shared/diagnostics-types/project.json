@@ -1,0 +1,17 @@
+{
+  "name": "diagnostics-types",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/diagnostics-types/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared/diagnostics-types",
+        "main": "libs/shared/diagnostics-types/src/index.ts",
+        "tsConfig": "libs/shared/diagnostics-types/tsconfig.json",
+        "assets": ["libs/shared/diagnostics-types/*.md"]
+      }
+    }
+  }
+}

@@ -3,4 +3,4 @@
 export * from './diagnostics.service';
 export * from './logger.service';
 export * from './metrics.service';
-export * from './crypto.service'
+export * from './crypto.service';

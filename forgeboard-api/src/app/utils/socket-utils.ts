@@ -1,36 +1,32 @@
 import { SocketResponse } from '@forge-board/shared/api-interfaces';
 
 /**
- * Create a standardized socket response
+ * Creates a socket response with standardized format
+ * @param event The event type/name
+ * @param data The payload data 
+ * @returns A standardized socket response
  */
-export function createSocketResponse<T>(event: string, data: T): SocketResponse<T>;
-export function createSocketResponse<T>(data: T): SocketResponse<T>;
-export function createSocketResponse<T>(eventOrData: string | T, data?: T): SocketResponse<T> {
-  if (typeof eventOrData === 'string' && data !== undefined) {
-    // Called with event name and data
-    return {
-      status: 'success',
-      data,
-      timestamp: new Date().toISOString(),
-    };
-  } else {
-    // Called with just data
-    return {
-      status: 'success',
-      data: eventOrData as T,
-      timestamp: new Date().toISOString(),
-    };
-  }
+export function createSocketResponse<T>(event: string, data: T): SocketResponse<T> {
+  return {
+    status: 'success',
+    data,
+    timestamp: new Date().toISOString(),
+    event
+  };
 }
 
 /**
- * Create a socket error response
+ * Creates a socket error response
+ * @param event The event type/name
+ * @param message Error message
+ * @returns A standardized socket error response
  */
-export function createSocketErrorResponse<T>(message: string, data?: T): SocketResponse<T> {
+export function createSocketErrorResponse(event: string, message: string): SocketResponse<null> {
   return {
     status: 'error',
-    data: data as T,
-    message,
+    data: null,
     timestamp: new Date().toISOString(),
+    message,
+    event
   };
 }

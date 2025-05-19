@@ -2,24 +2,7 @@
  * Shared crypto implementation for both browser and Node.js environments
  */
 import { Observable, from } from 'rxjs';
-
-/**
- * Hash result interface
- */
-export interface HashResult {
-  hash: string;
-  algorithm: string;
-  encoding: string;
-}
-
-/**
- * Random bytes result interface
- */
-export interface RandomBytesResult {
-  bytes: string;
-  size: number;
-  encoding?: string;
-}
+import { HashResult, RandomBytesResult } from '@forge-board/shared/api-interfaces';
 
 /**
  * Crypto service implementation - browser compatible
@@ -126,5 +109,97 @@ export class CryptoService {
    */
   static randomBytesObservable(size: number, encoding?: 'hex' | 'base64'): Observable<string | Uint8Array> {
     return from(this.randomBytes(size, encoding));
+  }
+
+  /**
+   * Generate a hash with metadata
+   * @param algorithm Hash algorithm to use (sha256, sha512, etc)
+   * @param data Data to hash
+   * @param encoding Output encoding (hex, base64, etc)
+   */
+  static async generateHashObject(algorithm: string, data: string, encoding: 'hex' | 'base64' = 'hex'): Promise<HashResult> {
+    const hash = await CryptoService.createHash(algorithm, data, encoding);
+    return {
+      hash,
+      algorithm,
+      encoding
+    };
+  }
+
+  /**
+   * Generate a hash from input with optional salt
+   * @param input Text to hash
+   * @param salt Optional salt value
+   */
+  static async generateHash(input: string, salt?: string): Promise<HashResult> {
+    const useSalt = salt || await CryptoService.randomBytes(16, 'hex') as string;
+    
+    // Use SHA-256 as default algorithm
+    const algorithm = 'sha256';
+    const encoding = 'hex';
+    
+    // Combine salt and input
+    const data = useSalt + input;
+    const hash = await CryptoService.createHash(algorithm, data, encoding);
+    
+    return {
+      hash,
+      algorithm,
+      encoding,
+      salt: useSalt
+    };
+  }
+
+  /**
+   * Compare a plaintext input with a stored hash
+   * @param input Text to compare
+   * @param hash Stored hash
+   * @param salt Salt used for hashing
+   */
+  static async compareHash(input: string, hash: string, salt: string): Promise<boolean> {
+    // Use SHA-256 as default algorithm
+    const algorithm = 'sha256';
+    const encoding = 'hex';
+    
+    // Combine salt and input
+    const data = salt + input;
+    const generatedHash = await CryptoService.createHash(algorithm, data, encoding);
+    
+    return generatedHash === hash;
+  }
+
+  /**
+   * Generate random bytes with metadata
+   * @param size Number of bytes to generate
+   */
+  static async generateRandomBytes(size: number = 32): Promise<RandomBytesResult> {
+    const encoding = 'hex';
+    const bytes = await CryptoService.randomBytes(size, encoding) as string;
+    
+    return {
+      bytes,
+      size,
+      encoding,
+      hex: bytes // Include hex property to match the interface
+    };
+  }
+
+  /**
+   * Generate a random token of specified length
+   * @param length Length of token to generate
+   */
+  static async generateToken(length: number = 32): Promise<string> {
+    const randomBytes = await CryptoService.randomBytes(Math.ceil(length / 2), 'hex');
+    let token = '';
+    
+    if (typeof randomBytes === 'string') {
+      token = randomBytes.substring(0, length);
+    } else {
+      // Convert Uint8Array to hex string
+      const hexArray = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0'));
+      token = hexArray.join('').substring(0, length);
+    }
+    
+    return token;
   }
 }

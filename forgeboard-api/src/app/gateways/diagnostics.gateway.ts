@@ -8,7 +8,9 @@ import {
 } from '@nestjs/websockets';
 import { Logger, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { DiagnosticEvent, Metric, createSocketResponse } from '@forge-board/shared/api-interfaces';
+// Update imports to use consolidated types
+import { DiagnosticEvent } from '@forge-board/shared/diagnostics.types';
+import { Metric, SocketResponse, createSocketResponse } from '@forge-board/shared/api-interfaces';
 import { DiagnosticsService } from '../diagnostics/diagnostics.service';
 import { SocketRegistryService } from '../socket/socket-registry.service';
 import { SocketLoggerService } from '../socket/socket-logger.service';

@@ -3,7 +3,8 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { LoggerService } from './logger.service';
 import type { LogFilter } from '@forge-board/shared/api-interfaces';
-import { LogEntry, LogQueryResponse, LogStreamUpdate, createSocketResponse } from '@forge-board/shared/api-interfaces';
+import { LogEntry, LogQueryResponse, LogStreamUpdate } from '@forge-board/shared/api-interfaces';
+import { createSocketResponse } from '../utils/socket-utils';
 import { firstValueFrom } from 'rxjs';
 
 // Define a proper Socket Error class

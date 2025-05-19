@@ -9,8 +9,9 @@ import {
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { Subscription, firstValueFrom } from 'rxjs'; // Added firstValueFrom, removed Observable
-import { LogEntry, createSocketResponse, LogFilter as SharedLogFilter } from '@forge-board/shared/api-interfaces'; // LogLevelEnum was correctly removed previously
+import { LogEntry, LogFilter as SharedLogFilter, LogStreamUpdate } from '@forge-board/shared/api-interfaces'; // Added LogStreamUpdate
 import { LoggerService } from '../logger/logger.service'; // Backend LoggerService
+import { createSocketResponse } from '../utils/socket-utils';
 import { SocketRegistryService } from '../socket/socket-registry.service'; // Optional: for logging connections
 
 // Use the imported LogFilter from shared/api-interfaces
@@ -83,14 +84,13 @@ export class LogGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     if (filter) {
       this.activeClients.set(client.id, filter);
     }
-    
-    // Emit initial data
+      // Emit initial data
     const logEntries = await firstValueFrom(this.logsService.getLogs(filter || {})); // Await log entries
-    client.emit('log-stream', createSocketResponse('log-stream', { // Use createSocketResponse
-        logs: logEntries, // Use resolved entries
+    const update: LogStreamUpdate = {
+        logs: logEntries,
         append: false
-      }
-    ));
+    };
+    client.emit('log-stream', createSocketResponse('log-stream', update));
     
     return createSocketResponse('subscribe-logs-ack', { subscribed: true, filterApplied: filter || this.activeClients.get(client.id) }); // Use createSocketResponse
   }
@@ -98,14 +98,13 @@ export class LogGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   @SubscribeMessage('update-filter')
   async handleUpdateFilter(client: Socket, filter: LogFilter) { // Made async
     this.activeClients.set(client.id, filter);
-    
-    // Get logs with updated filter
+      // Get logs with updated filter
     const logEntries = await firstValueFrom(this.logsService.getLogs(filter)); // Await log entries
-    client.emit('log-stream', createSocketResponse('log-stream', { // Use createSocketResponse
-        logs: logEntries, // Use resolved entries
+    const update: LogStreamUpdate = {
+        logs: logEntries,
         append: false
-      }
-    ));
+    };
+    client.emit('log-stream', createSocketResponse('log-stream', update));
     
     return createSocketResponse('update-filter-ack', { filterApplied: filter }); // Use createSocketResponse
   }
@@ -117,13 +116,12 @@ export class LogGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       ...currentFilter,
       afterTimestamp: options?.afterTimestamp
     };
-    
-    const logEntries = await firstValueFrom(this.logsService.getLogs(filter)); // Await log entries
-    client.emit('log-stream', createSocketResponse('log-stream', { // Use createSocketResponse
-        logs: logEntries, // Use resolved entries
+      const logEntries = await firstValueFrom(this.logsService.getLogs(filter)); // Await log entries
+    const update: LogStreamUpdate = {
+        logs: logEntries,
         append: true
-      }
-    ));
+    };
+    client.emit('log-stream', createSocketResponse('log-stream', update));
     
     return createSocketResponse('get-latest-logs-ack', { logsFetched: logEntries.length }); // Use createSocketResponse
   }

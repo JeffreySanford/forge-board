@@ -144,4 +144,5 @@ export interface Environment {
 import { JwtClaims } from '../jwt/jwt.interface';
 
 // Re-export socket response interface for easier imports
+// Make sure to use the correct import path
 export { SocketResponse } from '../socket/socket.interface';
