@@ -17,7 +17,7 @@ export class KanbanCard extends Document {
   priority: string;
   
   @Prop()
-  dueDate?: string;
+  dueDate?: Date;
   
   @Prop()
   assignee?: string;

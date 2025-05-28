@@ -1,5 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
+// Import SASS color module for modern color functions
+@use 'sass:color';
+
 // Angular Material Theming (if you have one, it should come first or early)
 // @use '@angular/material' as mat;
 // @include mat.core();
@@ -10,14 +13,129 @@
 @use 'app/styles/variables' as *; // Make variables globally available with a namespace or directly
 @use 'app/styles/utilities'; // Apply utility classes and placeholders
 
-// Reset or Base Styles (optional)
+// ==========================================================================
+//   GLOBAL STYLES
+// ==========================================================================
+
+// Reset and base styles
+* {
+  box-sizing: border-box;
+}
+
 html, body {
   height: 100%;
   margin: 0;
-  font-family: $font-family-primary; // Use variable
-  background-color: $background-light; // Example global background
-  color: $text-color-dark; // Example global text color
+  padding: 0;
+  font-family: $font-family-primary;
+  line-height: 1.5;
+  color: $text-color-dark;
+  background: $background-light;
 }
+
+// Material Design overrides for dark theme components
+.mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.mat-mdc-text-field-wrapper {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.mat-mdc-form-field-focus-overlay {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.mat-mdc-form-field-flex {
+  background-color: transparent !important;
+}
+
+.mat-mdc-input-element {
+  color: white !important;
+}
+
+.mat-mdc-form-field-label {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+// CDK Drag Drop global styles
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-drag;
+  z-index: 1000;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list {
+  display: block;
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+// Scrollbar styling for webkit browsers
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba($primary-color, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $primary-color;
+  border-radius: 4px;
+  
+  &:hover {
+    background: color.adjust($primary-color, $lightness: -10%);
+  }
+}
+
+// Focus styles for accessibility
+:focus-visible {
+  outline: 2px solid $primary-color;
+  outline-offset: 2px;
+}
+
+// Print styles
+@media print {
+  .kanban-board {
+    .board-header,
+    .drag-handle {
+      display: none;
+    }
+    
+    .columns-container {
+      display: flex;
+      flex-direction: row;
+      gap: $spacing-md;
+    }
+    
+    .column {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+}
+
+// Reset or Base Styles (optional)
+// html, body {
+//   height: 100%;
+//   margin: 0;
+//   font-family: $font-family-primary; // Use variable
+//   background-color: $background-light; // Example global background
+//   color: $text-color-dark; // Example global text color
+// }
 
 // Other global styles can go here
 // For example, global link styling, typography defaults, etc.

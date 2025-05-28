@@ -43,15 +43,42 @@ export interface SeedStatus {
 }
 
 const SEED_DATA_DIR = path.join(__dirname, 'seed');
+// Fallback paths for different environments
+const ALTERNATIVE_SEED_DIR = path.join(process.cwd(), 'forgeboard-api', 'src', 'app', 'seed');
+const MOCKS_SEED_DIR = path.join(__dirname, 'mocks');
+
 const KANBAN_EXAMPLE_FILE = path.join(SEED_DATA_DIR, 'kanban-example-boards.json');
 const KANBAN_FORGEBOARD_FILE = path.join(SEED_DATA_DIR, 'kanban-forgeboard-stories.json');
 
+// Alternative paths
+const ALT_KANBAN_EXAMPLE_FILE = path.join(ALTERNATIVE_SEED_DIR, 'kanban-example-boards.json');
+const ALT_KANBAN_FORGEBOARD_FILE = path.join(ALTERNATIVE_SEED_DIR, 'kanban-forgeboard-stories.json');
+
+// Mocks paths as fallback
+const MOCKS_KANBAN_EXAMPLE_FILE = path.join(MOCKS_SEED_DIR, 'kanban-example-boards.json');
+const MOCKS_KANBAN_FORGEBOARD_FILE = path.join(MOCKS_SEED_DIR, 'kanban-forgeboard-stories.json');
+const LEGACY_KANBAN_FILE = path.join(MOCKS_SEED_DIR, 'kanban/mock-boards.json');
+
 function loadSeedJson(filePath: string) {
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
   } catch (e) {
     throw new Error(`Failed to load seed file: ${filePath} - ${e.message}`);
   }
+}
+
+function findSeedFile(primaryPath: string, alternativePath: string, mocksPath?: string): string | null {
+  if (fs.existsSync(primaryPath)) {
+    return primaryPath;
+  }
+  if (fs.existsSync(alternativePath)) {
+    return alternativePath;
+  }
+  if (mocksPath && fs.existsSync(mocksPath)) {
+    return mocksPath;
+  }
+  return null;
 }
 
 @Injectable()
@@ -395,7 +422,6 @@ export class SeedService implements OnModuleInit {
   private seedKanbanBoards(): Observable<SeedOperationState> {
     const operationName = 'Kanban Boards';
     
-    // Update status to show operation is in progress
     this.updateOperationStatus({
       operation: operationName,
       status: SeedOperationStatus.IN_PROGRESS,
@@ -406,42 +432,90 @@ export class SeedService implements OnModuleInit {
     return from(this.kanbanBoardModel.countDocuments()).pipe(
       switchMap(count => {
         if (count > 0) {
-          this.logger.log(`Skipping ${operationName} seed - collection already has data`);
+          this.logger.log(`Skipping ${operationName} seed - collection already has ${count} boards`);
           return of({
             operation: operationName,
             status: SeedOperationStatus.SKIPPED,
-            message: `${operationName} collection already has ${count} documents`,
+            message: `${operationName} collection already has ${count} boards`,
             startTime: new Date(),
             endTime: new Date(),
             count
           });
         }
         
-        // Load both example and forgeboard stories
+        // Load comprehensive board data from multiple sources
         let boards: any[] = [];
+        let totalCards = 0;
+        
         try {
-          const exampleBoards = loadSeedJson(KANBAN_EXAMPLE_FILE);
-          const forgeboardBoards = loadSeedJson(KANBAN_FORGEBOARD_FILE);
-          boards = [...exampleBoards, ...forgeboardBoards];
+          // Load example boards - try all paths including mocks
+          const exampleFile = findSeedFile(KANBAN_EXAMPLE_FILE, ALT_KANBAN_EXAMPLE_FILE, MOCKS_KANBAN_EXAMPLE_FILE);
+          if (exampleFile) {
+            const exampleBoards = loadSeedJson(exampleFile);
+            boards.push(...exampleBoards);
+            this.logger.log(`Loaded ${exampleBoards.length} example boards from ${exampleFile}`);
+          } else {
+            this.logger.warn(`Example boards file not found at any of the expected paths`);
+          }
+          
+          // Load forgeboard stories - try all paths including mocks
+          const forgeboardFile = findSeedFile(KANBAN_FORGEBOARD_FILE, ALT_KANBAN_FORGEBOARD_FILE, MOCKS_KANBAN_FORGEBOARD_FILE);
+          if (forgeboardFile) {
+            const forgeboardBoards = loadSeedJson(forgeboardFile);
+            boards.push(...forgeboardBoards);
+            this.logger.log(`Loaded ${forgeboardBoards.length} forgeboard story boards from ${forgeboardFile}`);
+          } else {
+            this.logger.warn(`Forgeboard stories file not found at any of the expected paths`);
+          }
+
+          // Try to load legacy kanban file (fixed typo)
+          if (fs.existsSync(LEGACY_KANBAN_FILE)) {
+            const legacyBoards = loadSeedJson(LEGACY_KANBAN_FILE);
+            boards.push(...legacyBoards);
+            this.logger.log(`Loaded ${legacyBoards.length} legacy kanban boards from ${LEGACY_KANBAN_FILE}`);
+          }
+          
+          // Count total cards across all boards for logging
+          totalCards = boards.reduce((total, board) => {
+            return total + (board.columns?.reduce((colTotal, col) => {
+              return colTotal + (col.cards?.length || 0);
+            }, 0) || 0);
+          }, 0);
+          
+          this.logger.log(`Total cards to seed: ${totalCards} across ${boards.length} boards`);
+          
         } catch (e) {
-          this.logger.error(`Failed to load kanban board mock files: ${e.message}`);
+          this.logger.error(`Failed to load kanban board seed files: ${e.message}`);
           return of({
             operation: operationName,
             status: SeedOperationStatus.FAILED,
-            message: `Failed to load kanban board mock files`,
+            message: `Failed to load kanban board seed files`,
             startTime: new Date(),
             endTime: new Date(),
             error: e.message
           });
         }
+        
+        if (boards.length === 0) {
+          this.logger.warn('No kanban board data found to seed');
+          return of({
+            operation: operationName,
+            status: SeedOperationStatus.SKIPPED,
+            message: 'No kanban board data found to seed',
+            startTime: new Date(),
+            endTime: new Date(),
+            count: 0
+          });
+        }
+        
         return from(this.kanbanBoardModel.create(boards)).pipe(
           map(result => {
             const createdCount = Array.isArray(result) ? result.length : 1;
-            this.logger.log(`Seeded ${createdCount} kanban boards`);
+            this.logger.log(`Successfully seeded ${createdCount} kanban boards with ${totalCards} total cards`);
             return {
               operation: operationName,
               status: SeedOperationStatus.SUCCESS,
-              message: `Successfully seeded ${createdCount} kanban boards`,
+              message: `Successfully seeded ${createdCount} kanban boards with ${totalCards} cards`,
               startTime: new Date(),
               endTime: new Date(),
               count: createdCount

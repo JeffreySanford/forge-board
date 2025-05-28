@@ -13,7 +13,9 @@
     "start:all": "npx nx run-many --target=serve --projects=shared-api-interfaces,forgeboard-api,forgeboard-frontend --parallel=3",
     "watch:shared": "npx nx run shared-api-interfaces:watch",
     "dev": "npm run start:all",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "copy-kanban-seeds": "node scripts/copy-kanban-seed-jsons.js",
+    "seed-kanban": "npm run copy-kanban-seeds && nx serve forgeboard-api"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "^19.0.1",

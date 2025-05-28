@@ -1,0 +1,68 @@
+[
+  {
+    "id": "board-1",
+    "name": "ForgeBoard Development",
+    "currentPhase": "development",
+    "phases": {
+      "planning": {
+        "active": false,
+        "startDate": "2024-01-01T00:00:00.000Z",
+        "completionDate": "2024-01-15T00:00:00.000Z"
+      },
+      "development": {
+        "active": true,
+        "startDate": "2024-01-16T00:00:00.000Z"
+      },
+      "completion": {
+        "active": false
+      }
+    },
+    "columns": [
+      {
+        "id": "col-1",
+        "name": "Backlog",
+        "order": 0,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card-1",
+            "title": "Setup Development Environment",
+            "description": "Configure NX workspace with Angular and NestJS",
+            "priority": "high",
+            "tags": ["setup", "infrastructure"],
+            "category": "development",
+            "createdAt": "2024-01-01T10:00:00.000Z",
+            "updatedAt": "2024-01-01T10:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "col-2",
+        "name": "In Progress",
+        "order": 1,
+        "phase": "development",
+        "cards": [
+          {
+            "id": "card-2",
+            "title": "Implement Kanban Board",
+            "description": "Create reactive kanban board with drag-and-drop functionality",
+            "priority": "high",
+            "tags": ["frontend", "angular"],
+            "category": "feature",
+            "createdAt": "2024-01-16T09:00:00.000Z",
+            "updatedAt": "2024-01-16T14:30:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "col-3",
+        "name": "Done",
+        "order": 2,
+        "phase": "completion",
+        "cards": []
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-16T14:30:00.000Z"
+  }
+]

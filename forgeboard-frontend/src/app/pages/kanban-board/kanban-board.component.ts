@@ -1,493 +1,232 @@
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { KanbanBoard, KanbanColumn, KanbanService, ProjectPhase, KanbanCard } from '../../services/kanban.service';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { trigger, transition, style, animate } from '@angular/animations';
-
-// Interface for categorized cards
-interface CategoryGroup {
-  name: string;
-  displayName: string;
-  cards: KanbanCard[];
-  expanded: boolean;
-}
+import { KanbanService, KanbanBoard, KanbanColumn, KanbanCard } from '../../services/kanban.service';
 
 @Component({
   selector: 'app-kanban-board',
   templateUrl: './kanban-board.component.html',
   styleUrls: ['./kanban-board.component.scss'],
-  // eslint-disable-next-line @angular-eslint/prefer-standalone
-  standalone: false,
-  animations: [
-    trigger('cardAnimation', [
-      transition(':enter', [
-        style({ transform: 'scale(0.8)', opacity: 0 }),
-        animate('200ms ease-in', style({ transform: 'scale(1)', opacity: 1 }))
-      ]),
-      transition(':leave', [
-        animate('200ms ease-out', style({ transform: 'scale(0.8)', opacity: 0 }))
-      ])
-    ])
-  ]
+  standalone: false
 })
 export class KanbanBoardComponent implements OnInit, OnDestroy {
-  // Existing properties
-  board: KanbanBoard | null = null;
-  isConnected = false;
-  storageType = 'Unknown';
-  forcingMockData = false;
-  availableStorageTypes = ['memory', 'localStorage', 'mongodb', 'blockchain', 'mock'];
+  private destroy$ = new Subject<void>();
   
-  // Card navigation properties
-  currentCardIndex = 0;
-  cardsToShow = 3;
-  totalCards = 8;
-  visibleColumns: KanbanColumn[] = [];
-  paginationIndicators: number[] = [];
-  
-  // Current workflow step
-  currentWorkflowStep: 'backlog' | 'todo' | 'complete' = 'backlog';
-  
-  // Project phase navigation
-  currentPhase: ProjectPhase = 'planning';
-  allPhases: ProjectPhase[] = ['inception', 'planning', 'design', 'development', 'testing', 'completion'];
-  phaseLabels: { [key in ProjectPhase]: string } = {
-    inception: 'Inception',
-    planning: 'Planning',
-    design: 'Design',
-    development: 'Development',
-    testing: 'Testing',
-    completion: 'Completion'
-  };
-  phaseColumns: Map<ProjectPhase, KanbanColumn[]> = new Map();
-  
-  // New properties for categorized view
-  showCategorizedView = true;
-  categoryGroups: CategoryGroup[] = [];
-  categoryMappings: { [key: string]: string } = {
-    'security': 'Security & Compliance',
-    'user-experience': 'User Experience',
-    'project-management': 'Project Management',
-    'optimization': 'Performance & Optimization',
-    'infrastructure': 'Infrastructure',
-    'documentation': 'Documentation',
-    'feature': 'Feature Development'
-  };
-
-  // Map of column ID to category groups for that column
-  columnCategoryGroups: Map<string, CategoryGroup[]> = new Map();
-  
-  // New properties for board selection
   boards: KanbanBoard[] = [];
-  selectedBoardId: string | null = null;
-  
-  @ViewChild('columnsContainer') columnsContainer!: ElementRef;
-  
-  private subscriptions = new Subscription();
-  
-  constructor(
-    private kanbanService: KanbanService,
-    private ngZone: NgZone
-  ) {}
-  
-  ngOnInit(): void {
-    // Existing subscription code
-    this.subscriptions.add(
-      this.kanbanService.getConnectionStatus().subscribe(status => {
-        this.isConnected = status;
-        console.log('[KanbanBoard] Connection status changed:', status);
-      })
-    );
-    
-    this.subscriptions.add(
-      this.kanbanService.getBoards().subscribe(boards => {
+  selectedBoard: KanbanBoard | null = null;
+  useMockData = true; // Add toggle state for Material Design 3 toggle
+  isConnected = false;
+  storageType = 'mock';
+
+  constructor(private kanbanService: KanbanService) {}
+  ngOnInit() {
+    // Subscribe to boards observable
+    this.kanbanService.getBoardsObservable()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(boards => {
         this.boards = boards;
-        if (boards.length > 0) {
-          // If no board selected, default to first
-          if (!this.selectedBoardId || !boards.find(b => b.id === this.selectedBoardId)) {
-            this.selectedBoardId = boards[0].id;
+        // Always update selected board when new data arrives
+        if (boards && boards.length > 0) {
+          this.selectedBoard = boards[0];
+          console.log('Selected board:', this.selectedBoard);
+          console.log('Board columns:', this.selectedBoard.columns);
+          
+          // Log all cards for debugging
+          if (this.selectedBoard.columns) {
+            let totalCards = 0;
+            this.selectedBoard.columns.forEach((column, index) => {
+              const cardCount = column.cards?.length || 0;
+              totalCards += cardCount;
+              console.log(`Column ${index} (${column.name}): ${cardCount} cards`);
+            });
+            console.log(`Total cards across all columns: ${totalCards}`);
           }
-          this.board = boards.find(b => b.id === this.selectedBoardId) || boards[0];
-          this.currentPhase = this.board.currentPhase;
-          this.groupColumnsByPhase();
-          this.groupCardsByCategory();
-          this.columnCategoryGroups.clear();
-          this.board.columns.forEach(column => {
-            this.groupCardsByCategoryForColumn(column);
-          });
-          this.updateVisibleColumnsByPhase();
-          this.updatePaginationIndicators();
-          this.updateWorkflowStep();
         }
-      })
-    );
-    
+      });
+
+    // Subscribe to connection status
+    this.kanbanService.getConnectionStatus()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(connected => {
+        this.isConnected = connected;
+        console.log('Connection status:', connected);
+      });
+
     // Subscribe to storage type changes
-    this.subscriptions.add(
-      this.kanbanService.getStorageTypeChanges().subscribe(type => {
-        this.storageType = type || 'Unknown';
-        console.log('[KanbanBoard] Storage type changed:', this.storageType);
-      })
-    );
-    
-    // Initialize storage type
-    this.storageType = this.kanbanService.getStorageType() || 'Unknown';
-    console.log('[KanbanBoard] Initial storage type:', this.storageType);
-  }
-  
-  // Group backlog cards by category
-  groupCardsByCategory(): void {
-    if (!this.board) return;
-    
-    // Find the backlog column
-    const backlogColumn = this.board.columns.find(col => col.name === 'Backlog');
-    if (!backlogColumn) return;
-    
-    // Clear existing category groups
-    this.categoryGroups = [];
-    
-    // Create a map to hold cards by category
-    const cardsByCategory: { [category: string]: KanbanCard[] } = {};
-    
-    // Group cards by their category
-    backlogColumn.cards.forEach(card => {
-      const category = card.category || 'uncategorized';
-      if (!cardsByCategory[category]) {
-        cardsByCategory[category] = [];
-      }
-      cardsByCategory[category].push(card);
-    });
-    
-    // Convert map to array of category groups
-    Object.keys(cardsByCategory).forEach(category => {
-      this.categoryGroups.push({
-        name: category,
-        displayName: this.categoryMappings[category] || this.capitalizeFirstLetter(category),
-        cards: cardsByCategory[category],
-        expanded: true
+    this.kanbanService.getStorageTypeChanges()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(storageType => {
+        this.storageType = storageType;
+        console.log('Storage type changed to:', storageType);
+        
+        // Sync the toggle state with the actual storage type
+        this.useMockData = (storageType === 'mock');
       });
-    });
-    
-    // Sort categories alphabetically by display name
-    this.categoryGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
-  }
-  
-  // Group cards by category for a specific column
-  groupCardsByCategoryForColumn(column: KanbanColumn): CategoryGroup[] {
-    if (!column) return [];
-    
-    // Create a map to hold cards by category
-    const cardsByCategory: { [category: string]: KanbanCard[] } = {};
-    
-    // Group cards by their category
-    column.cards.forEach(card => {
-      const category = card.category || 'uncategorized';
-      if (!cardsByCategory[category]) {
-        cardsByCategory[category] = [];
-      }
-      cardsByCategory[category].push(card);
-    });
-    
-    // Convert map to array of category groups
-    const categoryGroups: CategoryGroup[] = [];
-    Object.keys(cardsByCategory).forEach(category => {
-      categoryGroups.push({
-        name: category,
-        displayName: this.categoryMappings[category] || this.capitalizeFirstLetter(category),
-        cards: cardsByCategory[category],
-        expanded: true
-      });
-    });
-    
-    // Sort categories alphabetically by display name
-    categoryGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
-    
-    // Store in the map for future reference
-    this.columnCategoryGroups.set(column.id, categoryGroups);
-    
-    return categoryGroups;
-  }
-  
-  // Helper function to capitalize first letter of each word
-  capitalizeFirstLetter(string: string): string {
-    return string.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  }
-  
-  // Toggle categorized view
-  toggleCategorizedView(): void {
-    this.showCategorizedView = !this.showCategorizedView;
-    console.log('[KanbanBoard] Categorized view:', this.showCategorizedView);
-  }
-  
-  // Toggle category expansion
-  toggleCategory(category: CategoryGroup): void {
-    category.expanded = !category.expanded;
-  }
-  
-  // Get category groups for a column
-  getColumnCategoryGroups(column: KanbanColumn): CategoryGroup[] {
-    if (!column) return [];
-    
-    // Return cached category groups if available
-    if (this.columnCategoryGroups.has(column.id)) {
-      const groups = this.columnCategoryGroups.get(column.id);
-      return groups || []; // Return empty array if groups is undefined
-    }
-    
-    // Otherwise, create them
-    return this.groupCardsByCategoryForColumn(column);
-  }
-  
-  // Toggle a category's expansion state
-  toggleColumnCategory(column: KanbanColumn, categoryGroup: CategoryGroup): void {
-    if (!column || !categoryGroup) return;
-    categoryGroup.expanded = !categoryGroup.expanded;
-  }
-  
-  // Existing methods remain the same
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
-  
-  toggleMockData(): void {
-    this.forcingMockData = !this.forcingMockData;
-    this.kanbanService.toggleMockData(this.forcingMockData);
-    console.log('[KanbanBoard] Mock data toggled:', this.forcingMockData);
-  }
-  
-  // Change the storage type (for demonstration purposes)
-  changeStorageType(type: string): void {
-    this.kanbanService.setStorageType(type);
-    console.log('[KanbanBoard] Storage type manually set to:', type);
-  }
-  
-  // Group columns by their phase
-  groupColumnsByPhase(): void {
-    if (!this.board) return;
-    
-    this.phaseColumns.clear();
-    
-    // Initialize empty arrays for each phase
-    this.allPhases.forEach(phase => {
-      this.phaseColumns.set(phase, []);
-    });
-    
-    // Group columns by phase
-    this.board.columns.forEach(column => {
-      // Cast column.phase to ProjectPhase to avoid type error
-      const phase = column.phase as ProjectPhase;
-      const phaseColumns = this.phaseColumns.get(phase) || [];
-      phaseColumns.push(column);
-      this.phaseColumns.set(phase, phaseColumns);
-    });
-    
-    // Sort columns by order within each phase
-    this.allPhases.forEach(phase => {
-      const columns = this.phaseColumns.get(phase) || [];
-      columns.sort((a, b) => a.order - b.order);
-    });
-  }
-  
-  // Update visible columns based on current phase
-  updateVisibleColumnsByPhase(): void {
-    if (!this.board) return;
-    
-    const phaseColumns = this.phaseColumns.get(this.currentPhase) || [];
-    this.totalCards = phaseColumns.length;
-    
-    // Update visible columns based on current card index and phase
-    this.visibleColumns = phaseColumns.slice(
-      this.currentCardIndex,
-      Math.min(this.currentCardIndex + this.cardsToShow, this.totalCards)
-    );
-  }
-  
-  // Switch to a different project phase
-  switchPhase(phase: ProjectPhase): void {
-    if (this.currentPhase !== phase) {
-      this.currentPhase = phase;
-      this.currentCardIndex = 0; // Reset card index when switching phases
-      this.updateVisibleColumnsByPhase();
-      this.updatePaginationIndicators();
-    }
-  }
-  
-  // Check if a phase is the current phase
-  isCurrentPhase(phase: ProjectPhase): boolean {
-    return this.currentPhase === phase;
-  }
-  
-  // Check if a phase is active
-  isPhaseActive(phase: ProjectPhase): boolean {
-    return this.board?.phases[phase]?.active || false;
-  }
-  
-  // Check if phase is complete
-  isPhaseComplete(phase: ProjectPhase): boolean {
-    return this.board?.phases[phase]?.completionDate !== undefined;
-  }
-  
-  // Update visible columns based on current index (modified to work with phases)
-  updateVisibleColumns(): void {
-    this.updateVisibleColumnsByPhase();
-  }
-  
-  // Update pagination indicators
-  updatePaginationIndicators(): void {
-    const phaseColumns = this.phaseColumns.get(this.currentPhase) || [];
-    this.totalCards = phaseColumns.length;
-    
-    const pageCount = Math.ceil(this.totalCards / this.cardsToShow);
-    this.paginationIndicators = Array.from({ length: pageCount }, (_, i) => i);
-  }
-  
-  // Navigation methods (updated)
-  navigateCards(direction: 'left' | 'right'): void {
-    const phaseColumns = this.phaseColumns.get(this.currentPhase) || [];
-    const maxIndex = Math.max(0, phaseColumns.length - this.cardsToShow);
-    
-    if (direction === 'left' && this.currentCardIndex > 0) {
-      this.currentCardIndex -= this.cardsToShow;
-    } else if (direction === 'right' && this.currentCardIndex < maxIndex) {
-      this.currentCardIndex += this.cardsToShow;
-    }
-    
-    // Make sure we don't have negative index or exceed total cards
-    this.currentCardIndex = Math.max(0, Math.min(this.currentCardIndex, maxIndex));
-    
-    this.updateVisibleColumnsByPhase();
-    this.updateWorkflowStep();
-    
-    // Scroll to the beginning of the container with animation
-    if (this.columnsContainer?.nativeElement) {
-      this.columnsContainer.nativeElement.scrollTo({ left: 0, behavior: 'smooth' });
-    }
-  }
-  
-  goToPage(pageIndex: number): void {
-    this.currentCardIndex = pageIndex * this.cardsToShow;
-    this.updateVisibleColumns();
-    this.updateWorkflowStep();
-  }
-  
-  // Update workflow step based on visible columns
-  updateWorkflowStep(): void {
-    // Map the current card index to a workflow step
-    if (this.currentCardIndex === 0) {
-      this.currentWorkflowStep = 'backlog';
-    } else if (this.currentCardIndex + this.cardsToShow >= this.totalCards) {
-      this.currentWorkflowStep = 'complete';
-    } else {
-      this.currentWorkflowStep = 'todo';
-    }
-  }
-  
-  // Check if a given step is active
-  isStepActive(step: 'backlog' | 'todo' | 'complete'): boolean {
-    return this.currentWorkflowStep === step;
-  }
-  
-  // Track functions for better performance with *ngFor
-  trackByFn(index: number, column: KanbanColumn): string {
-    return column.id;
-  }
-  
-  trackCardByFn(index: number, card: KanbanCard): string {
-    return card.id;
-  }
-  
-  // Handle card drop events with improved error handling
-  onCardDropped(event: CdkDragDrop<KanbanCard[]>): void {
-    if (!this.board) return;
-    
-    try {
-      if (event.previousContainer === event.container) {
-        // Reordering within the same column/category
-        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      } else {
-        // Find source and target column IDs
-        const sourceColId = this.findColumnIdByCards(event.previousContainer.data);
-        const targetColId = this.findColumnIdByCards(event.container.data);
-        
-        if (!sourceColId || !targetColId) {
-          console.error('Could not find column IDs for drag operation');
-          return;
-        }
-        
-        // Get the card being moved
-        const cardId = event.previousContainer.data[event.previousIndex].id;
-        
-        // Update the UI immediately
-        transferArrayItem(
-          event.previousContainer.data,
-          event.container.data,
-          event.previousIndex,
-          event.currentIndex
-        );
-        
-        // Call service to persist changes - use NgZone to ensure we're in the Angular zone
-        this.ngZone.run(() => {
-          this.kanbanService.moveCard(cardId, sourceColId, targetColId, event.currentIndex);
-        });
-        
-        // Update category groups for affected columns
-        if (sourceColId) {
-          const sourceCol = this.board.columns.find(col => col.id === sourceColId);
-          if (sourceCol) {
-            this.groupCardsByCategoryForColumn(sourceCol);
-          }
-        }
-        
-        if (targetColId && targetColId !== sourceColId) {
-          const targetCol = this.board.columns.find(col => col.id === targetColId);
-          if (targetCol) {
-            this.groupCardsByCategoryForColumn(targetCol);
-          }
-        }
-        
-        // Re-group cards if cards were moved to/from backlog
-        if (sourceColId === 'col3' || targetColId === 'col3') {
-          this.groupCardsByCategory();
-        }
-      }
-    } catch (err) {
-      console.error('Error during card drop:', err);
-    }
-  }
-  
-  // Helper to find column ID by its cards array reference
-  private findColumnIdByCards(cards: KanbanCard[]): string | null {
-    if (!this.board) return null;
-    
-    const column = this.board.columns.find(col => col.cards === cards);
-    return column ? column.id : null;
+
+    // Load initial boards based on current data source
+    this.loadBoards();
   }
 
-  onBoardSelect(boardId: string): void {
-    this.selectedBoardId = boardId;
+  /**
+   * getDropListIds - Returns column IDs for CDK drop list connections
+   */
+  getDropListIds(): string[] {
+    if (!this.selectedBoard || !this.selectedBoard.columns) {
+      return [];
+    }
+    return this.selectedBoard.columns.map(column => column.id);
+  }
+
+  /** 
+   * On Card Drop - Handle CDK drag drop events
+   * @param event - The CDK drop event
+   */
+  onCardDrop(event: CdkDragDrop<KanbanCard[]>): void {
+    const sourceColumnId = event.previousContainer.id;
+    const targetColumnId = event.container.id;
+    const cardId = event.item.data.id;
+    
+    console.log('[KanbanBoard] Card drop event:', {
+      cardId,
+      sourceColumnId,
+      targetColumnId,
+      previousIndex: event.previousIndex,
+      currentIndex: event.currentIndex
+    });
+
+    // Handle drag within same column
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      console.log('[KanbanBoard] Moved card within same column');
+    } else {
+      // Handle drag between different columns
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+      console.log('[KanbanBoard] Transferred card between columns');
+    }
+
+    // Update timestamps optimistically
+    const movedCard = event.container.data[event.currentIndex];
+    if (movedCard) {
+      movedCard.updatedAt = new Date().toISOString();
+    }
+
+    // Persist the change via service
+    this.kanbanService.moveCard(
+      cardId,
+      sourceColumnId,
+      targetColumnId,
+      event.currentIndex
+    );
+  }
+
+  /**
+   * Toggle between mock and live data
+   */
+  onBoardSelection(boardId: string): void {
+    console.log(`[KanbanBoard] Selecting board: ${boardId}`);
     const board = this.boards.find(b => b.id === boardId);
     if (board) {
-      this.board = board;
-      this.currentPhase = board.currentPhase;
-      this.groupColumnsByPhase();
-      this.groupCardsByCategory();
-      this.columnCategoryGroups.clear();
-      this.board.columns.forEach(column => {
-        this.groupCardsByCategoryForColumn(column);
-      });
-      this.updateVisibleColumnsByPhase();
-      this.updatePaginationIndicators();
-      this.updateWorkflowStep();
+      this.selectedBoard = board;
+      console.log(`[KanbanBoard] Selected board: ${board.name} with ${this.getTotalCards(board)} cards`);
     }
   }
 
-  // Getter for example boards
-  get exampleBoards(): KanbanBoard[] {
-    return this.boards.filter(b => b.name && b.name.toLowerCase().includes('example'));
+  getBoardStats(board: any): string {
+    const totalCards = this.getTotalCards(board);
+    const columnCount = board.columns?.length || 0;
+    return `${totalCards} cards • ${columnCount} columns`;
   }
 
-  // Getter for project boards
-  get projectBoards(): KanbanBoard[] {
-    return this.boards.filter(b => !b.name || !b.name.toLowerCase().includes('example'));
+  private getTotalCards(board: any): number {
+    if (!board?.columns) return 0;
+    return board.columns.reduce((total: number, column: any) => {
+      return total + (column.cards?.length || 0);
+    }, 0);
+  }
+
+  toggleDataSource(): void {
+    console.log('Toggling data source to:', this.useMockData ? 'mock' : 'live');
+    this.loadBoards();
+  }
+
+  /**
+   * Load boards based on current data source setting
+   */
+  private loadBoards(): void {
+    if (this.useMockData) {
+      this.kanbanService.loadMockBoards()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (boards) => {
+            console.log('Loaded mock boards:', boards);
+            this.handleBoardsLoaded(boards);
+          },
+          error: (error) => {
+            console.error('Error loading mock boards:', error);
+          }
+        });
+    } else {
+      this.kanbanService.getBoards()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (boards) => {
+            console.log('Loaded live boards:', boards);
+            this.handleBoardsLoaded(boards);
+          },
+          error: (error) => {
+            console.error('Error loading live boards:', error);
+          }
+        });
+    }
+  }  /**
+   * Handle boards loaded from either source
+   */
+  private handleBoardsLoaded(boards: KanbanBoard[]): void {
+    this.boards = boards;
+    if (boards && boards.length > 0) {
+      // Prefer "ForgeBoard Project Stories" as the default working set
+      const forgeboardStories = boards.find(board => 
+        board.name === 'ForgeBoard Project Stories' || 
+        board.id === 'forgeboard-main'
+      );
+      
+      this.selectedBoard = forgeboardStories || boards[0];
+      const totalCards = this.getTotalCards(this.selectedBoard);
+      console.log(`Selected board: ${this.selectedBoard.name} with ${totalCards} cards`);
+      console.log('Available boards:', boards.map(b => `${b.name} (${this.getTotalCards(b)} cards)`));
+    }
+  }
+
+  /**
+   * Returns true if the given index is the last column in selectedBoard.columns
+   */
+  isLastColumn(index: number): boolean {
+    if (!this.selectedBoard || !this.selectedBoard.columns) return false;
+    return index === this.selectedBoard.columns.length - 1;
+  }
+
+  /**
+   * TrackBy function for columns
+   */
+  trackByColumnId(index: number, column: KanbanColumn): string {
+    return column.id || index.toString();
+  }
+
+  /**
+   * TrackBy function for cards
+   */
+  trackByCardId(index: number, card: KanbanCard): string {
+    return card.id || index.toString();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

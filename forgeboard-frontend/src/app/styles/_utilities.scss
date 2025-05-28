@@ -1,5 +1,30 @@
+// Move all @use rules to the very top, before any @import or other rules
 @use 'sass:color';
-@use 'variables' as *;
+@use './variables' as *;
+
+// ==========================================================================
+//   FORGEBOARD UTILITY CLASSES & MIXINS
+// ==========================================================================
+
+// Define missing font family variables
+$font-family-monospace: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !default;
+
+// Fieldset label base placeholder
+%fieldset-label-base {
+  position: absolute;
+  font-size: 0.7em;
+  font-family: $font-family-monospace;
+  padding: 0.1em 0.7em;
+  border-radius: 1em;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 10;
+  border: 2px solid;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.05);
+  background-color: $color-white;
+}
 
 // Placeholder for fieldset-like labels on containers
 %fieldset-label-base {
@@ -71,4 +96,111 @@
 }
 .status-unknown {
   @include status-colors($text-color-muted);
+}
+
+// Flexbox utilities
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+// Spacing utilities
+.gap-xs { gap: $spacing-xs; }
+.gap-sm { gap: $spacing-sm; }
+.gap-md { gap: $spacing-md; }
+.gap-lg { gap: $spacing-lg; }
+.gap-xl { gap: $spacing-xl; }
+
+.p-xs { padding: $spacing-xs; }
+.p-sm { padding: $spacing-sm; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+.p-xl { padding: $spacing-xl; }
+
+.m-xs { margin: $spacing-xs; }
+.m-sm { margin: $spacing-sm; }
+.m-md { margin: $spacing-md; }
+.m-lg { margin: $spacing-lg; }
+.m-xl { margin: $spacing-xl; }
+
+// Text utilities
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-mono { font-family: $font-family-monospace; }
+.font-primary { font-family: $font-family-primary; }
+.monospace {
+  font-family: $font-family-monospace;
+}
+
+// Border utilities
+.border-rounded-sm { border-radius: $border-radius-sm; }
+.border-rounded-md { border-radius: $border-radius-md; }
+.border-rounded-lg { border-radius: $border-radius-lg; }
+
+// Shadow utilities
+.shadow-card { box-shadow: $shadow-card; }
+.shadow-hover { box-shadow: $shadow-hover; }
+.shadow-drag { box-shadow: $shadow-drag; }
+
+// Animation mixins
+@mixin pulse($color: $primary-color) {
+  animation: pulse-#{$color} 2s infinite;
+  
+  @keyframes pulse-#{$color} {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba($color, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba($color, 0);
+    }
+  }
+}
+
+@mixin hover-lift {
+  transition: transform $transition-normal, box-shadow $transition-normal;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-hover;
+  }
+}
+
+// Responsive mixins
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
 }

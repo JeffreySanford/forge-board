@@ -12,7 +12,8 @@
     "resolveJsonModule": true
   },
   "files": [],
-  "include": [],
+  "include": [
+  ],
   "references": [
     {
       "path": "./tsconfig.editor.json"

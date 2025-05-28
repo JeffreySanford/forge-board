@@ -38,6 +38,7 @@ import { SecurityStreamGateway } from './security/scanner-service/security-strea
 import { LogsModule } from './logs/logs.module';
 import { SystemModule } from './system/system.module';
 import { Sound, SoundSchema } from './models/sound.model';
+import { KanbanModule } from './kanban/kanban.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { Sound, SoundSchema } from './models/sound.model';
     LogsModule, // Add LogsModule here
     // JwtModule removed for v10+
     SystemModule,
+    KanbanModule,
   ],
   controllers: [
     AppController,

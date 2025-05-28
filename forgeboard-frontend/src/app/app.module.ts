@@ -40,6 +40,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 // Services and interceptors
 import { ErrorService } from './services/error.service';
@@ -83,9 +84,8 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     MatButtonToggleModule,
     MatProgressBarModule,
     DragDropModule,
-    
-    // Feature modules
-    KanbanBoardModule,
+    MatSlideToggleModule,
+    KanbanBoardModule, // This already includes KanbanBoardComponent
     MetricModule,
     HomeModule,
     NavigationModule,

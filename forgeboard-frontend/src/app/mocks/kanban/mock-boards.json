@@ -1,93 +1,17 @@
 [
   {
-    "id": "board1",
-    "name": "ForgeBoard Development",
-    "columns": [
-      {
-        "id": "col1",
-        "name": "Backlog",
-        "order": 0,
-        "phase": "planning",
-        "cards": [
-          {
-            "id": "card1",
-            "title": "Create API documentation",
-            "description": "Write comprehensive API docs for all endpoints",
-            "priority": "medium",
-            "tags": ["documentation", "api"],
-            "category": "documentation",
-            "createdAt": "2023-05-10T12:00:00Z",
-            "updatedAt": "2023-05-10T12:00:00Z"
-          },
-          {
-            "id": "card2",
-            "title": "Implement Authentication",
-            "description": "Set up JWT authentication for the API",
-            "priority": "high",
-            "tags": ["security", "api"],
-            "category": "security",
-            "createdAt": "2023-05-10T12:00:00Z",
-            "updatedAt": "2023-05-10T12:00:00Z"
-          },
-          {
-            "id": "card3",
-            "title": "Design Dashboard Layout",
-            "description": "Create wireframes for the main dashboard",
-            "priority": "medium",
-            "tags": ["ui", "design"],
-            "category": "user-experience",
-            "createdAt": "2023-05-10T12:00:00Z",
-            "updatedAt": "2023-05-10T12:00:00Z"
-          }
-        ]
-      },
-      {
-        "id": "col2",
-        "name": "In Progress",
-        "order": 1,
-        "phase": "planning",
-        "cards": [
-          {
-            "id": "card4",
-            "title": "Setup CI/CD Pipeline",
-            "description": "Configure GitHub Actions for continuous integration",
-            "priority": "high",
-            "tags": ["devops", "automation"],
-            "category": "infrastructure",
-            "createdAt": "2023-05-10T12:00:00Z",
-            "updatedAt": "2023-05-10T12:00:00Z"
-          }
-        ]
-      },
-      {
-        "id": "col3",
-        "name": "Done",
-        "order": 2,
-        "phase": "planning",
-        "cards": [
-          {
-            "id": "card5",
-            "title": "Project Setup",
-            "description": "Initialize Angular and NestJS projects with Nx",
-            "priority": "high",
-            "tags": ["setup", "nx"],
-            "category": "project-management",
-            "createdAt": "2023-05-10T12:00:00Z",
-            "updatedAt": "2023-05-10T12:00:00Z"
-          }
-        ]
-      }
-    ],
+    "id": "1",
+    "name": "Planning Board",
     "currentPhase": "planning",
     "phases": {
       "inception": {
         "active": true,
-        "startDate": "2023-04-10T00:00:00Z",
-        "completionDate": "2023-04-25T00:00:00Z"
+        "startDate": "2023-09-01T00:00:00.000Z",
+        "completionDate": "2023-09-15T00:00:00.000Z"
       },
       "planning": {
         "active": true,
-        "startDate": "2023-04-26T00:00:00Z"
+        "startDate": "2023-09-16T00:00:00.000Z"
       },
       "design": {
         "active": false
@@ -102,7 +26,124 @@
         "active": false
       }
     },
-    "createdAt": "2023-04-10T00:00:00Z",
-    "updatedAt": "2023-05-10T12:00:00Z"
+    "columns": [
+      {
+        "id": "col1",
+        "name": "Inception Ideas",
+        "order": 0,
+        "phase": "inception",
+        "cards": [
+          {
+            "id": "card1",
+            "title": "Project vision",
+            "description": "Define the overall vision and goals",
+            "priority": "high",
+            "tags": ["vision"],
+            "category": "project-management",
+            "createdAt": "2023-09-01T00:00:00.000Z",
+            "updatedAt": "2023-09-01T00:00:00.000Z"
+          },
+          {
+            "id": "card2",
+            "title": "Stakeholder mapping",
+            "description": "Identify key stakeholders and their interests",
+            "priority": "medium",
+            "tags": ["stakeholders"],
+            "category": "project-management",
+            "createdAt": "2023-09-02T00:00:00.000Z",
+            "updatedAt": "2023-09-02T00:00:00.000Z"
+          },
+          {
+            "id": "card44",
+            "title": "User Personas",
+            "description": "Create initial user personas for target audience",
+            "priority": "high",
+            "tags": ["research", "ux"],
+            "category": "user-experience",
+            "assignee": "Emma Wilson",
+            "createdAt": "2023-09-02T00:00:00.000Z",
+            "updatedAt": "2023-09-02T00:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "col3",
+        "name": "Backlog",
+        "order": 2,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card4",
+            "title": "Research user needs",
+            "description": "Conduct interviews with stakeholders to understand requirements",
+            "priority": "high",
+            "tags": ["research"],
+            "category": "user-experience",
+            "createdAt": "2023-09-16T00:00:00.000Z",
+            "updatedAt": "2023-09-16T00:00:00.000Z"
+          },
+          {
+            "id": "card20",
+            "title": "Security Dashboard Implementation",
+            "description": "Create a new dashboard for real-time security monitoring",
+            "priority": "high",
+            "tags": ["security", "feature"],
+            "category": "security",
+            "assignee": "Alex Chen",
+            "createdAt": "2023-09-26T00:00:00.000Z",
+            "updatedAt": "2023-09-26T00:00:00.000Z"
+          },
+          {
+            "id": "card22",
+            "title": "Vulnerability Scanning",
+            "description": "Add Grype integration for dependency scanning",
+            "priority": "high",
+            "tags": ["security"],
+            "category": "security",
+            "createdAt": "2023-09-27T00:00:00.000Z",
+            "updatedAt": "2023-09-27T00:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "col5",
+        "name": "In Progress",
+        "order": 4,
+        "phase": "planning",
+        "cards": [
+          {
+            "id": "card9",
+            "title": "Implement authentication",
+            "description": "Add user login and registration",
+            "priority": "high",
+            "tags": ["security"],
+            "assignee": "Jane Smith",
+            "createdAt": "2023-09-21T00:00:00.000Z",
+            "updatedAt": "2023-09-21T00:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "col14",
+        "name": "Launched",
+        "order": 13,
+        "phase": "completion",
+        "cards": [
+          {
+            "id": "card72",
+            "title": "Production Deployment",
+            "description": "Execute deployment to production environment",
+            "priority": "high",
+            "tags": ["deployment", "production"],
+            "category": "infrastructure",
+            "assignee": "James Wilson",
+            "createdAt": "2023-10-16T00:00:00.000Z",
+            "updatedAt": "2023-10-16T00:00:00.000Z"
+          }
+        ]
+      }
+    ],
+    "createdAt": "2023-09-01T00:00:00.000Z",
+    "updatedAt": "2023-09-25T00:00:00.000Z"
   }
 ]

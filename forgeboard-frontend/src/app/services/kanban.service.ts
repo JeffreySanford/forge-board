@@ -1,26 +1,23 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { Socket } from 'socket.io-client';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { BackendStatusService } from './backend-status.service';
-import { SocketClientService } from '../core/services/socket/socket-client.service';
+import { BehaviorSubject, Observable, of, from, Subject } from 'rxjs';
+import { catchError, tap, map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 
-// Define a proper injection token for Socket
-import { InjectionToken } from '@angular/core';
-export const SOCKET_TOKEN = new InjectionToken<Socket>('SOCKET_TOKEN');
-
-// Type definitions
+// Types and interfaces
 export type ProjectPhase = 'inception' | 'planning' | 'design' | 'development' | 'testing' | 'completion';
-export type Priority = 'low' | 'medium' | 'high';
+export type CardPriority = 'low' | 'medium' | 'high';
 
 export interface KanbanCard {
   id: string;
   title: string;
-  description?: string;
-  priority?: Priority;
-  dueDate?: string;
-  tags?: string[];
-  assignee?: string;
+  description: string;
+  priority: CardPriority;
+  tags: string[];
   category?: string;
+  assignee?: string;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,11 +26,11 @@ export interface KanbanColumn {
   id: string;
   name: string;
   order: number;
-  phase: string;
+  phase: ProjectPhase;
   cards: KanbanCard[];
 }
 
-export interface KanbanPhase {
+export interface PhaseInfo {
   active: boolean;
   startDate?: string;
   completionDate?: string;
@@ -44,7 +41,7 @@ export interface KanbanBoard {
   name: string;
   columns: KanbanColumn[];
   currentPhase: ProjectPhase;
-  phases: Record<ProjectPhase, KanbanPhase>;
+  phases: Record<ProjectPhase, PhaseInfo>;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,240 +50,259 @@ export interface KanbanBoard {
   providedIn: 'root'
 })
 export class KanbanService implements OnDestroy {
+  private socket: Socket | null = null;
   private boardsSubject = new BehaviorSubject<KanbanBoard[]>([]);
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
-  private storageTypeSubject = new BehaviorSubject<string | null>(null);
-  private forceMockData = false;
-  private currentStorageType: string | null = null;
-  private socket: Socket;
-  constructor(
-    private socketClient: SocketClientService,
-    private backendStatusService: BackendStatusService
-  ) {
-    // Initialize socket connection with proper namespace format
-    this.socket = this.socketClient.connect('/kanban');
-    
-    // Initialize connection
-    this.initializeConnection();
-    
-    // Listen for backend status changes
-    this.backendStatusService.getStatus().subscribe(isOnline => {
-      if (isOnline) {
-        this.connectToBackend();
-      } else {
-        this.disconnectFromBackend();
-        this.useMockData();
-      }
+  private storageTypeSubject = new BehaviorSubject<string>('mock');
+  private destroy$ = new Subject<void>();
+  private forcingMockData = false;
+  
+  // Configuration
+  private currentStorageType = 'mock'; // Default to mock data
+  private apiUrl = environment.apiBaseUrl || 'http://localhost:3000';
+
+  constructor(private http: HttpClient) {
+    this.loadFallbackDataFirst().subscribe(() => {
+      this.connectToWebSocket();
     });
   }
 
-  // Initialize connection to backend
-  private initializeConnection(): void {
-    this.socket.on('connect', () => {
-      console.log('Socket connected to Kanban namespace');
-      this.connectionStatusSubject.next(true);
-      this.fetchBoards();
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected from Kanban namespace');
-      this.connectionStatusSubject.next(false);
-      
-      // Use mock data if disconnected
-      if (!this.forceMockData) {
-        this.useMockData();
-      }
-    });
-
-    this.socket.on('boards-update', (response: {status: string, data: {boards: KanbanBoard[], storageType: string}}) => {
-      if (response && response.data) {
-        this.boardsSubject.next(response.data.boards);
-        
-        if (response.data.storageType) {
-          this.currentStorageType = response.data.storageType;
-          this.storageTypeSubject.next(response.data.storageType);
-        }
-      }
-    });
-  }
-
-  // Connect to backend
-  private connectToBackend(): void {
-    if (!this.forceMockData && this.socket) {
-      // Using the socketClient's connection
-      this.fetchBoards();
-    }
-  }
-
-  // Disconnect from backend
-  private disconnectFromBackend(): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     if (this.socket) {
+      this.socket.off();
       this.socket.disconnect();
-    }
-    this.connectionStatusSubject.next(false);
-  }
-
-  // Use mock data
-  private useMockData(): void {
-    console.log('Using mock Kanban data');
-    const mockData: KanbanBoard[] = [
-      {
-        id: "board1",
-        name: "ForgeBoard Development",
-        columns: [
-          {
-            id: "col1",
-            name: "To Do",
-            order: 1,
-            phase: "planning",
-            cards: [
-              {
-                id: "card1",
-                title: "Implement Authentication",
-                description: "Set up JWT authentication for the API",
-                priority: "high",
-                tags: ["security", "api"],
-                category: "security",
-                createdAt: "2023-05-10T12:00:00Z",
-                updatedAt: "2023-05-10T12:00:00Z"
-              },
-              {
-                id: "card2",
-                title: "Create Dashboard Layout",
-                description: "Design and implement the main dashboard layout",
-                priority: "medium",
-                tags: ["ui", "frontend"],
-                category: "user-experience",
-                createdAt: "2023-05-10T12:00:00Z",
-                updatedAt: "2023-05-10T12:00:00Z"
-              }
-            ]
-          }
-        ],
-        currentPhase: "planning",
-        phases: {
-          inception: {
-            active: true,
-            startDate: "2023-04-10T00:00:00Z",
-            completionDate: "2023-04-25T00:00:00Z"
-          },
-          planning: {
-            active: true,
-            startDate: "2023-04-26T00:00:00Z"
-          },
-          design: {
-            active: false
-          },
-          development: {
-            active: false
-          },
-          testing: {
-            active: false
-          },
-          completion: {
-            active: false
-          }
-        },
-        createdAt: "2023-04-10T00:00:00Z",
-        updatedAt: "2023-05-10T12:00:00Z"
-      }
-    ];
-    
-    this.boardsSubject.next(mockData);
-    this.connectionStatusSubject.next(false);
-    this.currentStorageType = 'mock';
-    this.storageTypeSubject.next('mock');
-  }
-
-  // Fetch boards from backend
-  fetchBoards(): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('get-boards');
+      this.socket = null;
     }
   }
 
-  // Get boards as observable
+  private loadFallbackDataFirst(): Observable<void> {
+    return from(import('../../assets/kanban/kanban-boards.json')).pipe(
+      map((mockData: any) => {
+        console.log('[KanbanService] Loaded initial fallback mock data');
+        const data = mockData.default || mockData;
+        const boardsArray = Array.isArray(data) ? data : [data];
+        
+        // Type-safe conversion ensuring phases are ProjectPhase types
+        const typedBoards = boardsArray.map((board: any) => ({
+          ...board,
+          columns: board.columns?.map((col: any) => ({
+            ...col,
+            phase: col.phase as ProjectPhase // Type assertion for phase
+          })) || []
+        })) as KanbanBoard[];
+        
+        this.boardsSubject.next(typedBoards);
+        this.storageTypeSubject.next('mock');
+        this.currentStorageType = 'mock';
+        return void 0;
+      }),
+      catchError(error => {
+        console.error('[KanbanService] Failed to load initial fallback data:', error);
+        return of(void 0);
+      })
+    );
+  }
+
+  private connectToWebSocket(): void {
+    try {
+      // Use environment configuration for socket URL
+      const socketUrl = environment.socketBaseUrl || environment.apiBaseUrl || 'http://localhost:3000';
+      this.socket = io(`${socketUrl}/kanban`, {
+        transports: ['websocket', 'polling'],
+        timeout: 5000,
+        forceNew: true,
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 3
+      });
+
+      this.socket.on('connect', () => {
+        console.log('[KanbanService] Connected to WebSocket');
+        this.connectionStatusSubject.next(true);
+        this.currentStorageType = 'memory';
+        this.storageTypeSubject.next('memory');
+        this.requestBoards();
+      });
+
+      this.socket.on('disconnect', () => {
+        console.log('[KanbanService] Disconnected from WebSocket');
+        this.connectionStatusSubject.next(false);
+        this.currentStorageType = 'mock';
+        this.storageTypeSubject.next('mock');
+      });      this.socket.on('boards-update', (response: { data?: { boards?: KanbanBoard[]; storageType?: string } }) => {
+        console.log('[KanbanService] Received boards update:', response);
+        if (response.data) {
+          if (response.data.boards) {
+            console.log(`[KanbanService] Processing ${response.data.boards.length} boards from server:`);
+            response.data.boards.forEach((board, index) => {
+              const totalCards = board.columns?.reduce((sum, col) => sum + (col.cards?.length || 0), 0) || 0;
+              console.log(`  Board ${index}: "${board.name}" - ${board.columns?.length || 0} columns, ${totalCards} total cards`);
+              board.columns?.forEach((col, colIndex) => {
+                console.log(`    Column ${colIndex}: "${col.name}" - ${col.cards?.length || 0} cards`);
+              });
+            });
+            this.boardsSubject.next(response.data.boards);
+          }
+          if (response.data.storageType) {
+            this.currentStorageType = response.data.storageType;
+            this.storageTypeSubject.next(response.data.storageType);
+          }
+        }
+      });
+
+      this.socket.on('connect_error', (error: Error) => {
+        console.error('[KanbanService] Connection error:', error);
+        this.connectionStatusSubject.next(false);
+        this.currentStorageType = 'mock';
+        this.storageTypeSubject.next('mock');
+      });
+
+      this.socket.on('reconnect_failed', () => {
+        console.warn('[KanbanService] Failed to reconnect after maximum attempts');
+        this.connectionStatusSubject.next(false);
+        this.currentStorageType = 'mock';
+        this.storageTypeSubject.next('mock');
+      });
+
+    } catch (error) {
+      console.error('[KanbanService] Failed to initialize WebSocket:', error);
+      this.connectionStatusSubject.next(false);
+      this.currentStorageType = 'mock';
+      this.storageTypeSubject.next('mock');
+    }
+  }
+
+  private requestBoards(): void {
+    if (this.socket?.connected) {
+      this.socket.emit('get-boards', {});
+    }
+  }
+
+  /**
+   * Load mock boards from JSON file - returns Observable directly
+   */
+  loadMockBoards(): Observable<KanbanBoard[]> {
+    return from(import('../../assets/kanban/kanban-boards.json')).pipe(
+      map((mockData: any) => {
+        const boardsData = mockData.default || mockData;
+        
+        // Ensure we have an array and properly format the data
+        const boards = Array.isArray(boardsData) ? boardsData : [boardsData];
+        
+        // Type-safe conversion ensuring phases are ProjectPhase types
+        const typedBoards = boards.map((board: any) => ({
+          ...board,
+          columns: board.columns?.map((col: any) => ({
+            ...col,
+            phase: col.phase as ProjectPhase // Type assertion for phase
+          })) || []
+        })) as KanbanBoard[];
+        
+        // Log for debugging
+        console.log('Raw mock data:', typedBoards);
+        typedBoards.forEach((board: KanbanBoard, index: number) => {
+          console.log(`Board ${index}:`, board.name, 'Columns:', board.columns?.length);
+          board.columns?.forEach((col: KanbanColumn, colIndex: number) => {
+            console.log(`  Column ${colIndex}:`, col.name, 'Cards:', col.cards?.length);
+          });
+        });
+        
+        this.boardsSubject.next(typedBoards);
+        return typedBoards;
+      }),
+      catchError(error => {
+        console.error('Error loading mock boards:', error);
+        this.boardsSubject.next([]);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get boards from API using HttpClient
+   */
   getBoards(): Observable<KanbanBoard[]> {
+    return this.http.get<KanbanBoard[]>(`${this.apiUrl}/kanban/boards`).pipe(
+      tap(boards => {
+        console.log('Loaded boards from API:', boards);
+        this.boardsSubject.next(boards);
+      }),
+      catchError(error => {
+        console.error('Error loading boards from API:', error);
+        // Fallback to mock data
+        return this.loadMockBoards();
+      })
+    );
+  }
+
+  // Public methods
+  getBoardsObservable(): Observable<KanbanBoard[]> {
     return this.boardsSubject.asObservable();
   }
 
-  // Get connection status as observable
   getConnectionStatus(): Observable<boolean> {
     return this.connectionStatusSubject.asObservable();
   }
 
-  // Get storage type changes as observable
-  getStorageTypeChanges(): Observable<string | null> {
+  getStorageTypeChanges(): Observable<string> {
     return this.storageTypeSubject.asObservable();
   }
 
-  // Get current storage type
-  getStorageType(): string | null {
+  getStorageType(): string {
     return this.currentStorageType;
   }
 
-  // Set storage type
   setStorageType(type: string): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('set-storage-type', { type });
+    this.currentStorageType = type;
+    this.storageTypeSubject.next(type);
+    console.log('[KanbanService] Storage type set to:', type);
+    
+    // If connected to websocket, send storage type change
+    if (this.socket?.connected) {
+      this.socket.emit('set-storage-type', { storageType: type });
     }
   }
 
-  // Toggle mock data
-  toggleMockData(forceMock: boolean): void {
-    this.forceMockData = forceMock;
-
-    if (forceMock) {
-      this.disconnectFromBackend();
-      this.useMockData();
-    } else {
-      this.connectToBackend();
+  toggleMockData(force: boolean): Observable<void> {
+    this.forcingMockData = force;
+    console.log('[KanbanService] Mock data toggled:', force);
+    
+    if (force || !this.socket?.connected) {
+      return this.loadFallbackDataFirst();
+    } else if (this.socket?.connected) {
+      this.socket.emit('toggle-mock-data', { force });
+      return of(void 0);
     }
+    return of(void 0);
   }
 
-  // Move card between columns
   moveCard(cardId: string, sourceColumnId: string, targetColumnId: string, newIndex: number): void {
-    if (!this.connectionStatusSubject.value) {
-      console.log('Not connected to backend. Card move will not be persisted.');
-      return;
-    }
-
-    // Find the board ID (assuming we only have one board for now)
-    const boards = this.boardsSubject.value;
-    if (boards.length === 0) {
-      console.error('No boards available');
-      return;
-    }
-
-    const boardId = boards[0].id;
-
-    // Emit card move event to server
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('move-card', {
-        boardId,
+    if (this.socket?.connected) {
+      const payload = {
+        boardId: this.boardsSubject.value[0]?.id || '1',
         moveCard: {
           cardId,
           sourceColumnId,
           targetColumnId,
-          newIndex,
+          newIndex
         }
-      });
+      };
+      
+      console.log('[KanbanService] Moving card:', payload);
+      this.socket.emit('move-card', payload);
+    } else {
+      console.warn('[KanbanService] Cannot move card - WebSocket not connected');
     }
   }
 
-  ngOnDestroy(): void {
-    // Unsubscribe from subscriptions
-    this.connectionStatusSubject.complete();
-    this.boardsSubject.complete();
-    this.storageTypeSubject.complete();
-    
-    // Clean up socket connections
+  disconnect(): void {
     if (this.socket) {
-      this.socket.off('connect');
-      this.socket.off('disconnect');
-      this.socket.off('boards-update');
-      this.socket.removeAllListeners();
+      this.socket.off();
       this.socket.disconnect();
+      this.socket = null;
     }
   }
 }

@@ -1,51 +1,92 @@
-// Base Colors
-$color-black: #000;
-$color-white: #fff;
+// ==========================================================================
+//   FORGEBOARD SCSS VARIABLES
+// ==========================================================================
 
-// Theme Colors (example, adjust to your actual theme)
-$primary-color: #3498db; // Blue
-$secondary-color: #0d1b2a; // Dark Blue/Black background
-$accent-color: #4eff91; // Green highlight
-$error-color: #e74c3c; // Red
-$warning-color: #f39c12; // Yellow/Orange
-$info-color: #3498db; // Blue (can be same as primary)
-$success-color: #2ecc71; // Green
+// Colors - Primary Palette
+$primary-color: #3498db;
+$secondary-color: #2c3e50;
+$accent-color: #4eff91;
+$success-color: #2ecc71;
+$warning-color: #ffe066;
+$error-color: #e74c3c;
+$info-color: #3498db;
 
-// Text Colors
-$text-color-light: $color-white;
+// Colors - Neutral Palette
+$color-white: #ffffff;
+$color-black: #000000;
+$text-color-light: #ffffff;
 $text-color-dark: #2c3e50;
-$text-color-muted: #6B778C; // Atlassian gray
-
-// Border Colors
-$border-color-primary: $primary-color;
-$border-color-dark: #222;
-$border-color-error: $error-color;
-$border-color-tile-grid: $error-color; // As per app.component.scss for .tile-grid-container
+$text-color-muted: rgba(0, 0, 0, 0.54);
 
 // Background Colors
-$background-dark: $secondary-color;
-$background-light: #f9f9f9;
-$background-content-wrapper: rgba(255,255,255,0.85);
-$background-layout-container: rgba(255,255,255,0.7);
+$background-light: #f8f9fa;
+$background-dark: #0d1b2a;
+$background-content-wrapper: none;
+$background-layout-container: rgba(255, 255, 255, 0.05);
 
-// Kanban Specific (from kanban-board.component.scss)
-$kanban-background: #f4f5f7;
-$kanban-column-background: #ebecf0;
-$kanban-text-primary: #172B4D;
-$kanban-text-secondary: #5E6C84;
-$kanban-priority-high: #FF5630;
-$kanban-priority-medium: #FFAB00;
-$kanban-priority-low: #36B37E;
-$kanban-atlassian-blue: #0052CC;
+// Border Colors
+$border-color-tile-grid: #3498db;
+$border-color-dark: #2c3e50;
+$border-color-error: #e74c3c;
 
-// Spacing (example)
-$spacing-unit: 8px;
-$spacing-xs: $spacing-unit * 0.5; // 4px
-$spacing-sm: $spacing-unit;       // 8px
-$spacing-md: $spacing-unit * 2;   // 16px
-$spacing-lg: $spacing-unit * 3;   // 24px
-$spacing-xl: $spacing-unit * 4;   // 32px
+// Kanban Specific Colors
+$kanban-bg: #f5f7fa;
+$kanban-column-bg: #ffffff;
+$kanban-card-bg: #ffffff;
+$kanban-card-shadow: rgba(0, 0, 0, 0.1);
+$kanban-drag-preview: rgba(52, 152, 219, 0.1);
 
-// Font Families (example)
-$font-family-primary: 'Roboto', sans-serif;
-$font-family-monospace: 'IBM Plex Mono', 'Courier New', monospace;
+// Priority Colors
+$priority-low: #95a5a6;
+$priority-medium: #f39c12;
+$priority-high: #e74c3c;
+
+// Phase Colors
+$phase-backlog: #95a5a6;
+$phase-todo: #3498db;
+$phase-complete: #2ecc71;
+
+// Typography
+$font-family-primary: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$font-family-mono: 'IBM Plex Mono', 'Courier New', monospace;
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
+$font-family-monospace: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !default;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+
+// Border Radius
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+
+// Shadows
+$shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+$shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+$shadow-drag: 0 8px 24px rgba(0, 0, 0, 0.2);
+$shadow-dropdown: 0 6px 20px rgba(0, 0, 0, 0.12);
+
+// Transitions
+$transition-fast: 0.15s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;
+
+// Z-indexes
+$z-index-dropdown: 1000;
+$z-index-modal: 1050;
+$z-index-tooltip: 1070;
+
+// Breakpoints
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+$breakpoint-desktop: 1200px;
+
+// Status colors
+$status-success: #4caf50 !default;
+$status-warning: #ff9800 !default;
+$status-error: #f44336 !default;
+$status-info: #2196f3 !default;

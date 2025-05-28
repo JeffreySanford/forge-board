@@ -5,6 +5,7 @@ export class CardDto {
   description?: string;
   priority?: string;
   tags?: string[];
+  category?: string;
   assignee?: string;
   createdAt?: string;
   updatedAt?: string;
