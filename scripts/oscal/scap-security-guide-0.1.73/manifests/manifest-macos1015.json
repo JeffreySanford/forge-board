@@ -1,0 +1,1 @@
+{"product_name": "macos1015", "rules": {"audit_failure_halt": {"content": ["bash", "oval"], "platform_names": []}, "service_com_apple_auditd_enabled": {"content": ["bash"], "platform_names": []}}, "profiles": {"moderate": {"rules": ["audit_failure_halt", "service_com_apple_auditd_enabled"], "values": []}}}

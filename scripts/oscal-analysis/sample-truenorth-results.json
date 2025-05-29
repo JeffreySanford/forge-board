@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "profile": "truenorth",
+  "results": {
+    "pass": 10,
+    "fail": 2,
+    "not_applicable": 1,
+    "total": 13
+  },
+  "controls": [
+    {
+      "id": "C1",
+      "result": "pass",
+      "time": "2023-10-01T12:00:00Z",
+      "description": "Sample control 1",
+      "message": "Control passed."
+    },
+    {
+      "id": "C2",
+      "result": "fail",
+      "time": "2023-10-01T12:05:00Z",
+      "description": "Sample control 2",
+      "message": "Control failed. See details."
+    }
+  ]
+}

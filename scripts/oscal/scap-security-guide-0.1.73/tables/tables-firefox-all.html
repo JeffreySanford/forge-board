@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+
+/* Style the button that is used to open and close the collapsible content */
+.collapsible {
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 7px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+/* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+.active, .collapsible:hover {
+  background-color: #ccc;
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+} 
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 2;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+
+<h2>References for product firefox</h2>
+
+<ul>
+<li class="collapsible">disa</li>
+  <ul class="content">
+  <li class="collapsible">CCI-000054</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-dod_root_certificate_installed<span class="tooltiptext">The DoD Root Certificate Exists</span></div></li>
+    <li><div class="tooltip">firefox_preferences-enable_ca_trust<span class="tooltiptext">Enable Shared System Certificates</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-000187</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-verification<span class="tooltiptext">Enable Certificate Verification</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-000381</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-addons_permission<span class="tooltiptext">Firefox must be configured to disable the installation of extensions.</span></div></li>
+    <li><div class="tooltip">firefox_policy-autoplay_video<span class="tooltiptext">Firefox autoplay must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-cryptomining<span class="tooltiptext">Enabled Firefox Cryptomining protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_deprecated_ciphers<span class="tooltiptext">Disable Firefox deprecated ciphers</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_form_history<span class="tooltiptext">Firefox must be configured to disable form fill assistance.</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_pocket<span class="tooltiptext">Disable Firefox Pocket</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_studies<span class="tooltiptext">Disable Firefox Studies</span></div></li>
+    <li><div class="tooltip">firefox_policy-dns_over_https<span class="tooltiptext">Firefox must be configured so that DNS over HTTPS is disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-encrypted_media_extensions<span class="tooltiptext">Firefox encrypted media extensions must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-enhanced_tracking<span class="tooltiptext">Enabled Firefox Enhanced Tracking Protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-extension_recommendation<span class="tooltiptext">Disabled Firefox Extension Recommendations</span></div></li>
+    <li><div class="tooltip">firefox_policy-extension_update<span class="tooltiptext">Firefox must be configured to not automatically update installed add-ons and plugins.</span></div></li>
+    <li><div class="tooltip">firefox_policy-feedback_reporting<span class="tooltiptext">Firefox feedback reporting must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-fingerprinting_protection<span class="tooltiptext">Enabled Firefox Fingerprinting Protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-javascript_window_changes<span class="tooltiptext">Disable JavaScript's Raise Or Lower Windows Capability</span></div></li>
+    <li><div class="tooltip">firefox_policy-javascript_window_resizing<span class="tooltiptext">Disable JavaScript's Moving Or Resizing Windows Capability</span></div></li>
+    <li><div class="tooltip">firefox_policy-network_prediction<span class="tooltiptext">Disable Firefox network prediction</span></div></li>
+    <li><div class="tooltip">firefox_policy-no_sanitize_on_shutdown<span class="tooltiptext">Firefox must be configured to not delete data upon shutdown.</span></div></li>
+    <li><div class="tooltip">firefox_policy-nonessential_capabilities<span class="tooltiptext">The Firefox New Tab page must not show Top Sites, Sponsored Top sites, Pocket Recommendations, Sponsored Pocket Stories, Searches, Highlights, or Snippets.</span></div></li>
+    <li><div class="tooltip">firefox_policy-password_manager<span class="tooltiptext">Firefox must be configured to not use a password store with or without a master password.</span></div></li>
+    <li><div class="tooltip">firefox_policy-pop-up_windows<span class="tooltiptext">Enable Firefox Pop-up Blocker</span></div></li>
+    <li><div class="tooltip">firefox_policy-private_browsing<span class="tooltiptext">Firefox private browsing must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-search_suggestion<span class="tooltiptext">Firefox search suggestions must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-search_update<span class="tooltiptext">Disable Installed Search Plugins Update Checking</span></div></li>
+    <li><div class="tooltip">firefox_policy-sync<span class="tooltiptext">Firefox accounts must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-telemetry<span class="tooltiptext">Disable Firefox Telemetry</span></div></li>
+    <li><div class="tooltip">firefox_policy-user_messaging<span class="tooltiptext">Firefox must not recommend extensions as the user is using the browser.</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-001242</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-auto-download_actions<span class="tooltiptext">Disable auto-download for proscribed MIME types.</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-001312</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-development_tools<span class="tooltiptext">Disable Firefox Development Tools</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-001453</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-ssl_minimum_version<span class="tooltiptext">Firefox must be configured to allow only TLS 1.2 or above.</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-002355</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-forget_button<span class="tooltiptext">Firefox must prevent the user from quickly deleting data.</span></div></li>
+    </ul>
+  <li class="collapsible">CCI-003376</li>
+    <ul class="content">
+    <li><div class="tooltip">installed_firefox_version_supported<span class="tooltiptext">Supported Version of Firefox Installed</span></div></li>
+    </ul>
+  </ul>
+<li class="collapsible">nist</li>
+  <ul class="content">
+  <li class="collapsible">AC-10</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-enable_ca_trust<span class="tooltiptext">Enable Shared System Certificates</span></div></li>
+    </ul>
+  <li class="collapsible">AC-17 (2)</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-ssl_minimum_version<span class="tooltiptext">Firefox must be configured to allow only TLS 1.2 or above.</span></div></li>
+    </ul>
+  <li class="collapsible">AC-24(2)</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-forget_button<span class="tooltiptext">Firefox must prevent the user from quickly deleting data.</span></div></li>
+    </ul>
+  <li class="collapsible">CM-7</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-addons_permission<span class="tooltiptext">Firefox must be configured to disable the installation of extensions.</span></div></li>
+    <li><div class="tooltip">firefox_policy-autoplay_video<span class="tooltiptext">Firefox autoplay must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-cryptomining<span class="tooltiptext">Enabled Firefox Cryptomining protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_deprecated_ciphers<span class="tooltiptext">Disable Firefox deprecated ciphers</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_form_history<span class="tooltiptext">Firefox must be configured to disable form fill assistance.</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_pocket<span class="tooltiptext">Disable Firefox Pocket</span></div></li>
+    <li><div class="tooltip">firefox_policy-disable_studies<span class="tooltiptext">Disable Firefox Studies</span></div></li>
+    <li><div class="tooltip">firefox_policy-dns_over_https<span class="tooltiptext">Firefox must be configured so that DNS over HTTPS is disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-encrypted_media_extensions<span class="tooltiptext">Firefox encrypted media extensions must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-enhanced_tracking<span class="tooltiptext">Enabled Firefox Enhanced Tracking Protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-extension_recommendation<span class="tooltiptext">Disabled Firefox Extension Recommendations</span></div></li>
+    <li><div class="tooltip">firefox_policy-extension_update<span class="tooltiptext">Firefox must be configured to not automatically update installed add-ons and plugins.</span></div></li>
+    <li><div class="tooltip">firefox_policy-feedback_reporting<span class="tooltiptext">Firefox feedback reporting must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-fingerprinting_protection<span class="tooltiptext">Enabled Firefox Fingerprinting Protection</span></div></li>
+    <li><div class="tooltip">firefox_policy-javascript_window_changes<span class="tooltiptext">Disable JavaScript's Raise Or Lower Windows Capability</span></div></li>
+    <li><div class="tooltip">firefox_policy-javascript_window_resizing<span class="tooltiptext">Disable JavaScript's Moving Or Resizing Windows Capability</span></div></li>
+    <li><div class="tooltip">firefox_policy-network_prediction<span class="tooltiptext">Disable Firefox network prediction</span></div></li>
+    <li><div class="tooltip">firefox_policy-nonessential_capabilities<span class="tooltiptext">The Firefox New Tab page must not show Top Sites, Sponsored Top sites, Pocket Recommendations, Sponsored Pocket Stories, Searches, Highlights, or Snippets.</span></div></li>
+    <li><div class="tooltip">firefox_policy-password_manager<span class="tooltiptext">Firefox must be configured to not use a password store with or without a master password.</span></div></li>
+    <li><div class="tooltip">firefox_policy-pop-up_windows<span class="tooltiptext">Enable Firefox Pop-up Blocker</span></div></li>
+    <li><div class="tooltip">firefox_policy-private_browsing<span class="tooltiptext">Firefox private browsing must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-search_suggestion<span class="tooltiptext">Firefox search suggestions must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-search_update<span class="tooltiptext">Disable Installed Search Plugins Update Checking</span></div></li>
+    <li><div class="tooltip">firefox_policy-sync<span class="tooltiptext">Firefox accounts must be disabled.</span></div></li>
+    <li><div class="tooltip">firefox_policy-telemetry<span class="tooltiptext">Disable Firefox Telemetry</span></div></li>
+    <li><div class="tooltip">firefox_policy-user_messaging<span class="tooltiptext">Firefox must not recommend extensions as the user is using the browser.</span></div></li>
+    </ul>
+  <li class="collapsible">CM-7 a</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-no_sanitize_on_shutdown<span class="tooltiptext">Firefox must be configured to not delete data upon shutdown.</span></div></li>
+    </ul>
+  <li class="collapsible">IA-5 (2)</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-dod_root_certificate_installed<span class="tooltiptext">The DoD Root Certificate Exists</span></div></li>
+    </ul>
+  <li class="collapsible">IA-5(2)</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-verification<span class="tooltiptext">Enable Certificate Verification</span></div></li>
+    </ul>
+  <li class="collapsible">SA-22</li>
+    <ul class="content">
+    <li><div class="tooltip">installed_firefox_version_supported<span class="tooltiptext">Supported Version of Firefox Installed</span></div></li>
+    </ul>
+  <li class="collapsible">SI-11 b</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-development_tools<span class="tooltiptext">Disable Firefox Development Tools</span></div></li>
+    </ul>
+  <li class="collapsible">SI-3 c</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-auto-download_actions<span class="tooltiptext">Disable auto-download for proscribed MIME types.</span></div></li>
+    </ul>
+  </ul>
+<li class="collapsible">stigid</li>
+  <ul class="content">
+  <li class="collapsible">FFOX-00-000001</li>
+    <ul class="content">
+    <li><div class="tooltip">installed_firefox_version_supported<span class="tooltiptext">Supported Version of Firefox Installed</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000002</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-ssl_minimum_version<span class="tooltiptext">Firefox must be configured to allow only TLS 1.2 or above.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000003</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-verification<span class="tooltiptext">Enable Certificate Verification</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000004</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-search_update<span class="tooltiptext">Disable Installed Search Plugins Update Checking</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000005</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-extension_update<span class="tooltiptext">Firefox must be configured to not automatically update installed add-ons and plugins.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000006</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-auto-download_actions<span class="tooltiptext">Disable auto-download for proscribed MIME types.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000007</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-disable_form_history<span class="tooltiptext">Firefox must be configured to disable form fill assistance.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000008</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-password_manager<span class="tooltiptext">Firefox must be configured to not use a password store with or without a master password.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000009</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-pop-up_windows<span class="tooltiptext">Enable Firefox Pop-up Blocker</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000010</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-javascript_window_resizing<span class="tooltiptext">Disable JavaScript's Moving Or Resizing Windows Capability</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000011</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-javascript_window_changes<span class="tooltiptext">Disable JavaScript's Raise Or Lower Windows Capability</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000013</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-addons_permission<span class="tooltiptext">Firefox must be configured to disable the installation of extensions.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000014</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-telemetry<span class="tooltiptext">Disable Firefox Telemetry</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000015</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-development_tools<span class="tooltiptext">Disable Firefox Development Tools</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000016</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_preferences-dod_root_certificate_installed<span class="tooltiptext">The DoD Root Certificate Exists</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000017</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-no_sanitize_on_shutdown<span class="tooltiptext">Firefox must be configured to not delete data upon shutdown.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000018</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-forget_button<span class="tooltiptext">Firefox must prevent the user from quickly deleting data.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000019</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-private_browsing<span class="tooltiptext">Firefox private browsing must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000020</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-search_suggestion<span class="tooltiptext">Firefox search suggestions must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000021</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-autoplay_video<span class="tooltiptext">Firefox autoplay must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000022</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-network_prediction<span class="tooltiptext">Disable Firefox network prediction</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000023</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-fingerprinting_protection<span class="tooltiptext">Enabled Firefox Fingerprinting Protection</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000024</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-cryptomining<span class="tooltiptext">Enabled Firefox Cryptomining protection</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000025</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-enhanced_tracking<span class="tooltiptext">Enabled Firefox Enhanced Tracking Protection</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000026</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-extension_recommendation<span class="tooltiptext">Disabled Firefox Extension Recommendations</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000027</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-disable_deprecated_ciphers<span class="tooltiptext">Disable Firefox deprecated ciphers</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000028</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-user_messaging<span class="tooltiptext">Firefox must not recommend extensions as the user is using the browser.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000029</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-nonessential_capabilities<span class="tooltiptext">The Firefox New Tab page must not show Top Sites, Sponsored Top sites, Pocket Recommendations, Sponsored Pocket Stories, Searches, Highlights, or Snippets.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000033</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-dns_over_https<span class="tooltiptext">Firefox must be configured so that DNS over HTTPS is disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000034</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-sync<span class="tooltiptext">Firefox accounts must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000036</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-feedback_reporting<span class="tooltiptext">Firefox feedback reporting must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000037</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-encrypted_media_extensions<span class="tooltiptext">Firefox encrypted media extensions must be disabled.</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000038</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-disable_pocket<span class="tooltiptext">Disable Firefox Pocket</span></div></li>
+    </ul>
+  <li class="collapsible">FFOX-00-000039</li>
+    <ul class="content">
+    <li><div class="tooltip">firefox_policy-disable_studies<span class="tooltiptext">Disable Firefox Studies</span></div></li>
+    </ul>
+  </ul>
+</ul>  
+
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+} 
+</script>
+</body>
+</html>

@@ -18,18 +18,23 @@ import (
 	"time"
 )
 
-// ANSI color codes
+// ANSI color codes - Patriotic red, white, blue theme
 const (
-	ColorReset   = "\033[0m"
-	ColorRed     = "\033[31m"
-	ColorGreen   = "\033[32m"
-	ColorYellow  = "\033[33m"
-	ColorBlue    = "\033[34m"
-	ColorMagenta = "\033[35m"
-	ColorCyan    = "\033[36m"
-	ColorWhite   = "\033[97m"
-	ColorBold    = "\033[1m"
-	ColorPurple  = "\033[95m"
+	ColorReset      = "\033[0m"
+	ColorRed        = "\033[91m"  // Bright red
+	ColorGreen      = "\033[92m"  // Bright green
+	ColorYellow     = "\033[93m"  // Bright yellow
+	ColorBlue       = "\033[94m"  // Bright blue
+	ColorMagenta    = "\033[95m"  // Bright magenta
+	ColorCyan       = "\033[96m"  // Bright cyan
+	ColorWhite      = "\033[97m"  // Bright white
+	ColorBold       = "\033[1m"
+	ColorPurple     = "\033[95m"
+	// Patriotic theme colors
+	ColorPatriotRed   = "\033[38;5;196m"  // Bright patriotic red
+	ColorPatriotBlue  = "\033[38;5;21m"   // Deep patriotic blue
+	ColorPatriotWhite = "\033[97m"        // Pure white
+	ColorStarSpangled = "\033[38;5;220m"  // Gold/yellow for stars
 )
 
 // OscalScan represents a scan profile and its configuration
@@ -90,10 +95,11 @@ var (
 )
 
 func printLegendaryHeader() {
-	fmt.Printf("%s%s\n", ColorBold+ColorCyan, strings.Repeat("═", 70))
-	fmt.Printf("%s🛡️  TRUE NORTH INSIGHTS: CRAFT FUSION OSCAL SCANNER%s\n", ColorBold+ColorGreen, ColorReset)
-	fmt.Printf("%s%s\n", ColorBold+ColorCyan, strings.Repeat("═", 70))
-	fmt.Printf("%sLegendary Mode: Vibrant, animated, and branded reporting!%s\n", ColorMagenta, ColorReset)
+	fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
+	fmt.Printf("%s🇺🇸  TRUE NORTH INSIGHTS: CRAFT FUSION OSCAL SCANNER  🛡️%s\n", ColorBold+ColorPatriotRed, ColorReset)
+	fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
+	fmt.Printf("%s⭐ Professional OSCAL Security Compliance Analysis ⭐%s\n", ColorBold+ColorStarSpangled, ColorReset)
+	fmt.Printf("%sPatriotic Excellence in Cybersecurity Standards%s\n\n", ColorPatriotWhite, ColorReset)
 }
 
 func main() {
@@ -283,65 +289,63 @@ func main() {
 	// Optionally, update the central profile file remotely (placeholder)
 	// Example: uploadOscalProfilesJSON(oscalProfilesPath)
 	// Implement remote update logic here, e.g., HTTP PUT/POST or SFTP upload
-
-	// Display final results
-	fmt.Printf("\n%s=== OSCAL Scan Summary ===%s\n", ColorBold+ColorCyan, ColorReset)
+	// Display final results with professional formatting
+	fmt.Printf("\n%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
+	fmt.Printf("%s🛡️ OSCAL SECURITY COMPLIANCE ANALYSIS COMPLETE 🛡️%s\n", ColorBold+ColorPatriotRed, ColorReset)
+	fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
+	
 	successful := 0
 	withFailures := 0
 	failed := 0
 
+	fmt.Printf("\n%s📊 SCAN RESULTS SUMMARY%s\n", ColorBold+ColorStarSpangled, ColorReset)
+	fmt.Printf("%s%s\n", ColorPatriotBlue, strings.Repeat("─", 50))
+
 	for _, result := range results {
-		fmt.Printf("%s%s Profile: %s%s\n", result.Color, ColorBold, result.Profile, ColorReset)
-		// Print reference and note if available
+		fmt.Printf("\n%s🔍 Profile: %s%s%s\n", ColorBold, ColorPatriotWhite, result.Profile, ColorReset)
+		
 		if result.Description != "" {
-			fmt.Printf("  Description: %s\n", result.Description)
-		}
-		if result.Reference != "" {
-			fmt.Printf("  Reference: %s\n", result.Reference)
-		}
-		if result.Note != "" {
-			fmt.Printf("  Note: %s\n", result.Note)
+			fmt.Printf("   %sDescription:%s %s\n", ColorPatriotBlue, ColorReset, result.Description)
 		}
 
 		if result.Profile == "truenorth" {
 			if result.Results.ExitCode == 0 {
-				fmt.Printf("  %s✓ TrueNorth JSON validation completed successfully%s\n", ColorGreen, ColorReset)
+				fmt.Printf("   %s✅ Status:%s %sTrueNorth validation completed successfully%s\n", 
+					ColorPatriotBlue, ColorReset, ColorGreen, ColorReset)
 				successful++
 			} else {
-				fmt.Printf("  %s✗ TrueNorth JSON validation failed%s\n", ColorRed, ColorReset)
+				fmt.Printf("   %s❌ Status:%s %sTrueNorth validation failed%s\n", 
+					ColorPatriotBlue, ColorReset, ColorRed, ColorReset)
 				failed++
 			}
-			continue
-		}
-
-		if result.Results.ExitCode == 0 {
-			fmt.Printf("  %s✓ Scan completed successfully%s\n", ColorGreen, ColorReset)
-			successful++
-		} else if result.Results.ExitCode == 2 {
-			fmt.Printf("  %s⚠ Scan completed with rule failures%s\n", ColorYellow, ColorReset)
-			withFailures++
 		} else {
-			fmt.Printf("  %s✗ Scan failed (Exit code: %d)%s\n", ColorRed, result.Results.ExitCode, ColorReset)
-			failed++
-		}
+			if result.Results.ExitCode == 0 {
+				fmt.Printf("   %s✅ Status:%s %sScan completed successfully%s\n", 
+					ColorPatriotBlue, ColorReset, ColorGreen, ColorReset)
+				successful++
+			} else if result.Results.ExitCode == 2 {
+				fmt.Printf("   %s⚠️  Status:%s %sScan completed with rule failures%s\n", 
+					ColorPatriotBlue, ColorReset, ColorYellow, ColorReset)
+				withFailures++
+			} else {
+				fmt.Printf("   %s❌ Status:%s %sScan failed (Exit code: %d)%s\n", 
+					ColorPatriotBlue, ColorReset, ColorRed, result.Results.ExitCode, ColorReset)
+				failed++
+			}
 
-		if result.Results.Total > 0 {
-			fmt.Printf("  Pass: %s%d%s  Fail: %s%d%s  N/A: %s%d%s  Total: %s%d%s\n",
-				ColorGreen, result.Results.Pass, ColorReset,
-				ColorRed, result.Results.Fail, ColorReset,
-				ColorYellow, result.Results.NotApplicable, ColorReset,
-				ColorWhite, result.Results.Total, ColorReset)
+			if result.Results.Total > 0 {
+				fmt.Printf("   %s📈 Results:%s Pass: %s%d%s | Fail: %s%d%s | N/A: %s%d%s | Total: %s%d%s\n",
+					ColorPatriotBlue, ColorReset,
+					ColorGreen, result.Results.Pass, ColorReset,
+					ColorRed, result.Results.Fail, ColorReset,
+					ColorYellow, result.Results.NotApplicable, ColorReset,
+					ColorPatriotWhite, result.Results.Total, ColorReset)
+			}
 		}
 
 		if result.Results.XMLPath != "" {
-			fmt.Printf("  XML: %s%s%s\n", ColorCyan, result.Results.XMLPath, ColorReset)
-			fmt.Printf("  HTML: %s%s%s\n", ColorCyan, result.Results.HTMLPath, ColorReset)
-			if result.Results.JSONPath != "" {
-				fmt.Printf("  JSON: %s%s%s\n", ColorCyan, result.Results.JSONPath, ColorReset)
-			}
-			if result.Results.MarkdownPath != "" {
-				fmt.Printf("  Markdown: %s%s%s\n", ColorCyan, result.Results.MarkdownPath, ColorReset)
-			}
+			fmt.Printf("   %s📄 Reports:%s XML, HTML, JSON, Markdown available\n", 
+				ColorPatriotBlue, ColorReset)
 		}
 
 		fmt.Printf("  Duration: %s%.1f seconds%s\n", ColorWhite,
@@ -700,36 +704,34 @@ func runTrueNorthScan(profile *OscalScan, oscalDir string) {
 		profile.Color, profile.Results.ExitCode, ColorReset)
 }
 
-// Print overall progress bar with vibrant color and profile name
+// Print overall progress bar with patriotic colors and clean formatting
 func printOverallProgress(current, total int, profileName string, final bool) {
 	progressMutex.Lock()
 	defer progressMutex.Unlock()
+
+	// Only print progress updates, not concurrent scan messages
+	if !final {
+		return // Skip intermediate progress to avoid messy output
+	}
 
 	percentage := 0.0
 	if total > 0 {
 		percentage = (float64(current) / float64(total)) * 100
 	}
 
-	barLength := 30 // Length of the progress bar
+	barLength := 30
 	filledLength := 0
 	if total > 0 {
 		filledLength = int(float64(barLength) * float64(current) / float64(total))
 	}
 
-	bar := strings.Repeat("=", filledLength) + strings.Repeat("-", barLength-filledLength)
+	bar := strings.Repeat("█", filledLength) + strings.Repeat("░", barLength-filledLength)
 
-	// Vibrant color cycling for profile name
-	profileColors := []string{ColorCyan, ColorGreen, ColorYellow, ColorPurple, ColorBlue, ColorWhite}
-	colorIdx := (current + len(profileName)) % len(profileColors)
-	profileColor := profileColors[colorIdx]
-
-	// \r moves cursor to beginning of line. Pad with spaces to clear previous, longer lines.
-	clearLine := strings.Repeat(" ", 80) // Increased padding to ensure full line clear
-	fmt.Printf("\r%s", clearLine)        // Clear the line first
-	fmt.Printf("\r%sOverall Progress: [%s%s%s] [%s] %d/%d (%.1f%%)%s", ColorBold, profileColor, profileName, ColorReset, bar, current, total, percentage, ColorReset)
-
-	if final && current == total { // Ensure it's truly the final call and all are done
-		fmt.Printf(" %sAll scans complete.%s\n", ColorGreen, ColorReset) // Newline and final message
+	if final && current == total {
+		fmt.Printf("\n%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
+		fmt.Printf("%s🎯 SCAN COMPLETION: [%s%s%s] %d/%d (%.1f%%) %s✅ COMPLETE%s\n", 
+			ColorBold+ColorPatriotRed, ColorPatriotWhite, bar, ColorPatriotRed, current, total, percentage, ColorStarSpangled, ColorReset)
+		fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
 	}
 }
 
@@ -898,13 +900,26 @@ func fileExists(filename string) bool {
 }
 
 func getDefaultScapContentPath() string {
+	// Use local SCAP content instead of system paths
+	// RHEL9 content has more comprehensive profiles than Fedora
+	localPath := "./scap-security-guide-0.1.73/ssg-rhel9-ds.xml"
+	if fileExists(localPath) {
+		return localPath
+	}
+
+	// Fallback to Fedora content
+	fedoraPath := "./scap-security-guide-0.1.73/ssg-fedora-ds.xml"
+	if fileExists(fedoraPath) {
+		return fedoraPath
+	}
+
 	if runtime.GOOS == "windows" {
 		// No universal default for Windows; user should specify.
 		// An empty string will trigger the check in runOscapScan.
 		return ""
 	}
 	// Default for Linux-like systems (adjust if your primary Linux target differs)
-	return "/usr/share/xml/scap/ssg/content/ssg-fedora-ds.xml"
+	return "/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml"
 }
 
 // Control represents a single security control result
