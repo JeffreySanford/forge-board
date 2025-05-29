@@ -41,6 +41,8 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(JwtDiagnosticsGateway.name);
   private eventsInterval: NodeJS.Timeout;
+  private lastAuthEvents = '';
+  private lastAuthStats = '';
   
   constructor(
     private readonly jwtDiagnostics: JwtDiagnosticsService,
@@ -55,9 +57,14 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
       if (this.server && Object.keys(this.server.sockets.sockets).length > 0) {
         const events = this.jwtDiagnostics.getCurrentEvents();
         const stats = this.jwtDiagnostics.getCurrentStats();
-        
-        this.server.emit('auth-events', createSocketResponse('auth-events', events));
-        this.server.emit('auth-stats', createSocketResponse('auth-stats', stats));
+        const eventsStr = JSON.stringify(events);
+        const statsStr = JSON.stringify(stats);
+        const eventsChanged = eventsStr !== this.lastAuthEvents;
+        const statsChanged = statsStr !== this.lastAuthStats;
+        this.lastAuthEvents = eventsStr;
+        this.lastAuthStats = statsStr;
+        this.server.emit('auth-events', createSocketResponse('auth-events', { events, changed: eventsChanged }));
+        this.server.emit('auth-stats', createSocketResponse('auth-stats', { stats, changed: statsChanged }));
       }
     }, 5000); // Every 5 seconds
   }
@@ -72,8 +79,8 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
     const events = this.jwtDiagnostics.getCurrentEvents();
     const stats = this.jwtDiagnostics.getCurrentStats();
     
-    client.emit('auth-events', createSocketResponse('auth-events', events));
-    client.emit('auth-stats', createSocketResponse('auth-stats', stats));
+    client.emit('auth-events', createSocketResponse('auth-events', { events, changed: true }));
+    client.emit('auth-stats', createSocketResponse('auth-stats', { stats, changed: true }));
   }
   
   handleDisconnect(client: Socket) {
@@ -84,14 +91,14 @@ export class JwtDiagnosticsGateway implements OnGatewayInit, OnGatewayConnection
   handleGetAuthEvents(client: Socket) {
     this.logger.verbose(`Client ${client.id} requested auth events`);
     const events = this.jwtDiagnostics.getCurrentEvents();
-    client.emit('auth-events', createSocketResponse('auth-events', events));
+    client.emit('auth-events', createSocketResponse('auth-events', { events, changed: true }));
   }
-  
+
   @SubscribeMessage('get-auth-stats')
   handleGetAuthStats(client: Socket) {
     this.logger.verbose(`Client ${client.id} requested auth stats`);
     const stats = this.jwtDiagnostics.getCurrentStats();
-    client.emit('auth-stats', createSocketResponse('auth-stats', stats));
+    client.emit('auth-stats', createSocketResponse('auth-stats', { stats, changed: true }));
   }
 
   @SubscribeMessage('verify-token')

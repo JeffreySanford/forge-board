@@ -48,8 +48,14 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
     
     // Emit health updates at regular intervals
     this.healthInterval = setInterval(() => {
-      const health = this.diagnosticsService.getHealth();
-      this.server.emit('health-update', { type: 'health-update', payload: health, timestamp: new Date().toISOString(), success: true });
+      const { data: health, unchanged } = this.diagnosticsService.getHealthWithChangeFlag();
+      this.server.emit('health-update', {
+        type: 'health-update',
+        payload: health,
+        changed: !unchanged,
+        timestamp: new Date().toISOString(),
+        success: true
+      });
     }, 10000);
 
     // Subscribe to metrics updates and emit them
@@ -77,10 +83,15 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
       'connect',
       `Client connected from ${client.handshake.address}`
     );
-    
     // Send initial health data
-    const health = this.diagnosticsService.getHealth();
-    client.emit('health-update', { type: 'health-update', payload: health, timestamp: new Date().toISOString(), success: true });
+    const { data: health, unchanged } = this.diagnosticsService.getHealthWithChangeFlag();
+    client.emit('health-update', {
+      type: 'health-update',
+      payload: health,
+      changed: !unchanged,
+      timestamp: new Date().toISOString(),
+      success: true
+    });
   }
   
   handleDisconnect(client: Socket) {
@@ -94,8 +105,14 @@ export class DiagnosticsGateway implements OnGatewayInit, OnGatewayConnection, O
       clearInterval(this.healthInterval);
     }
     this.healthInterval = setInterval(() => {
-      const healthData = this.diagnosticsService.getHealth();
-      this.server.emit('health-update', createSocketResponse('health-update', healthData));
+      const { data: healthData, unchanged } = this.diagnosticsService.getHealthWithChangeFlag();
+      this.server.emit('health-update', {
+        type: 'health-update',
+        payload: healthData,
+        changed: !unchanged,
+        timestamp: new Date().toISOString(),
+        success: true
+      });
     }, this.healthUpdateInterval);
   }
 

@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Inject, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Logger, Res, HttpStatus } from '@nestjs/common';
 import { DiagnosticsService } from './diagnostics.service';
 import { DiagnosticsGateway } from '../gateways/diagnostics.gateway';
 import type { DiagnosticEvent } from '@forge-board/shared/api-interfaces';
-import { HealthData } from '@forge-board/shared/api-interfaces';
+import { Response } from 'express';
 
 // Define DiagnosticEventResponse interface
 export interface DiagnosticEventResponse {
@@ -22,9 +22,14 @@ export class DiagnosticsController {
   ) {}
   
   @Get('health')
-  getHealth(): HealthData {
+  getHealth(@Res() res: Response) {
     this.logger.log('GET /diagnostics/health');
-    return this.diagnosticsService.getHealth();
+    const { data, unchanged } = this.diagnosticsService.getHealthWithChangeFlag();
+    if (unchanged) {
+      // 203 Non-Authoritative Information (used here for 'not changed')
+      return res.status(203).json({ message: 'Health data not changed', data });
+    }
+    return res.status(HttpStatus.OK).json(data);
   }
   
   @Get('services')

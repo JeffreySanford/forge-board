@@ -122,22 +122,23 @@ export class DiagnosticsService implements OnModuleDestroy {
 
   getHealth(): HealthData {
     const uptime = Math.floor((Date.now() - this.startTime) / 1000);
-    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' = 'unknown';
+    // Improved status logic: support more states
+    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' | 'mocking' | 'offline' = 'unknown';
+    // For now, if uptime > 0, default to 'healthy'.
     if (uptime > 0) {
-      status = uptime > 60 ? 'healthy' : 'unknown';
+      status = 'healthy';
     }
-
-    // Add a timeline point for health status check if it changed or periodically
+    const presentMsg = `Server is currently "${status}" with uptime of ${uptime} seconds.`;
     const lastPoint = this.timelinePointsSubject.getValue().slice(-1)[0];
-    if (!lastPoint || lastPoint.status !== status || (Date.now() - new Date(lastPoint.timestamp).getTime()) > 60000) { // Example: update if status changed or >1min ago
-        this.addTimelinePoint({
-            timestamp: new Date().toISOString(),
-            status: status,
-            message: `Health status updated to ${status}`,
-            metadata: { uptime, service: DiagnosticsService.name, action: 'getHealth' }
-        });
+    // Only add a timeline point if status or present message changed
+    if (!lastPoint || lastPoint.status !== status || lastPoint.message !== presentMsg) {
+      this.addTimelinePoint({
+        timestamp: new Date().toISOString(),
+        status: status,
+        message: presentMsg,
+        metadata: { uptime, service: DiagnosticsService.name, action: 'getHealth' }
+      });
     }
-
     return {
       status,
       uptime,
@@ -147,7 +148,7 @@ export class DiagnosticsService implements OnModuleDestroy {
           message: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'unknown'}".`
         },
         present: {
-          message: `Server is currently "${status}" with uptime of ${uptime} seconds.`
+          message: presentMsg
         },
         future: {
           message: `If current trends continue, the server is expected to remain "${status}" and stable.`
@@ -176,5 +177,86 @@ export class DiagnosticsService implements OnModuleDestroy {
       id: uuidv4(), // Generate unique ID for the event
       eventType: event
     };
+  }
+
+  /**
+   * Compare two HealthData objects for meaningful changes
+   */
+  private isHealthDataChanged(newData: HealthData, lastPoint?: HealthTimelinePoint): boolean {
+    if (!lastPoint) return true;
+    // Compare status and message (and optionally, more fields)
+    if (lastPoint.status !== newData.status) return true;
+    // Compare present message if available
+    const lastMsg = lastPoint.message;
+    const newMsg = newData.details?.present?.message || '';
+    if (lastMsg !== newMsg) return true;
+    // Optionally compare uptime (if you want to treat uptime as a change)
+    // If you want to ignore uptime, comment out the next lines
+    // if (lastPoint.metadata?.uptime !== newData.uptime) return true;
+    return false;
+  }
+
+  /**
+   * Returns health data and a flag if it is unchanged (for 203 logic)
+   */
+  public getHealthWithChangeFlag(): { data: HealthData, unchanged: boolean } {
+    const uptime = Math.floor((Date.now() - this.startTime) / 1000);
+    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' | 'mocking' | 'offline' | 'up' | 'down' | 'simulated' = 'unknown';
+    if (uptime > 0) {
+      status = 'healthy';
+    }
+    const presentMsg = `Server is currently "${status}" with uptime of ${uptime} seconds.`;
+    const healthData: HealthData = {
+      status,
+      uptime,
+      timestamp: new Date().toISOString(),
+      details: {
+        past: {
+          message: `Server started ${uptime} seconds ago. Initial status was "${uptime > 10 ? 'healthy' : 'unknown'}".`
+        },
+        present: {
+          message: presentMsg
+        },
+        future: {
+          message: `If current trends continue, the server is expected to remain "${status}" and stable.`
+        }
+      }
+    };
+    const lastPoint = this.timelinePointsSubject.getValue().slice(-1)[0];
+    const changed = !lastPoint || lastPoint.status !== status || lastPoint.message !== presentMsg;
+    if (changed) {
+      // Map HealthData.status to HealthTimelinePoint.status
+      let timelineStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+      switch (healthData.status as string) {
+        case 'healthy':
+        case 'degraded':
+        case 'unhealthy':
+        case 'unknown':
+          timelineStatus = healthData.status as 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+          break;
+        case 'up':
+          timelineStatus = 'healthy';
+          break;
+        case 'down':
+          timelineStatus = 'unhealthy';
+          break;
+        case 'simulated':
+        case 'mocking':
+          timelineStatus = 'degraded';
+          break;
+        case 'offline':
+          timelineStatus = 'unhealthy';
+          break;
+        default:
+          timelineStatus = 'unknown';
+      }
+      this.addTimelinePoint({
+        timestamp: healthData.timestamp,
+        status: timelineStatus,
+        message: presentMsg,
+        metadata: { uptime, service: DiagnosticsService.name, action: 'getHealth' }
+      });
+    }
+    return { data: healthData, unchanged: !changed };
   }
 }
