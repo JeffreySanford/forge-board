@@ -57,7 +57,7 @@ export interface HealthData {
 export class DiagnosticsService implements OnDestroy {  // API URLs
   private readonly apiUrl = 'http://localhost:3000/api/diagnostics';
   private readonly socketUrl = 'http://localhost:3000';
-  private readonly DIAGNOSTICS_NAMESPACE = 'diagnostics'; // Define namespace as a constant
+  private readonly DIAGNOSTICS_NAMESPACE = '/diagnostics'; // Add leading slash to match backend namespace
   
   // Socket connection
   private socket: Socket | null = null;
@@ -120,11 +120,10 @@ export class DiagnosticsService implements OnDestroy {  // API URLs
    */  private initSocket(): void {
     try {
       console.log('DiagnosticsService: Initializing socket connection');
-      
       // Clean up any existing socket first to prevent duplicate connections
       this.cleanupSocket();
-        // Create new socket connection with proper options
-      this.socket = io(`${this.socketUrl}/${this.DIAGNOSTICS_NAMESPACE}`, {
+      // Create new socket connection with proper options
+      this.socket = io(`${this.socketUrl}${this.DIAGNOSTICS_NAMESPACE}`, {
         withCredentials: false,
         transports: ['websocket', 'polling'],
         timeout: 5000,
@@ -132,7 +131,6 @@ export class DiagnosticsService implements OnDestroy {  // API URLs
         reconnectionDelay: 1000,
         forceNew: true // Force new connection to avoid conflicts
       });
-      
       // Setup socket event handlers
       this.setupSocketEvents();
     } catch (err) {

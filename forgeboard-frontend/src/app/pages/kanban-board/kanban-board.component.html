@@ -10,7 +10,7 @@
             <mat-form-field appearance="outline" class="board-selector">
               <mat-label>Select Board</mat-label>
               <mat-select 
-                [value]="selectedBoard?.id" 
+                [value]="selectedBoard.id" 
                 (selectionChange)="onBoardSelection($event.value)"
                 class="board-dropdown">
                 <mat-option 

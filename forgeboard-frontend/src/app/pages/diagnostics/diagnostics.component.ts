@@ -17,7 +17,16 @@ import {
   standalone: false
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
-  liveMetrics$ = new BehaviorSubject<MetricData | null>(null);
+  // Provide a default MetricData with zero values
+  private static readonly DEFAULT_METRICS: MetricData = {
+    cpu: 0,
+    memory: 0,
+    disk: 0,
+    network: 0,
+    time: new Date().toISOString(),
+  };
+
+  liveMetrics$ = new BehaviorSubject<MetricData | null>(DiagnosticsComponent.DEFAULT_METRICS);
   healthData: HealthData | null = null;
   health: { status: string; uptime: number } = { status: 'unknown', uptime: 0 };
   socketStatus = 'disconnected';

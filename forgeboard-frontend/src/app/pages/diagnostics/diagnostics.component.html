@@ -167,10 +167,10 @@
     <div class="metrics-display">
       <ng-container *ngIf="liveMetrics$ | async as metrics; else loadingMetrics">
         <div *ngIf="metrics; else waitingForData">
-          <p><strong>CPU Usage:</strong> {{ metrics.cpu.toFixed(2) }}%</p>
-          <p><strong>Memory Usage:</strong> {{ metrics.memory.toFixed(2) }}%</p>
-          <p *ngIf="metrics.disk !== undefined"><strong>Disk Usage:</strong> {{ metrics.disk.toFixed(2) }}%</p>
-          <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ metrics.network.toFixed(2) }}%</p>
+          <p><strong>CPU Usage:</strong> {{ metrics.cpu !== null && metrics.cpu !== undefined ? metrics.cpu.toFixed(2) : 'N/A' }}%</p>
+          <p><strong>Memory Usage:</strong> {{ metrics.memory !== null && metrics.memory !== undefined ? metrics.memory.toFixed(2) : 'N/A' }}%</p>
+          <p *ngIf="metrics.disk !== undefined"><strong>Disk Usage:</strong> {{ metrics.disk !== null && metrics.disk !== undefined ? metrics.disk.toFixed(2) : 'N/A' }}%</p>
+          <p *ngIf="metrics.network !== undefined"><strong>Network Usage:</strong> {{ metrics.network !== null && metrics.network !== undefined ? metrics.network.toFixed(2) : 'N/A' }}%</p>
           <p><strong>Last Update:</strong> {{ metrics.time | date:'mediumTime' }}</p>
           <p *ngIf="metrics.value !== undefined"><strong>Value:</strong> {{ metrics['value'] }}</p>
           <!-- You can add more specific fields if your MetricData has them -->

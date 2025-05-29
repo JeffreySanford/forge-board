@@ -201,7 +201,7 @@ export class DiagnosticsService implements OnModuleDestroy {
    */
   public getHealthWithChangeFlag(): { data: HealthData, unchanged: boolean } {
     const uptime = Math.floor((Date.now() - this.startTime) / 1000);
-    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' | 'mocking' | 'offline' | 'up' | 'down' | 'simulated' = 'unknown';
+    let status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown' | 'up' | 'down' | 'simulated' = 'unknown';
     if (uptime > 0) {
       status = 'healthy';
     }
@@ -227,12 +227,12 @@ export class DiagnosticsService implements OnModuleDestroy {
     if (changed) {
       // Map HealthData.status to HealthTimelinePoint.status
       let timelineStatus: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
-      switch (healthData.status as string) {
+      switch (healthData.status) {
         case 'healthy':
         case 'degraded':
         case 'unhealthy':
         case 'unknown':
-          timelineStatus = healthData.status as 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+          timelineStatus = healthData.status;
           break;
         case 'up':
           timelineStatus = 'healthy';
@@ -241,11 +241,7 @@ export class DiagnosticsService implements OnModuleDestroy {
           timelineStatus = 'unhealthy';
           break;
         case 'simulated':
-        case 'mocking':
           timelineStatus = 'degraded';
-          break;
-        case 'offline':
-          timelineStatus = 'unhealthy';
           break;
         default:
           timelineStatus = 'unknown';
