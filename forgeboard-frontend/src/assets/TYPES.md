@@ -11,10 +11,13 @@ Forge Board leverages RxJS's hot observables for reactive state management throu
 ### 🔥 Hot Observables with BehaviorSubject
 
 Services use `BehaviorSubject` to create hot observables that:
+
 - Emit the current value upon subscription
-- Multicasts to all subscribers
-- Maintains state between emissions
-- Ensures all subscribers get consistent data
+- Multicast to all subscribers (hot observable)
+- Maintain state between emissions
+- Ensure all subscribers get consistent data
+
+> **Note:** In Forge Board, all data services return hot observable streams (using `BehaviorSubject`) by default. Avoid returning Promises or cold Observables for shared state. Always expose state as `Observable` using `.asObservable()` to prevent external mutation.
 
 ### 📡 Observable Architecture
 
@@ -28,24 +31,24 @@ Our reactive architecture follows these patterns:
 ### 📊 Example Pattern
 
 ```typescript
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import type { User, ApiResponse } from '@forge-board/api-interfaces';
+
 @Injectable()
-export class ExampleService implements OnDestroy {
-  // Private BehaviorSubject for state management
-  private dataSubject = new BehaviorSubject<DataType[]>([]);
-  
+export class UserService implements OnDestroy {
+  private userSubject = new BehaviorSubject<ApiResponse<User> | null>(null);
+
   // Public hot observable API
-  public data$ = this.dataSubject.asObservable().pipe(
-    shareReplay(1)
-  );
-  
-  // Update internal state
-  updateData(newData: DataType[]): void {
-    this.dataSubject.next(newData);
+  public user$: Observable<ApiResponse<User> | null> = this.userSubject.asObservable();
+
+  fetchUserData(userId: string): void {
+    // ... fetch logic (e.g., HTTP request) ...
+    // this.userSubject.next(fetchedUser);
   }
-  
-  // Clean up
+
   ngOnDestroy(): void {
-    this.dataSubject.complete();
+    this.userSubject.complete();
   }
 }
 ```
@@ -55,6 +58,7 @@ export class ExampleService implements OnDestroy {
 ### 🔵 Core Data Types
 
 #### `LogEntry`
+
 The foundational type for all logging in the system.
 
 ```typescript
@@ -66,29 +70,29 @@ export interface LogEntry {
   source?: string; // Represents the service or component originating the log
   details?: Record<string, unknown>; // Structured data payload
   context?: string; // Optional context string for categorization
-  
+
   // Extended properties for display (primarily frontend)
   displayMessage?: string;
   expanded?: boolean;
   rawData?: string;
   categories?: string[];
-  
+
   // Group-related properties
   isCategory?: boolean;
   categoryName?: string;
   categoryLogs?: LogEntry[];
   categoryCount?: number;
-  
+
   // Duplication tracking
   duplicates?: LogEntry[];
   duplicateCount?: number;
-  
+
   // Loop detection flag
   isLoggingLoop?: boolean;
-  
+
   // Correlation
   eventId?: string;
-  
+
   // Optional stack trace and tags
   stackTrace?: string;
   tags?: string[];
@@ -96,6 +100,7 @@ export interface LogEntry {
 ```
 
 #### `LogFilter`
+
 Standard filter interface for filtering log entries. Uses `LogLevelEnum`.
 
 ```typescript
@@ -114,6 +119,7 @@ export interface LogFilter {
 ```
 
 #### `ExtendedLogFilter`
+
 This type might be deprecated or merged into `LogFilter` if all properties are now in the base `LogFilter`.
 If `ExtendedLogFilter` still has unique properties not in the shared `LogFilter`, it should be documented.
 For now, assuming `LogFilter` from `shared/api-interfaces` is the standard.
@@ -127,6 +133,7 @@ For now, assuming `LogFilter` from `shared/api-interfaces` is the standard.
 ```
 
 #### `LogLevelEnum`
+
 Standardized log levels across the application, imported from `@forge-board/shared/api-interfaces`.
 
 ```typescript
@@ -136,13 +143,14 @@ export enum LogLevelEnum {
   INFO = 2,
   WARN = 3,
   ERROR = 4,
-  FATAL = 5
+  FATAL = 5,
 }
 ```
 
 ### 🔴 Socket Communication Types
 
 #### `SocketResponse<T>`
+
 Generic wrapper for all socket responses, ensuring consistent format.
 
 ```typescript
@@ -155,6 +163,7 @@ export interface SocketResponse<T> {
 ```
 
 #### `LogSocketResponse<T>`
+
 Specialized socket response for log-related operations.
 
 ```typescript
@@ -165,6 +174,7 @@ export interface LogSocketResponse<T> extends SocketResponse<T> {
 ```
 
 #### `LogStreamUpdate`
+
 Updates sent over socket connections for real-time log streaming.
 
 ```typescript
@@ -182,6 +192,7 @@ export interface LogStreamUpdate {
 ### 🟢 Logger Service Types
 
 #### `LogMetadata`
+
 Common structure for additional log information.
 
 ```typescript
@@ -193,6 +204,7 @@ export interface LogMetadata {
 ```
 
 #### `LoggerConfig`
+
 Configuration options for the logger.
 
 ```typescript
@@ -205,6 +217,7 @@ interface LoggerConfig {
 ```
 
 #### `LogResponse`
+
 Response structure for log requests.
 
 ```typescript
@@ -221,6 +234,7 @@ export interface LogResponse {
 ### 🟣 Component-Specific Types
 
 #### `LogQueryResponse`
+
 Response structure for log queries in components.
 
 ```typescript
@@ -234,6 +248,7 @@ export interface LogQueryResponse {
 ```
 
 #### `LogFetchResponse`
+
 Extended query response for pagination support.
 
 ```typescript
@@ -243,6 +258,7 @@ export interface LogFetchResponse extends LogQueryResponse {
 ```
 
 #### `SourceOption`
+
 Option structure for service/source selection dropdowns.
 
 ```typescript
@@ -257,6 +273,7 @@ interface SourceOption {
 ### 🟡 Logger Service Types
 
 #### `ExtendedLogEntry`
+
 Backend-specific extension of LogEntry with additional context.
 
 ```typescript
@@ -268,6 +285,7 @@ interface ExtendedLogEntry extends LogEntry {
 ```
 
 #### `LogQueryOptions`
+
 Options for querying logs from storage.
 
 ```typescript
@@ -291,6 +309,7 @@ interface LogQueryOptions {
 The Forge Board application implements a robust type validation system to ensure data integrity. Here's how it works:
 
 #### `TypeValidator<T>`
+
 Interface for type validators.
 
 ```typescript
@@ -301,6 +320,7 @@ export interface TypeValidator<T> {
 ```
 
 #### `ValidationError`
+
 Structure for validation errors.
 
 ```typescript
@@ -313,6 +333,7 @@ export interface ValidationError {
 ```
 
 #### `DiagnosticResult`
+
 Result of diagnostic validation.
 
 ```typescript
@@ -330,6 +351,7 @@ export interface DiagnosticResult<T> {
 ### 🔌 Socket Management
 
 #### `SocketRegistration`
+
 Registered socket entry.
 
 ```typescript
@@ -342,6 +364,7 @@ interface SocketRegistration {
 ```
 
 #### `SocketMetrics`
+
 Metrics about socket usage.
 
 ```typescript
@@ -358,6 +381,7 @@ interface SocketMetrics {
 ### 🧩 Tile Configuration
 
 #### `TileConfig`
+
 Configuration for a dashboard tile.
 
 ```typescript
@@ -378,6 +402,7 @@ export interface TileConfig {
 ```
 
 #### `TileType`
+
 Available tile types.
 
 ```typescript
@@ -387,11 +412,12 @@ export enum TileType {
   TABLE = 'table',
   STATUS = 'status',
   LOGGER = 'logger',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 ```
 
 #### `TileState`
+
 Runtime state of a tile.
 
 ```typescript
@@ -457,6 +483,7 @@ Our logging filter system has evolved to provide more flexibility and consistenc
 1. **Initial Design**: Started with a simple `LogFilter` interface for basic filtering operations.
 
 2. **Extended Capabilities**: Added `ExtendedLogFilter` that extends the base filter with additional properties for advanced filtering:
+
    ```typescript
    export interface ExtendedLogFilter extends LogFilter {
      contexts?: string[];
@@ -488,6 +515,7 @@ When working with log filters:
 1. **Prefer ExtendedLogFilter**: Use `ExtendedLogFilter` for all new code and when refactoring existing code.
 
 2. **Type Narrowing**: If only basic filtering is needed, you can type-narrow to the base properties:
+
    ```typescript
    function simpleFilter(filter: Pick<LogFilter, 'level' | 'service'>) { ... }
    ```
@@ -527,11 +555,11 @@ flowchart TD
     ClientModels[Frontend Models]
     ServerModels[Backend Models]
     BrowserShims[Browser Shims]
-    
+
     SharedLib --> ClientModels
     SharedLib --> ServerModels
     BrowserShims -.-> ClientModels
-    
+
     style SharedLib fill:#002868,stroke:#071442,stroke-width:2px,color:#fff
     style ClientModels fill:#BF0A30,stroke:#7D100E,stroke-width:2px,color:#fff
     style ServerModels fill:#BF0A30,stroke:#7D100E,stroke-width:2px,color:#fff
@@ -642,7 +670,7 @@ export type SecurityEventType = 'sbom' | 'sca' | 'zap' | 'supplyChain' | 'fedram
 // Security event interface
 export interface SecurityEvent {
   id: string;
-  type: SecurityEventType; 
+  type: SecurityEventType;
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
