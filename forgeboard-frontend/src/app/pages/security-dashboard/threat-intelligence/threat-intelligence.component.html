@@ -1,0 +1,51 @@
+<div class="threat-intelligence-container">
+  <div class="header">
+    <h2>Threat Intelligence</h2>
+    <div class="actions">
+      <button mat-button color="primary">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+      <button mat-button color="accent">
+        <mat-icon>add</mat-icon> Add Threat
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <mat-card class="threat-feed">
+      <mat-card-header>
+        <mat-card-title>Active Threats</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngFor="let threat of threats" class="threat-item">
+          <div class="threat-header">
+            <span class="threat-id">{{threat.id}}</span>
+            <span class="threat-name">{{threat.name}}</span>
+            <span class="threat-severity" [style.background-color]="getStatusColor(threat.severity)">
+              {{threat.severity}}
+            </span>
+          </div>
+          <div class="threat-details">
+            <p>{{threat.description}}</p>
+            <div class="threat-meta">
+              <span class="threat-source">Source: {{threat.source}}</span>
+              <span class="threat-date">Updated: {{threat.lastUpdated | date:'medium'}}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="threat-map">
+      <mat-card-header>
+        <mat-card-title>Threat Map</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="placeholder-map">
+          <!-- Placeholder for threat map visualization -->
+          <p>Threat map visualization will be displayed here</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

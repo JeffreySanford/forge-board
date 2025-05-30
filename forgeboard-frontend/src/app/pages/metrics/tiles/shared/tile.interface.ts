@@ -4,4 +4,6 @@ export interface Tile {
   icon: string;
   loading: boolean;
   refresh(): void;
+  row: number; // <-- Now required
+  col: number; // <-- Now required
 }

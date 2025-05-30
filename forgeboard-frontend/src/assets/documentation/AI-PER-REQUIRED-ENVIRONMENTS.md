@@ -415,8 +415,7 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'app-my-button',
   template: `<button mat-raised-button color="primary">Click me</button>`,
-  standalone: true,
-  imports: [MatButtonModule]
+  standalone: false
 })
 export class MyButtonComponent {}
 
@@ -492,7 +491,7 @@ mcp.tool({
       ? `import { Component } from '@angular/core';
 
 @Component
-({ selector: 'app-example', standalone: true, template: '' })
+({ selector: 'app-example', standalone: false, template: '' })
 export class ExampleComponent {}           :import { Component } from '@angular
 /core';
 @Component
@@ -510,7 +509,7 @@ export class ExampleComponent {}`;
        return `import { MatButtonModule } from '@angular/material/button';
 
 @Component
-({ standalone: true, imports: [MatButtonModule], template: '<button mat-raised-button>Click</button>' })
+({ standalone: false, template: '<button mat-raised-button>Click</button>' })
 export class ButtonComponent {}`;
          }
          return 'Component not found';

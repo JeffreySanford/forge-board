@@ -1,4 +1,11 @@
-import { Component, ElementRef, OnInit, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  OnDestroy,
+  AfterViewInit,
+} from '@angular/core';
 import { Subscription, interval } from 'rxjs';
 import * as d3 from 'd3';
 import { MetricData } from '@forge-board/shared/api-interfaces';
@@ -18,7 +25,7 @@ interface HealthData {
   selector: 'app-system-health',
   templateUrl: './system-health.component.html',
   styleUrls: ['./system-health.component.scss'],
-  standalone: false
+  standalone: false,
 })
 export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
   @ViewChild('chart') private chartContainer!: ElementRef;
@@ -30,18 +37,22 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
   title = 'System Health';
   order: number = 1;
   visible: boolean = true;
-  
+
+  // Add row and col for Tile interface
+  row = 0;
+  col = 0;
+
   subtitle = 'Overall status monitor';
   icon = 'health_and_safety';
   loading = true;
-  
+
   private subscription = new Subscription();
-  
+
   overallHealth = 0;
   statusMessage = 'Checking system...';
   lastIncidentTime = '-- minutes ago';
   serverUptime = '00:00:00';
-  
+
   healthData: HealthData[] = [];
 
   constructor(private metricsService: MetricsService) {
@@ -50,23 +61,23 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
       { category: 'CPU', score: 0, threshold: 80, icon: 'memory' },
       { category: 'Memory', score: 0, threshold: 90, icon: 'sd_card' },
       { category: 'Disk', score: 0, threshold: 90, icon: 'storage' },
-      { category: 'Network', score: 0, threshold: 70, icon: 'wifi' }
+      { category: 'Network', score: 0, threshold: 70, icon: 'wifi' },
     ];
   }
 
   ngOnInit(): void {
     this.subscription.add(
-      this.metricsService.getMetricsStream().subscribe(metrics => {
+      this.metricsService.getMetricsStream().subscribe((metrics) => {
         this.loading = false;
-        
+
         // Update health data based on metrics
         this.updateHealthData(metrics);
-        
+
         // Calculate overall health score (weighted average)
         this.calculateOverallHealth();
       })
     );
-    
+
     // Simulate server uptime increasing
     let uptimeSeconds = 0;
     this.subscription.add(
@@ -75,13 +86,18 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
         const hours = Math.floor(uptimeSeconds / 3600);
         const minutes = Math.floor((uptimeSeconds % 3600) / 60);
         const seconds = uptimeSeconds % 60;
-        
-        this.serverUptime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
+
+        this.serverUptime = `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
         // Simulate a random incident
-        if (Math.random() < 0.001) { // Very rare chance
+        if (Math.random() < 0.001) {
+          // Very rare chance
           const minutesAgo = Math.floor(Math.random() * 30) + 1;
-          this.lastIncidentTime = `${minutesAgo} minute${minutesAgo > 1 ? 's' : ''} ago`;
+          this.lastIncidentTime = `${minutesAgo} minute${
+            minutesAgo > 1 ? 's' : ''
+          } ago`;
         }
       })
     );
@@ -93,9 +109,9 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
 
   refresh(): void {
     this.loading = true;
-    setTimeout(() => this.loading = false, 500);
+    setTimeout(() => (this.loading = false), 500);
   }
-  
+
   /**
    * Get CSS class based on health score
    */
@@ -112,7 +128,7 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
       return 'critical';
     }
   }
-  
+
   /**
    * Get CSS class for metric health status
    */
@@ -125,59 +141,59 @@ export class SystemHealthComponent implements OnInit, OnDestroy, Tile {
       return 'healthy';
     }
   }
-  
+
   /**
    * Update the health data using metrics
    */
   private updateHealthData(metrics: MetricData): void {
     // Update CPU health
-    const cpuIndex = this.healthData.findIndex(d => d.category === 'CPU');
+    const cpuIndex = this.healthData.findIndex((d) => d.category === 'CPU');
     if (cpuIndex >= 0 && metrics.cpu !== undefined) {
       this.healthData[cpuIndex].score = metrics.cpu;
     }
-    
+
     // Update Memory health
-    const memIndex = this.healthData.findIndex(d => d.category === 'Memory');
+    const memIndex = this.healthData.findIndex((d) => d.category === 'Memory');
     if (memIndex >= 0 && metrics.memory !== undefined) {
       this.healthData[memIndex].score = metrics.memory;
     }
-    
+
     // Update Disk health
-    const diskIndex = this.healthData.findIndex(d => d.category === 'Disk');
+    const diskIndex = this.healthData.findIndex((d) => d.category === 'Disk');
     if (diskIndex >= 0 && metrics.disk !== undefined) {
       this.healthData[diskIndex].score = metrics.disk;
     }
-    
+
     // Update Network health
-    const netIndex = this.healthData.findIndex(d => d.category === 'Network');
+    const netIndex = this.healthData.findIndex((d) => d.category === 'Network');
     if (netIndex >= 0 && metrics.network !== undefined) {
       this.healthData[netIndex].score = metrics.network;
     }
   }
-  
+
   /**
    * Calculate overall health score
    */
   private calculateOverallHealth(): void {
     // Simple weighted average
     const weights = {
-      'CPU': 0.3,
-      'Memory': 0.3,
-      'Disk': 0.2,
-      'Network': 0.2
+      CPU: 0.3,
+      Memory: 0.3,
+      Disk: 0.2,
+      Network: 0.2,
     };
-    
+
     let totalScore = 0;
     let totalWeight = 0;
-    
-    this.healthData.forEach(data => {
+
+    this.healthData.forEach((data) => {
       const weight = weights[data.category as keyof typeof weights] || 0.25;
       totalScore += (100 - data.score) * weight; // Invert score (higher usage = lower health)
       totalWeight += weight;
     });
-    
+
     this.overallHealth = Math.round(totalScore / totalWeight);
-    
+
     // Set status message based on health score
     if (this.overallHealth >= 90) {
       this.statusMessage = 'System operating normally';

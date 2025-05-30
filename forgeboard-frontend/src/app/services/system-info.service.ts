@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { environment } from '@/environments/environment';
-import * as osShim from '@shims/os';
+import { environment } from '../../environments/environment';
+import * as osShim from '../shims/os';
 import { BackendStatusService } from './backend-status.service';
 
 interface SystemInfo {

@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, from } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { environment } from '@/environments/environment';
-import * as cryptoShim from '@shims/crypto';
+import { environment } from '../../environments/environment';
+import * as cryptoShim from '../shims/crypto';
 import { BackendStatusService } from './backend-status.service';
 
 interface HashResponse {

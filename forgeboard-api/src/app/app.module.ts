@@ -48,7 +48,7 @@ import { KanbanModule } from './kanban/kanban.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        let uri = configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/forgeboard');
+        let uri = configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/forge-board');
         if (configService.get<string>('USE_IN_MEMORY_MONGO') === 'true') {
           const mongod = await MongoMemoryServer.create();
           uri = mongod.getUri();

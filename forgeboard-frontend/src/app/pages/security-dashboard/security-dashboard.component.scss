@@ -1,22 +1,241 @@
+@use 'sass:color';
+
 .security-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px); // Adjust based on your header height
   padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  .content-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
 }
 
-.dashboard-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
+.masthead-container {
+  background-color: #2c3e50; // Dark blue-grey
+  color: white;
+  padding: 2rem;
   margin-bottom: 2rem;
+  border-radius: 8px;
+  text-align: center;
+
+  h2 {
+    margin-top: 0;
+    font-size: 1.8em;
+  }
+
+  .architecture-map-placeholder {
+    min-height: 200px;
+    background-color: #34495e; // Slightly lighter blue-grey
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    color: #bdc3c7; // Light grey text
+    border: 1px dashed #7f8c8d; // Dashed border
+  }
+}
+
+.main-tab-group {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden; // Ensures border radius is respected by tabs
+
+  ::ng-deep .mat-mdc-tab-header {
+    border-bottom: 1px solid #ddd;
+  }
+
+  ::ng-deep .mat-mdc-tab_label {
+    min-width: 120px !important; // Ensure tabs fit
+    padding: 0 16px !important;
+    font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+    color: #ffffff !important; // White text for active tab label
+  }
+
+  // Tab-specific colors - apply to active tab indicator and label background
+  &.mat-mdc-tab-group {
+    // Threat & Vuln. Mgmt Tab
+    ::ng-deep .mat-mdc-tab:nth-child(1).mat-mdc-tab-active {
+      .mdc-tab-indicator__content--underline {
+        border-color: #e74c3c !important; // Red
+      }
+      .mdc-tab__text-label {
+        color: #e74c3c !important;
+      }
+      background-color: color.adjust(#e74c3c, $lightness: 45%);
+      border-right: 1px solid color.adjust(#e74c3c, $lightness: -10%);
+    }
+
+    // Compliance & Risk Tab
+    ::ng-deep .mat-mdc-tab:nth-child(2).mat-mdc-tab-active {
+      .mdc-tab-indicator__content--underline {
+        border-color: #3498db !important; // Blue
+      }
+      .mdc-tab__text-label {
+        color: #3498db !important;
+      }
+      background-color: color.adjust(#3498db, $lightness: 45%);
+      border-right: 1px solid color.adjust(#3498db, $lightness: -10%);
+    }
+
+    // Ops & Monitoring Tab
+    ::ng-deep .mat-mdc-tab:nth-child(3).mat-mdc-tab-active {
+      .mdc-tab-indicator__content--underline {
+        border-color: #2ecc71 !important; // Green
+      }
+      .mdc-tab__text-label {
+        color: #2ecc71 !important;
+      }
+      background-color: color.adjust(#2ecc71, $lightness: 45%);
+    }
+  }
+}
+
+.tab-content-wrapper {
+  padding: 1.5rem;
+  display: flex;
+  flex-wrap: wrap; // Allow cards to wrap
+  gap: 1.5rem; // Space between cards
+  width: 100%; // Use full width
+  box-sizing: border-box;
 }
 
 .dashboard-card {
-  flex: 1 1 300px;
-  min-width: 300px;
-  max-width: 400px;
+  flex: 1 1 calc(33.333% - 2rem); // Aim for 3 cards per row, adjusting for gap
+  min-width: 280px; // Minimum card width
+  border-radius: 8px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  border-left: 5px solid transparent; // For color accent
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  mat-card-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+  }
+
+  mat-card-content {
+    .description-container {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      max-height: 10em; // Max height before scroll
+      overflow-y: auto; // Scrollable content
+      h4 {
+        margin-top: 0;
+        color: #333;
+      }
+      p {
+        font-size: 0.95em;
+        line-height: 1.6;
+        color: #555;
+      }
+    }
+
+    .visualization-placeholder, .table-placeholder, .log-feed-placeholder, .placeholder-list {
+      min-height: 120px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: #777;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px dashed #ccc;
+    }
+    .placeholder-list {
+      flex-direction: column;
+      align-items: flex-start;
+      li {
+        margin-bottom: 0.5rem;
+      }
+    }
+    .log-feed-placeholder {
+      flex-direction: column;
+      align-items: flex-start;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9em;
+      padding: 0.3rem 0;
+    }
+
+    button[mat-stroked-button] {
+      margin-top: auto; // Push button to bottom of card content if flex
+      width: 100%;
+    }
+  }
+}
+
+// Card specific accent colors (applied to border-left)
+.sbom-card { border-left-color: #e74c3c; mat-card-title { color: #e74c3c; } }
+.sca-card { border-left-color: #e74c3c; mat-card-title { color: #e74c3c; } }
+.zap-card { border-left-color: #e74c3c; mat-card-title { color: #e74c3c; } }
+
+.fedramp-card { border-left-color: #3498db; mat-card-title { color: #3498db; } }
+.security-controls-card { border-left-color: #3498db; mat-card-title { color: #3498db; } }
+.poam-card { border-left-color: #3498db; mat-card-title { color: #3498db; } }
+.config-compliance-card { border-left-color: #3498db; mat-card-title { color: #3498db; } }
+.rmf-insights-card { border-left-color: #3498db; mat-card-title { color: #3498db; } }
+
+.supply-chain-card { border-left-color: #2ecc71; mat-card-title { color: #2ecc71; } }
+.log-monitoring-card { border-left-color: #2ecc71; mat-card-title { color: #2ecc71; } }
+.conmon-card { border-left-color: #2ecc71; mat-card-title { color: #2ecc71; } }
+.event-log-feed-card { border-left-color: #2ecc71; mat-card-title { color: #2ecc71; } }
+
+.security-controls-table {
+  width: 100%;
+  margin-top: 1rem;
 }
 
 .dashboard-note {
-  font-size: 1.1em;
-  color: #3498db;
-  margin-top: 1rem;
+  text-align: center;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 2rem;
+  border-radius: 0 0 8px 8px;
+  p {
+    margin: 0;
+    font-style: italic;
+    color: #555;
+  }
+}
+
+// Animations for tab transitions (example - can be expanded)
+::ng-deep .mat-mdc-tab-body-content {
+  transition: opacity 0.4s ease-in-out;
+}
+
+::ng-deep .mat-mdc-tab:not(.mat-mdc-tab-active) {
+  opacity: 0.7;
+  &:hover {
+    opacity: 1;
+    background-color: #f5f5f5;
+  }
+}
+
+// Glow effect for active tab (subtle)
+::ng-deep .mat-mdc-tab.mat-mdc-tab-active {
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.3); // Example blue glow, adjust color per tab if desired
 }

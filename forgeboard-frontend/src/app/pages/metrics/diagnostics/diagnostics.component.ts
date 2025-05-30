@@ -10,11 +10,11 @@ import { SystemStatus } from '../../../models/system-status.model';
   selector: 'app-diagnostics',
   templateUrl: './diagnostics.component.html',
   styleUrls: ['./diagnostics.component.scss'],
-  standalone: false
+  standalone: false,
 })
 export class DiagnosticsComponent implements OnInit, OnDestroy {
   showLayoutBorder = false; // Default to false for production view
-  
+
   // Tile visibility states
   showHealthTile = true;
   showMemoryTile = true;
@@ -22,10 +22,17 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   showLogsTile = true;
   showUptimeTile = true;
   showActivityTile = true;
-  
+
   // Default order of tiles
-  tileOrder: TileType[] = ['health', 'memory', 'connection', 'logs', 'uptime', 'activity'];
-  
+  tileOrder: TileType[] = [
+    'health',
+    'memory',
+    'connection',
+    'logs',
+    'uptime',
+    'activity',
+  ];
+
   // Properties referenced in the template
   health: { status: string; uptime: number } = { status: 'unknown', uptime: 0 };
   services: string[] = [];
@@ -33,7 +40,20 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   gateways: string[] = [];
   errors: string[] = [];
   socketStatus = 'disconnected';
-  
+
+  tiles = [
+    {
+      id: 'tile-1',
+      type: 'metrics',
+      visible: true,
+      position: 0,
+      row: 0,
+      col: 0,
+    },
+    { id: 'tile-2', type: 'logs', visible: true, position: 1, row: 0, col: 1 },
+    // ...etc...
+  ];
+
   private subscription = new Subscription();
 
   constructor(
@@ -44,30 +64,30 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Load tile order from backend
     this.subscription.add(
-      this.tileStateService.getTileOrder('user1').subscribe(res => {
+      this.tileStateService.getTileOrder('user1').subscribe((res) => {
         if (res.order && res.order.length) {
           // Check if the order includes our new tiles
-          const hasAllTileTypes = ['health', 'memory'].every(
-            type => res.order.includes(type as TileType)
+          const hasAllTileTypes = ['health', 'memory'].every((type) =>
+            res.order.includes(type as TileType)
           );
-          
+
           // If the stored order doesn't include all our new tiles,
           // merge new tiles with existing order
           if (!hasAllTileTypes) {
             const missingTiles = ['health', 'memory'].filter(
-              type => !res.order.includes(type as TileType)
+              (type) => !res.order.includes(type as TileType)
             ) as TileType[];
-            
+
             // Add missing tiles to the beginning
-            this.tileOrder = [...missingTiles, ...res.order as TileType[]];
-            
+            this.tileOrder = [...missingTiles, ...(res.order as TileType[])];
+
             // Save the updated order to persist changes
             this.saveTileOrder();
           } else {
             // Use stored order as-is
             this.tileOrder = res.order as TileType[];
           }
-          
+
           // Apply visibility settings if available
           if (res.visibility) {
             // Add support for new tiles with default of true if not present
@@ -82,7 +102,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       })
     );
   }
-  
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
   }
@@ -94,22 +114,21 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     moveItemInArray(this.tileOrder, event.previousIndex, event.currentIndex);
     this.saveTileOrder();
   }
-  
+
   /**
    * Save the current tile order to the backend
    */
   saveTileOrder(): void {
-    this.tileStateService.setTileOrder('user1', this.tileOrder)
-      .subscribe({
-        next: (response) => {
-          if (!response.success) {
-            console.warn('Failed to save tile order');
-          }
-        },
-        error: (err) => {
-          console.error('Error saving tile order:', err);
+    this.tileStateService.setTileOrder('user1', this.tileOrder).subscribe({
+      next: (response) => {
+        if (!response.success) {
+          console.warn('Failed to save tile order');
         }
-      });
+      },
+      error: (err) => {
+        console.error('Error saving tile order:', err);
+      },
+    });
   }
 
   /**
@@ -117,7 +136,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
    */
   toggleTileVisibility(tileType: TileType): void {
     // Update local state based on tile type
-    switch(tileType) {
+    switch (tileType) {
       case 'health':
         this.showHealthTile = !this.showHealthTile;
         break;
@@ -137,24 +156,31 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
         this.showActivityTile = !this.showActivityTile;
         break;
     }
-    
+
     this.saveTileVisibility();
   }
-  
+
   /**
    * Toggle layout border visibility (for development/design purposes)
    */
   toggleLayoutBorder(): void {
     this.showLayoutBorder = !this.showLayoutBorder;
   }
-  
+
   /**
    * Reset tile layout to default order and visibility
    */
   resetTileLayout(): void {
     // Reset to default order
-    this.tileOrder = ['health', 'memory', 'connection', 'logs', 'uptime', 'activity'];
-    
+    this.tileOrder = [
+      'health',
+      'memory',
+      'connection',
+      'logs',
+      'uptime',
+      'activity',
+    ];
+
     // Reset visibility (all tiles visible by default)
     this.showHealthTile = true;
     this.showMemoryTile = true;
@@ -162,12 +188,12 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     this.showLogsTile = true;
     this.showUptimeTile = true;
     this.showActivityTile = true;
-    
+
     // Save both order and visibility
     this.saveTileOrder();
     this.saveTileVisibility();
   }
-  
+
   /**
    * Save tile visibility settings to backend
    */
@@ -180,27 +206,30 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
       logs: this.showLogsTile,
       uptime: this.showUptimeTile,
       activity: this.showActivityTile,
-      kanban: true // Set to true or bind to a variable if you have one
+      kanban: true, // Set to true or bind to a variable if you have one
     };
-    this.tileStateService.setTileVisibility('user1', visibility)
-      .subscribe({
-        next: (response) => {
-          if (!response.success) {
-            console.warn('Failed to save tile visibility');
-          }
-        },
-        error: (err) => {
-          console.error('Error saving tile visibility:', err);
+    this.tileStateService.setTileVisibility('user1', visibility).subscribe({
+      next: (response) => {
+        if (!response.success) {
+          console.warn('Failed to save tile visibility');
         }
-      });
+      },
+      error: (err) => {
+        console.error('Error saving tile visibility:', err);
+      },
+    });
   }
 
   getEventTypeClass(type: string): string {
     switch (type) {
-      case 'error': return 'event-error';
-      case 'warning': return 'event-warning';
-      case 'info': return 'event-info';
-      default: return 'event-default';
+      case 'error':
+        return 'event-error';
+      case 'warning':
+        return 'event-warning';
+      case 'info':
+        return 'event-info';
+      default:
+        return 'event-default';
     }
   }
 
@@ -209,7 +238,7 @@ export class DiagnosticsComponent implements OnInit, OnDestroy {
     // Update properties based on system status data
     this.health.status = data.status;
     this.health.uptime = data.uptime;
-    
+
     // Update service lists if available
     if (data.services) this.services = data.services;
     if (data.controllers) this.controllers = data.controllers;

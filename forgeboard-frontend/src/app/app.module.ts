@@ -1,4 +1,8 @@
-import { NgModule, NO_ERRORS_SCHEMA, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import {
+  NgModule,
+  NO_ERRORS_SCHEMA,
+  CUSTOM_ELEMENTS_SCHEMA,
+} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -23,7 +27,7 @@ import { DocumentationModule } from './pages/documentation/documentation.module'
 import { SecurityDashboardModule } from './pages/security-dashboard/security-dashboard.module';
 
 // Core modules
-import { SoundModule } from './core/sounds/sound.module';  // Add the SoundModule
+import { SoundModule } from './core/sounds/sound.module'; // Add the SoundModule
 
 // Angular Material modules
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -48,14 +52,13 @@ import { ApiErrorInterceptor } from './interceptors/api-error.interceptor';
 import { TypeValidationInterceptor } from './interceptors/type-validation.interceptor';
 import { ProjectConfigService } from './services/project-config.service';
 import { TypeDiagnosticsService } from './services/type-diagnostics.service';
+import { LoggerService } from './services/logger.service'; // Import LoggerService
 
 // Feature modules
 import { ConnectionStatusIndicatorModule } from './components/connection-status-indicator/connection-status-indicator.module';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -66,10 +69,11 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
-    
+
     // Angular Material Modules via shared module
     MaterialModule,
-    // Individual Material modules for backward compatibility
+
+    // Individual Material modules
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
@@ -85,36 +89,39 @@ import { ConnectionStatusIndicatorModule } from './components/connection-status-
     MatProgressBarModule,
     DragDropModule,
     MatSlideToggleModule,
-    KanbanBoardModule, // This already includes KanbanBoardComponent
+
+    // Feature modules
+    SecurityDashboardModule,
+    KanbanBoardModule,
     MetricModule,
     HomeModule,
     NavigationModule,
     NotFoundModule,
     FooterModule,
-    LoggerModule, // Fixed: was LoggerPageModule
+    LoggerModule,
     DocumentationModule,
-    SecurityDashboardModule,
     ConnectionStatusIndicatorModule,
-    SoundModule // Import SoundModule here
+    SoundModule,
   ],
   providers: [
     DatePipe, // Add DatePipe to providers
     ErrorService,
     TypeDiagnosticsService,
     ProjectConfigService,
+    LoggerService, // Add LoggerService to the providers array
     // Order matters for HTTP interceptors to avoid circular dependencies
-    { 
-      provide: HTTP_INTERCEPTORS, 
-      useClass: ApiErrorInterceptor, 
-      multi: true 
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ApiErrorInterceptor,
+      multi: true,
     },
-    { 
-      provide: HTTP_INTERCEPTORS, 
-      useClass: TypeValidationInterceptor, 
-      multi: true 
-    }
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TypeValidationInterceptor,
+      multi: true,
+    },
   ],
   schemas: [NO_ERRORS_SCHEMA, CUSTOM_ELEMENTS_SCHEMA], // Add schemas to be more permissive with templates
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

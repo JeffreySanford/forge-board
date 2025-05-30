@@ -1,14 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SoundService, SoundType } from '../../core/sounds/sound.service';
+import { MatIconModule } from '@angular/material/icon';
 
 /**
  * Example component demonstrating the new sound system capabilities
  */
 @Component({
   selector: 'app-sound-demo',
-  standalone: true,
-  imports: [CommonModule],
   template: `
     <div class="sound-demo">
       <h2>Sound System Demo</h2>
@@ -135,7 +134,9 @@ import { SoundService, SoundType } from '../../core/sounds/sound.service';
       background-color: #ffebee;
       border: 1px solid #f44336;
     }
-  `]
+  `],
+  imports: [CommonModule, MatIconModule],
+  standalone: true
 })
 export class SoundDemoComponent implements OnInit {
   // Sound settings

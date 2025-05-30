@@ -16,7 +16,7 @@ export const config = {
     enableConsole: process.env.ENABLE_CONSOLE_LOGS !== 'false',
   },
   mongo: {
-    uri: process.env.MONGO_URI || 'mongodb://localhost/forgeboard',
+    uri: process.env.MONGO_URI || 'mongodb://localhost/forge-board',
   }
 };
 

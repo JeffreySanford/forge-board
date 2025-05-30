@@ -1,38 +1,74 @@
 <div class="security-dashboard-container">
   <h1>Security Dashboard</h1>
-  <div class="dashboard-cards">
-    <mat-card class="dashboard-card sbom-card">
-      <mat-card-title>📦 SBOM Status</mat-card-title>
-      <mat-card-content>
-        <p>Displays the status of the Software Bill of Materials (SBOM) for each build.</p>
-      </mat-card-content>
-    </mat-card>
-    <mat-card class="dashboard-card sca-card">
-      <mat-card-title>🐛 SCA Scan Results</mat-card-title>
-      <mat-card-content>
-        <p>Highlights known vulnerabilities in components, categorized by severity.</p>
-      </mat-card-content>
-    </mat-card>
-    <mat-card class="dashboard-card zap-card">
-      <mat-card-title>⚡ OWASP ZAP Feedback</mat-card-title>
-      <mat-card-content>
-        <p>Shows findings from dynamic security tests (XSS, SQLi, etc.).</p>
-      </mat-card-content>
-    </mat-card>
-    <mat-card class="dashboard-card supply-chain-card">
-      <mat-card-title>🔐 Supply Chain Signature Verification</mat-card-title>
-      <mat-card-content>
-        <p>Verifies supply chain security checks (artifact signing, signature status).</p>
-      </mat-card-content>
-    </mat-card>
-    <mat-card class="dashboard-card fedramp-card">
-      <mat-card-title>🛡️ FedRAMP 20X Compliance</mat-card-title>
-      <mat-card-content>
-        <p>Shows compliance status with FedRAMP 20X requirements.</p>
-      </mat-card-content>
-    </mat-card>
+
+  <!-- Masthead for D3.js System Architecture Map -->
+  <div class="masthead-container">
+    <h2>Live Security Architecture Overview</h2>
+    <!-- Placeholder for the D3.js map component -->
+    <div class="architecture-map-placeholder">
+      [Security Architecture Map - D3.js Visualization Placeholder]
+    </div>
   </div>
-  <div class="dashboard-note">
-    <p>All data updates in real time. Click cards for details and drill-down.</p>
-  </div>
+
+  <mat-tab-group animationDuration="0ms" mat-align-tabs="center">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>bug_report</mat-icon>
+        <span class="tab-label">Vulnerabilities</span>
+      </ng-template>
+      <router-outlet></router-outlet>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>warning</mat-icon>
+        <span class="tab-label">Security Alerts</span>
+      </ng-template>
+      <app-security-alerts></app-security-alerts>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>emergency</mat-icon>
+        <span class="tab-label">Incident Response</span>
+      </ng-template>
+      <app-incident-response></app-incident-response>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>assignment_turned_in</mat-icon>
+        <span class="tab-label">Compliance</span>
+      </ng-template>
+      <app-compliance-status></app-compliance-status>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>devices</mat-icon>
+        <span class="tab-label">Asset Inventory</span>
+      </ng-template>
+      <app-asset-inventory></app-asset-inventory>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>security</mat-icon>
+        <span class="tab-label">Threat Intelligence</span>
+      </ng-template>
+      <app-threat-intelligence></app-threat-intelligence>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>admin_panel_settings</mat-icon>
+        <span class="tab-label">Access Control</span>
+      </ng-template>
+      <app-access-control></app-access-control>
+    </mat-tab>
+  </mat-tab-group>
+
+  <app-security-footer
+    [tiles]="(allTiles$ | async) || []"
+  ></app-security-footer>
 </div>

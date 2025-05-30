@@ -25,7 +25,6 @@
     "json": true,
     "jsonc": true
   },
-
   "github.copilot.chat": {
     "modelProvider": "github-copilot",
     "defaultModelConfiguration": {
@@ -50,5 +49,16 @@
   "github.copilot.editor": {
     "enableAutoCompletions": true,
     "enableCodeEngine": true
-  }
+  },
+  "files.associations": {
+    "*.ts": "typescript",
+    "*.tsx": "typescriptreact",
+    "*.js": "javascript",
+    "*.jsx": "javascriptreact",
+    "*.html": "html",
+    "*.scss": "scss",
+    "*.css": "css"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
 }

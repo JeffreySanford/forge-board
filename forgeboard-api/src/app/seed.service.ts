@@ -44,7 +44,7 @@ export interface SeedStatus {
 
 const SEED_DATA_DIR = path.join(__dirname, 'seed');
 // Fallback paths for different environments
-const ALTERNATIVE_SEED_DIR = path.join(process.cwd(), 'forgeboard-api', 'src', 'app', 'seed');
+const ALTERNATIVE_SEED_DIR = path.join(process.cwd(), 'forge-board-api', 'src', 'app', 'seed');
 const MOCKS_SEED_DIR = path.join(__dirname, 'mocks');
 
 const KANBAN_EXAMPLE_FILE = path.join(SEED_DATA_DIR, 'kanban-example-boards.json');

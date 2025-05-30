@@ -33,7 +33,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // Add ViewChild reference to the NavigationComponent
   @ViewChild(NavigationComponent) navigationComponent!: NavigationComponent;
   
-  title = 'forgeboard-frontend';
+  title = 'forge-board-frontend';
   projectName = 'PROJECT: FORGEBOARD'; // Default fallback
   currentDate = new Date().toLocaleDateString();
   todayDate = new Date().toLocaleDateString();

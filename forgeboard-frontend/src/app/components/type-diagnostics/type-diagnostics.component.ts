@@ -1,29 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { TypeDiagnosticsService, TypeDiagnosticEvent } from '../../services/type-diagnostics.service';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'app-type-diagnostics',
   templateUrl: './type-diagnostics.component.html',
   styleUrls: ['./type-diagnostics.component.scss'],
-  standalone: true, // Set standalone to true
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatIconModule,
-    MatButtonModule,
-    MatBadgeModule,
-    MatExpansionModule,
-    MatChipsModule
-  ]
+  standalone: false,
 })
+
 export class TypeDiagnosticsComponent implements OnInit, OnDestroy {
   events: TypeDiagnosticEvent[] = [];
   filteredEvents: TypeDiagnosticEvent[] = [];

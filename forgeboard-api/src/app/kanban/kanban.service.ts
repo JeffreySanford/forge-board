@@ -45,7 +45,7 @@ export class KanbanService {
       }
 
       // Load ForgeBoard project stories
-      const forgeboardStoriesPath = path.join(__dirname, '../../mocks/kanban-forgeboard-stories.json');
+      const forgeboardStoriesPath = path.join(__dirname, '../../mocks/kanban-forge-board-stories.json');
       if (fs.existsSync(forgeboardStoriesPath)) {
         const storiesData = JSON.parse(fs.readFileSync(forgeboardStoriesPath, 'utf8'));
         this.boards.push(...storiesData);

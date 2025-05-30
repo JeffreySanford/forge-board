@@ -1,7 +1,15 @@
 /**
  * Available tile types
  */
-export type TileType = 'health' | 'memory' | 'metrics' | 'connection' | 'logs' | 'uptime' | 'activity' | 'kanban';
+export type TileType =
+  | 'health'
+  | 'memory'
+  | 'metrics'
+  | 'connection'
+  | 'logs'
+  | 'uptime'
+  | 'activity'
+  | 'kanban';
 
 /**
  * Tile visibility settings
@@ -45,6 +53,8 @@ export interface Tile {
   type: TileType;
   visible: boolean;
   position: number;
+  row: number; // <-- Added
+  col: number; // <-- Added
 }
 
 /**
