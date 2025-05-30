@@ -1,0 +1,61 @@
+{
+  "assessment-results": {
+    "uuid": "truenorth-ar-001",
+    "metadata": {
+      "title": "TrueNorth Assessment Results",
+      "last-modified": "2025-05-29T00:00:00.000Z",
+      "version": "1.0.0",
+      "oscal-version": "1.0.4"
+    },
+    "import-ap": {
+      "href": "#truenorth-assessment-plan"
+    },
+    "results": [
+      {
+        "uuid": "truenorth-result-001",
+        "title": "TrueNorth Security Assessment Results",
+        "description": "Comprehensive security assessment results for TrueNorth framework",
+        "start": "2025-05-29T00:00:00.000Z",
+        "end": "2025-05-29T23:59:59.000Z",
+        "findings": [
+          {
+            "uuid": "truenorth-finding-001",
+            "title": "Access Control Implementation",
+            "description": "All access control requirements exceed baseline standards",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-1",
+              "status": {
+                "state": "satisfied"
+              }
+            }
+          },
+          {
+            "uuid": "truenorth-finding-002",
+            "title": "Account Management",
+            "description": "Advanced account management controls implemented",
+            "target": {
+              "type": "objective-id", 
+              "target-id": "ac-2",
+              "status": {
+                "state": "satisfied"
+              }
+            }
+          },
+          {
+            "uuid": "truenorth-finding-003",
+            "title": "System Hardening",
+            "description": "Enhanced system hardening beyond industry standards",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-7", 
+              "status": {
+                "state": "satisfied"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

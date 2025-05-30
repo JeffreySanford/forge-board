@@ -1,0 +1,74 @@
+{
+  "system-security-plan": {
+    "uuid": "truenorth-ssp-001",
+    "metadata": {
+      "title": "TrueNorth System Security Plan",
+      "last-modified": "2025-05-29T00:00:00.000Z",
+      "version": "1.0.0",
+      "oscal-version": "1.0.4",
+      "parties": [
+        {
+          "uuid": "truenorth-party-001",
+          "type": "organization",
+          "name": "TrueNorth Insights",
+          "short-name": "TNI"
+        }
+      ]
+    },
+    "import-profile": {
+      "href": "#truenorth-profile"
+    },
+    "system-characteristics": {
+      "system-ids": [
+        {
+          "identifier-type": "https://ietf.org/rfc/rfc4122",
+          "id": "truenorth-system-001"
+        }
+      ],
+      "system-name": "TrueNorth Security Framework",
+      "description": "Custom security framework that exceeds all other standards",
+      "security-sensitivity-level": "high",
+      "system-information": {
+        "information-types": [
+          {
+            "uuid": "truenorth-info-001",
+            "title": "Sensitive Security Data",
+            "description": "Highly sensitive security configuration and assessment data",
+            "confidentiality-impact": {
+              "base": "high"
+            },
+            "integrity-impact": {
+              "base": "high"
+            },
+            "availability-impact": {
+              "base": "high"
+            }
+          }
+        ]
+      },
+      "authorization-boundary": {
+        "description": "TrueNorth security framework boundary includes all system components"
+      }
+    },
+    "control-implementation": {
+      "description": "TrueNorth control implementations exceed industry standards",
+      "implemented-requirements": [
+        {
+          "uuid": "truenorth-req-001",
+          "control-id": "ac-1",
+          "description": "Access Control Policy and Procedures - Enhanced TrueNorth Implementation"
+        },
+        {
+          "uuid": "truenorth-req-002", 
+          "control-id": "ac-2",
+          "description": "Account Management - Advanced TrueNorth Controls"
+        },
+        {
+          "uuid": "truenorth-req-003",
+          "control-id": "cm-7",
+          "description": "Least Functionality - TrueNorth Hardening Standards"
+        }
+      ]
+    }
+  }
+}

@@ -20,21 +20,21 @@ import (
 
 // ANSI color codes - Patriotic red, white, blue theme
 const (
-	ColorReset      = "\033[0m"
-	ColorRed        = "\033[91m"  // Bright red
-	ColorGreen      = "\033[92m"  // Bright green
-	ColorYellow     = "\033[93m"  // Bright yellow
-	ColorBlue       = "\033[94m"  // Bright blue
-	ColorMagenta    = "\033[95m"  // Bright magenta
-	ColorCyan       = "\033[96m"  // Bright cyan
-	ColorWhite      = "\033[97m"  // Bright white
-	ColorBold       = "\033[1m"
-	ColorPurple     = "\033[95m"
+	ColorReset   = "\033[0m"
+	ColorRed     = "\033[91m" // Bright red
+	ColorGreen   = "\033[92m" // Bright green
+	ColorYellow  = "\033[93m" // Bright yellow
+	ColorBlue    = "\033[94m" // Bright blue
+	ColorMagenta = "\033[95m" // Bright magenta
+	ColorCyan    = "\033[96m" // Bright cyan
+	ColorWhite   = "\033[97m" // Bright white
+	ColorBold    = "\033[1m"
+	ColorPurple  = "\033[95m"
 	// Patriotic theme colors
-	ColorPatriotRed   = "\033[38;5;196m"  // Bright patriotic red
-	ColorPatriotBlue  = "\033[38;5;21m"   // Deep patriotic blue
-	ColorPatriotWhite = "\033[97m"        // Pure white
-	ColorStarSpangled = "\033[38;5;220m"  // Gold/yellow for stars
+	ColorPatriotRed   = "\033[38;5;196m" // Bright patriotic red
+	ColorPatriotBlue  = "\033[38;5;21m"  // Deep patriotic blue
+	ColorPatriotWhite = "\033[97m"       // Pure white
+	ColorStarSpangled = "\033[38;5;220m" // Gold/yellow for stars
 )
 
 // OscalScan represents a scan profile and its configuration
@@ -293,7 +293,7 @@ func main() {
 	fmt.Printf("\n%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
 	fmt.Printf("%s🛡️ OSCAL SECURITY COMPLIANCE ANALYSIS COMPLETE 🛡️%s\n", ColorBold+ColorPatriotRed, ColorReset)
 	fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
-	
+
 	successful := 0
 	withFailures := 0
 	failed := 0
@@ -303,32 +303,32 @@ func main() {
 
 	for _, result := range results {
 		fmt.Printf("\n%s🔍 Profile: %s%s%s\n", ColorBold, ColorPatriotWhite, result.Profile, ColorReset)
-		
+
 		if result.Description != "" {
 			fmt.Printf("   %sDescription:%s %s\n", ColorPatriotBlue, ColorReset, result.Description)
 		}
 
 		if result.Profile == "truenorth" {
 			if result.Results.ExitCode == 0 {
-				fmt.Printf("   %s✅ Status:%s %sTrueNorth validation completed successfully%s\n", 
+				fmt.Printf("   %s✅ Status:%s %sTrueNorth validation completed successfully%s\n",
 					ColorPatriotBlue, ColorReset, ColorGreen, ColorReset)
 				successful++
 			} else {
-				fmt.Printf("   %s❌ Status:%s %sTrueNorth validation failed%s\n", 
+				fmt.Printf("   %s❌ Status:%s %sTrueNorth validation failed%s\n",
 					ColorPatriotBlue, ColorReset, ColorRed, ColorReset)
 				failed++
 			}
 		} else {
 			if result.Results.ExitCode == 0 {
-				fmt.Printf("   %s✅ Status:%s %sScan completed successfully%s\n", 
+				fmt.Printf("   %s✅ Status:%s %sScan completed successfully%s\n",
 					ColorPatriotBlue, ColorReset, ColorGreen, ColorReset)
 				successful++
 			} else if result.Results.ExitCode == 2 {
-				fmt.Printf("   %s⚠️  Status:%s %sScan completed with rule failures%s\n", 
+				fmt.Printf("   %s⚠️  Status:%s %sScan completed with rule failures%s\n",
 					ColorPatriotBlue, ColorReset, ColorYellow, ColorReset)
 				withFailures++
 			} else {
-				fmt.Printf("   %s❌ Status:%s %sScan failed (Exit code: %d)%s\n", 
+				fmt.Printf("   %s❌ Status:%s %sScan failed (Exit code: %d)%s\n",
 					ColorPatriotBlue, ColorReset, ColorRed, result.Results.ExitCode, ColorReset)
 				failed++
 			}
@@ -344,7 +344,7 @@ func main() {
 		}
 
 		if result.Results.XMLPath != "" {
-			fmt.Printf("   %s📄 Reports:%s XML, HTML, JSON, Markdown available\n", 
+			fmt.Printf("   %s📄 Reports:%s XML, HTML, JSON, Markdown available\n",
 				ColorPatriotBlue, ColorReset)
 		}
 
@@ -475,31 +475,11 @@ func runOscapScan(profile *OscalScan, oscalDir string, scapContentFile string, v
 	args := []string{
 		"xccdf", "eval",
 		"--profile", profile.ProfileID,
-		"--results", resultsFile, // This will be translated for WSL if needed
-		"--report", reportFile, // This will be translated for WSL if needed
-		scapContentFile, // This will be translated for WSL if needed
+		"--results", resultsFile,
+		"--report", reportFile,
+		scapContentFile,
 	}
-
-	if runtime.GOOS == "windows" {
-		fmt.Printf("%sAttempting to run 'oscap' via WSL on Windows. Ensure WSL and OpenSCAP are installed in your WSL distribution.%s\n", ColorYellow, ColorReset)
-
-		// Remove unused variables
-		// absResultsFile, errResults := filepath.Abs(resultsFile)
-		// absReportFile, errReport := filepath.Abs(reportFile)
-		absScapContentFile, errScapContent := filepath.Abs(scapContentFile)
-
-		if errScapContent != nil {
-			fmt.Printf("%sError converting file paths to absolute for WSL: %v%s\n", ColorRed, errScapContent, ColorReset)
-			profile.Results.ExitCode = 1
-			profile.Results.EndTime = time.Now()
-			return
-		}
-
-		args[7] = convertWindowsPathToWSL(absScapContentFile)
-		cmd = exec.Command("wsl", append([]string{"oscap"}, args...)...)
-	} else {
-		cmd = exec.Command("oscap", args...)
-	}
+	cmd = exec.Command("oscap", args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -515,7 +495,7 @@ func runOscapScan(profile *OscalScan, oscalDir string, scapContentFile string, v
 			profile.Results.ExitCode = exitErr.ExitCode()
 			fmt.Printf("%s  oscap command failed. Stderr: %s%s\n", ColorRed, stderr.String(), ColorReset)
 		} else {
-			// Command could not be started (e.g., "oscap" not found, or "wsl" not found)
+			// Command could not be started (e.g., "oscap" not found)
 			profile.Results.ExitCode = 1
 			fmt.Printf("%s  Failed to run oscap command: %v. Stderr: %s%s\n", ColorRed, err, stderr.String(), ColorReset)
 		}
@@ -597,13 +577,8 @@ func runOscapScan(profile *OscalScan, oscalDir string, scapContentFile string, v
 		}
 		fmt.Printf("%sProfile [%s]: Exporting PDF/Markdown via Puppeteer...%s\n", profile.Color, profile.Profile, ColorReset)
 		var exportCmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			exportCmd = exec.Command("node", exportScript)
-			exportCmd.Dir = oscalDir + "/.." // scripts dir
-		} else {
-			exportCmd = exec.Command("node", exportScript)
-			exportCmd.Dir = oscalDir + "/.." // scripts dir
-		}
+		exportCmd = exec.Command("node", exportScript)
+		exportCmd.Dir = oscalDir + "/.." // scripts dir
 		var exportOut, exportErr bytes.Buffer
 		exportCmd.Stdout = &exportOut
 		exportCmd.Stderr = &exportErr
@@ -630,12 +605,7 @@ func runTrueNorthScan(profile *OscalScan, oscalDir string) {
 
 	if fileExists(scriptPath) {
 		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			fmt.Printf("%sAttempting to run '%s' via WSL on Windows. Ensure WSL and bash are available.%s\n", ColorYellow, scriptName, ColorReset)
-			cmd = exec.Command("wsl", "bash", scriptPath)
-		} else {
-			cmd = exec.Command("/bin/bash", scriptPath)
-		}
+		cmd = exec.Command("/bin/bash", scriptPath)
 
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -729,7 +699,7 @@ func printOverallProgress(current, total int, profileName string, final bool) {
 
 	if final && current == total {
 		fmt.Printf("\n%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
-		fmt.Printf("%s🎯 SCAN COMPLETION: [%s%s%s] %d/%d (%.1f%%) %s✅ COMPLETE%s\n", 
+		fmt.Printf("%s🎯 SCAN COMPLETION: [%s%s%s] %d/%d (%.1f%%) %s✅ COMPLETE%s\n",
 			ColorBold+ColorPatriotRed, ColorPatriotWhite, bar, ColorPatriotRed, current, total, percentage, ColorStarSpangled, ColorReset)
 		fmt.Printf("%s%s\n", ColorBold+ColorPatriotBlue, strings.Repeat("═", 80))
 	}
