@@ -120,26 +120,26 @@ The PMO detailed significant improvements to the Agency Authorization process:
 ```mermaid
 gantt
     title FedRAMP Transformation Roadmap
-    dateFormat  YYYY-Q[Q]
-    axisFormat %Y-Q%q
+    dateFormat YYYY-MM-DD
+    axisFormat %Y Q%q
 
     section OSCAL Implementation
-    OSCAL Templates Release                      :done, 2025-Q2, 2025-Q2
-    OSCAL Submission Requirement                 :active, 2025-Q3, 2026-Q1
-    OSCAL-Only Workflow                          :2026-Q1, 2026-Q4
+    OSCAL Templates Release                      :done, 2025-04-01, 2025-06-30
+    OSCAL Submission Requirement                 :active, 2025-07-01, 2026-03-31
+    OSCAL-Only Workflow                          :2026-01-01, 2026-12-31
 
     section Assessment Modernization
-    Automated Evidence Collection Pilot          :active, 2025-Q2, 2025-Q3
-    Continuous Authorization Framework           :2025-Q3, 2026-Q2
-    3PAO Modernization Requirements              :2025-Q4, 2026-Q2
-    Real-time Assessment Capability              :2026-Q1, 2026-Q4
+    Automated Evidence Collection Pilot          :active, 2025-04-01, 2025-09-30
+    Continuous Authorization Framework           :2025-07-01, 2026-06-30
+    3PAO Modernization Requirements              :2025-10-01, 2026-06-30
+    Real-time Assessment Capability              :2026-01-01, 2026-12-31
 
     section 20X Implementation
-    FedRAMP 20X Guidance Release                 :done, 2025-Q2, 2025-Q2
-    KSI Framework Implementation                 :active, 2025-Q3, 2025-Q4
-    SBOM Requirements Enforcement                :2025-Q3, 2026-Q1
-    Zero Trust Controls Integration              :2025-Q4, 2026-Q2
-    Continuous Authorization Transition          :2026-Q1, 2026-Q4
+    FedRAMP 20X Guidance Release                 :done, 2025-04-01, 2025-06-30
+    KSI Framework Implementation                 :active, 2025-07-01, 2025-12-31
+    SBOM Requirements Enforcement                :2025-07-01, 2026-03-31
+    Zero Trust Controls Integration              :2025-10-01, 2026-06-30
+    Continuous Authorization Transition          :2026-01-01, 2026-12-31
 ```
 
 ## Key Challenges & Opportunities

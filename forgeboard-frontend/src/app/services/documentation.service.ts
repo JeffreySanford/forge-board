@@ -19,7 +19,7 @@ export interface DocCategory {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DocumentationService {
   private readonly basePath = 'assets/documentation/';
@@ -36,37 +36,113 @@ export class DocumentationService {
    */
   private initializeDocumentation(): void {
     // Try to fetch the documentation index first
-    this.http.get<{files: DocFile[], categories: DocCategory[]}>(`${this.basePath}index.json`)
+    this.http
+      .get<{ files: DocFile[]; categories: DocCategory[] }>(
+        `${this.basePath}index.json`
+      )
       .pipe(
         catchError(() => {
           // If index.json doesn't exist, load a static list for now
           // In a production environment, we would generate this index during build
           // or have the backend generate it dynamically
           const staticFiles: DocFile[] = [
-            { name: 'FRONTEND-API-ARCHITECTURE.md', path: 'FRONTEND-API-ARCHITECTURE.md', title: 'Frontend-API Architecture' },
+            {
+              name: 'FRONTEND-API-ARCHITECTURE.md',
+              path: 'FRONTEND-API-ARCHITECTURE.md',
+              title: 'Frontend-API Architecture',
+            },
             { name: 'LAYOUT.md', path: 'LAYOUT.md', title: 'Layout System' },
-            { name: 'VISUAL-STANDARDS.md', path: 'VISUAL-STANDARDS.md', title: 'Visual Standards' },
-            { name: 'API-DOCUMENTATION.md', path: 'API-DOCUMENTATION.md', title: 'API Documentation' },
-            { name: 'AUTHENTICATION.md', path: 'AUTHENTICATION.md', title: 'Authentication' },
-            { name: 'CODING-STANDARDS.md', path: 'CODING-STANDARDS.md', title: 'Coding Standards' },
-            { name: 'TEST-PATTERNS.md', path: 'TEST-PATTERNS.md', title: 'Test Patterns' },
-            
+            {
+              name: 'VISUAL-STANDARDS.md',
+              path: 'VISUAL-STANDARDS.md',
+              title: 'Visual Standards',
+            },
+            {
+              name: 'API-DOCUMENTATION.md',
+              path: 'API-DOCUMENTATION.md',
+              title: 'API Documentation',
+            },
+            {
+              name: 'AUTHENTICATION.md',
+              path: 'AUTHENTICATION.md',
+              title: 'Authentication',
+            },
+            {
+              name: 'CODING-STANDARDS.md',
+              path: 'CODING-STANDARDS.md',
+              title: 'Coding Standards',
+            },
+            {
+              name: 'TEST-PATTERNS.md',
+              path: 'TEST-PATTERNS.md',
+              title: 'Test Patterns',
+            },
+            {
+              name: 'EXCEEDING-STANDARDS.md',
+              path: 'EXCEEDING-STANDARDS.md',
+              title: 'Exceeding Standards Playbook',
+            },
+            {
+              name: 'PROJECT-STATUS.md',
+              path: 'PROJECT-STATUS.md',
+              title: 'Project Status Report',
+            },
+
             // Add known subdirectories
-            { name: 'developer', path: 'developer/', title: 'Developer Guides', isDirectory: true },
-            { name: 'security', path: 'security/', title: 'Security Documentation', isDirectory: true },
-            { name: 'FedRAMP', path: 'FedRAMP/', title: 'FedRAMP Documentation', isDirectory: true },
-            { name: 'marketing', path: 'marketing/', title: 'Marketing Material', isDirectory: true },
-            { name: 'small-business', path: 'small-business/', title: 'Small Business', isDirectory: true },
+            {
+              name: 'developer',
+              path: 'developer/',
+              title: 'Developer Guides',
+              isDirectory: true,
+            },
+            {
+              name: 'security',
+              path: 'security/',
+              title: 'Security Documentation',
+              isDirectory: true,
+            },
+            {
+              name: 'fedramp',
+              path: 'fedramp/',
+              title: 'FedRAMP Documentation',
+              isDirectory: true,
+            },
+            {
+              name: 'marketing',
+              path: 'marketing/',
+              title: 'Marketing Material',
+              isDirectory: true,
+            },
+            {
+              name: 'small-business',
+              path: 'small-business/',
+              title: 'Small Business',
+              isDirectory: true,
+            },
+
+            // Add specific FedRAMP document files
+            {
+              name: 'PILLAR_MATRIX_DECONSTRUCTED.md',
+              path: 'fedramp/PILLAR_MATRIX_DECONSTRUCTED.md',
+              title: 'Pillar-to-Doc Matrix Deconstructed',
+              category: 'fedramp',
+            },
+            {
+              name: 'FEDRAMP_DEPLOYMENT_CONSIDERATIONS.md',
+              path: 'fedramp/FEDRAMP_DEPLOYMENT_CONSIDERATIONS.md',
+              title: 'FedRAMP Deployment Considerations',
+              category: 'fedramp',
+            },
           ];
 
           return of({ files: staticFiles, categories: [] });
         })
       )
-      .subscribe(data => {
+      .subscribe((data) => {
         this.docFiles = data.files;
         this.docCategories = data.categories;
         this.initialized = true;
-        
+
         // Organize files into categories if categories are empty
         if (data.categories.length === 0) {
           this.organizeFilesIntoCategories();
@@ -79,36 +155,36 @@ export class DocumentationService {
    */
   private organizeFilesIntoCategories(): void {
     const categories = new Map<string, DocCategory>();
-    
+
     // Create "General" category for root files
     categories.set('general', {
       name: 'general',
       title: 'General Documentation',
-      files: []
+      files: [],
     });
-    
+
     // Process each file
-    this.docFiles.forEach(file => {
+    this.docFiles.forEach((file) => {
       if (file.isDirectory) {
         // Create a category for each directory
         categories.set(file.name, {
           name: file.name,
           title: file.title,
-          files: []
+          files: [],
         });
       } else {
         // Determine category from path
         const path = file.path;
         const category = path.includes('/') ? path.split('/')[0] : 'general';
-        
+
         if (!categories.has(category) && category !== 'general') {
           categories.set(category, {
             name: category,
             title: this.formatCategoryTitle(category),
-            files: []
+            files: [],
           });
         }
-        
+
         // Add to appropriate category
         if (path.includes('/') && categories.has(category)) {
           const categoryObj = categories.get(category);
@@ -123,7 +199,7 @@ export class DocumentationService {
         }
       }
     });
-    
+
     this.docCategories = Array.from(categories.values());
   }
 
@@ -133,7 +209,7 @@ export class DocumentationService {
   private formatCategoryTitle(category: string): string {
     return category
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
@@ -142,7 +218,7 @@ export class DocumentationService {
    */
   getDocumentationList(): Observable<DocFile[]> {
     if (!this.initialized) {
-      return new Observable<DocFile[]>(observer => {
+      return new Observable<DocFile[]>((observer) => {
         const checkInterval = setInterval(() => {
           if (this.initialized) {
             clearInterval(checkInterval);
@@ -150,7 +226,7 @@ export class DocumentationService {
             observer.complete();
           }
         }, 100);
-        
+
         // Safety timeout
         setTimeout(() => {
           if (!observer.closed) {
@@ -161,7 +237,7 @@ export class DocumentationService {
         }, 5000);
       });
     }
-    
+
     return of(this.docFiles);
   }
 
@@ -170,7 +246,7 @@ export class DocumentationService {
    */
   getDocumentationCategories(): Observable<DocCategory[]> {
     if (!this.initialized) {
-      return new Observable<DocCategory[]>(observer => {
+      return new Observable<DocCategory[]>((observer) => {
         const checkInterval = setInterval(() => {
           if (this.initialized) {
             clearInterval(checkInterval);
@@ -178,7 +254,7 @@ export class DocumentationService {
             observer.complete();
           }
         }, 100);
-        
+
         // Safety timeout
         setTimeout(() => {
           if (!observer.closed) {
@@ -189,7 +265,7 @@ export class DocumentationService {
         }, 5000);
       });
     }
-    
+
     return of(this.docCategories);
   }
 
@@ -198,36 +274,40 @@ export class DocumentationService {
    */
   getDocumentationByName(filename: string): Observable<string> {
     const path = this.basePath + filename;
-    return this.http.get(path, { responseType: 'text' })
-      .pipe(
-        catchError(err => {
-          console.error(`Failed to load documentation file: ${filename}`, err);
-          return of(`# Error Loading Documentation\n\nUnable to load the requested documentation file: **${filename}**.\n\nPlease check that the file exists in the assets/documentation directory.`);
-        })
-      );
+    return this.http.get(path, { responseType: 'text' }).pipe(
+      catchError((err) => {
+        console.error(`Failed to load documentation file: ${filename}`, err);
+        return of(
+          `# Error Loading Documentation\n\nUnable to load the requested documentation file: **${filename}**.\n\nPlease check that the file exists in the assets/documentation directory.`
+        );
+      })
+    );
   }
 
   /**
    * Get documentation file content by path
    */
   getDocumentationByPath(path: string): Observable<string> {
-    const fullPath = path.startsWith(this.basePath) ? path : this.basePath + path;
-    return this.http.get(fullPath, { responseType: 'text' })
-      .pipe(
-        catchError(err => {
-          console.error(`Failed to load documentation file: ${path}`, err);
-          return of(`# Error Loading Documentation\n\nUnable to load the requested documentation file at path: **${path}**.\n\nPlease check that the file exists in the assets/documentation directory.`);
-        })
-      );
+    const fullPath = path.startsWith(this.basePath)
+      ? path
+      : this.basePath + path;
+    return this.http.get(fullPath, { responseType: 'text' }).pipe(
+      catchError((err) => {
+        console.error(`Failed to load documentation file: ${path}`, err);
+        return of(
+          `# Error Loading Documentation\n\nUnable to load the requested documentation file at path: **${path}**.\n\nPlease check that the file exists in the assets/documentation directory.`
+        );
+      })
+    );
   }
-  
+
   /**
    * Get files in a specific category
    */
   getFilesInCategory(category: string): Observable<DocFile[]> {
     return this.getDocumentationCategories().pipe(
-      map(categories => {
-        const foundCategory = categories.find(c => c.name === category);
+      map((categories) => {
+        const foundCategory = categories.find((c) => c.name === category);
         return foundCategory ? foundCategory.files : [];
       })
     );
