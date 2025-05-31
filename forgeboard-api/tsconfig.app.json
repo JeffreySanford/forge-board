@@ -4,7 +4,9 @@
     "outDir": "../dist/out-tsc",
     "module": "CommonJS",
     "moduleResolution": "node",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "target": "es2021",
@@ -12,8 +14,12 @@
     "declaration": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.json"
+    "src/app/**/*.ts",
+    "src/app/**/*.json"
   ],
-  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+  "exclude": [
+    "jest.config.ts",
+    "src/app/**/*.spec.ts",
+    "src/app/**/*.test.ts"
+  ]
 }

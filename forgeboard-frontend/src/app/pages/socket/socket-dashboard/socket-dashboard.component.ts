@@ -6,14 +6,14 @@ import { SocketRegistryService } from '../../../services/socket-registry.service
   selector: 'app-socket-dashboard',
   templateUrl: './socket-dashboard.component.html',
   styleUrls: ['./socket-dashboard.component.scss'],
-  standalone: false // Ensure component is not standalone
+  standalone: false, // Ensure component is not standalone
 })
 export class SocketDashboardComponent implements OnInit {
   activeSockets: SocketInfo[] = []; // Add activeSockets property
   isLoading = false;
   error: string | null = null;
 
-  constructor(private socketRegistryService: SocketRegistryService) { } // Inject service if needed
+  constructor(private socketRegistryService: SocketRegistryService) {} // Inject service if needed
 
   ngOnInit(): void {
     // Optionally load data or set up subscriptions here
@@ -31,10 +31,17 @@ export class SocketDashboardComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error fetching active sockets for dashboard:', err);
-        this.error = 'Failed to load socket data for dashboard.';
+        console.warn(
+          'Socket dashboard: Unable to connect to socket registry service. This may be expected if the backend is not running.',
+          {
+            status: err.status,
+            message: err.message,
+          }
+        );
+        this.error =
+          'Unable to connect to socket service. Please ensure the backend is running.';
         this.isLoading = false;
-      }
+      },
     });
   }
 }

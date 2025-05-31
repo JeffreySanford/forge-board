@@ -6,14 +6,14 @@
 import { Logger, LoggerService } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { shouldEnableConsoleLogging } from './bootstrap';
+import { config, shouldEnableConsoleLogging } from './bootstrap';
 
 /**
  * Custom logger implementation with filtering capabilities
  */
 class FilteredLogger implements LoggerService {
   private readonly enableConsoleOutput: boolean;
-  
+
   constructor() {
     // Read from environment config
     this.enableConsoleOutput = shouldEnableConsoleLogging();
@@ -24,9 +24,11 @@ class FilteredLogger implements LoggerService {
    */
   private shouldFilter(context: string, message: string): boolean {
     // Skip log messages about receiving log entries
-    if (context === 'LogsController' && 
-        message.includes('Received') && 
-        message.includes('log entries')) {
+    if (
+      context === 'LogsController' &&
+      message.includes('Received') &&
+      message.includes('log entries')
+    ) {
       return true;
     }
     return false;
@@ -37,27 +39,48 @@ class FilteredLogger implements LoggerService {
     if (context && this.shouldFilter(context, String(message))) {
       return;
     }
-    console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     LOG [${context}] ${message}`);
+    console.log(
+      `[Nest] ${
+        process.pid
+      }  - ${new Date().toLocaleString()}     LOG [${context}] ${message}`
+    );
   }
 
   error(message: unknown, trace?: string, context?: string): void {
     if (!this.enableConsoleOutput) return;
-    console.error(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     ERROR [${context}] ${message}`, trace);
+    console.error(
+      `[Nest] ${
+        process.pid
+      }  - ${new Date().toLocaleString()}     ERROR [${context}] ${message}`,
+      trace
+    );
   }
 
   warn(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
-    console.warn(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     WARN [${context}] ${message}`);
+    console.warn(
+      `[Nest] ${
+        process.pid
+      }  - ${new Date().toLocaleString()}     WARN [${context}] ${message}`
+    );
   }
 
   debug(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
-    console.debug(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     DEBUG [${context}] ${message}`);
+    console.debug(
+      `[Nest] ${
+        process.pid
+      }  - ${new Date().toLocaleString()}     DEBUG [${context}] ${message}`
+    );
   }
 
   verbose(message: unknown, context?: string): void {
     if (!this.enableConsoleOutput) return;
-    console.log(`[Nest] ${process.pid}  - ${new Date().toLocaleString()}     VERBOSE [${context}] ${message}`);
+    console.log(
+      `[Nest] ${
+        process.pid
+      }  - ${new Date().toLocaleString()}     VERBOSE [${context}] ${message}`
+    );
   }
 }
 
@@ -66,30 +89,30 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new FilteredLogger(),
   });
-  
+
   const logger = new Logger('Bootstrap');
   logger.log('Starting ForgeBoard API...');
-  
+
   // Configure CORS for HTTP requests
   app.enableCors({
     origin: '*', // In production, specify the actual origins
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Accept,Authorization',
   });
-  
+
   // Add API prefix to all routes
   app.setGlobalPrefix('api');
-  
-  const port = process.env.PORT || 3000;
+
+  const port = config.port;
   await app.listen(port);
-  
+
   logger.log(`ForgeBoard API is running on: http://localhost:${port}`);
   logger.log('WebSocket server is available at:');
   logger.log(`  - http://localhost:${port}/metrics`);
   logger.log(`  - http://localhost:${port}/diagnostics`);
 }
 
-bootstrap().catch(err => {
+bootstrap().catch((err) => {
   const logger = new Logger('Bootstrap');
   logger.error(`Error starting application: ${err.message}`);
 });

@@ -1,6 +1,26 @@
 <div class="documentation-container">
   <h1>ForgeBoard Documentation</h1>
 
+  <!-- Documentation source selector -->
+  <div class="doc-source-selector">
+    <mat-form-field appearance="outline">
+      <mat-label>Documentation Source</mat-label>
+      <mat-select
+        [(value)]="documentationSource"
+        (selectionChange)="onSourceChange($event.value)"
+      >
+        <mat-option value="auto"
+          >Auto (Backend with Frontend Fallback)</mat-option
+        >
+        <mat-option value="backend">Backend Storage Only</mat-option>
+        <mat-option value="frontend">Frontend Assets Only</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <span class="source-indicator" [ngClass]="currentSourceClass">
+      Current: {{ currentSourceLabel }}
+    </span>
+  </div>
+
   <!-- Loading indicator -->
   <div *ngIf="isLoading" class="loading-container">
     <mat-spinner diameter="40"></mat-spinner>
@@ -12,94 +32,143 @@
     <mat-icon color="warn">error</mat-icon>
     <p>{{ loadError }}</p>
   </div>
-  
+
   <!-- Search bar -->
   <div class="search-container">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search documentation</mat-label>
-      <input matInput [(ngModel)]="searchQuery" (keyup.enter)="searchDocumentation()">
+      <input
+        matInput
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchDocumentation()"
+      />
       <mat-icon matSuffix *ngIf="!searchQuery">search</mat-icon>
-      <mat-icon matSuffix *ngIf="searchQuery" (click)="clearSearch()" style="cursor: pointer">clear</mat-icon>
+      <mat-icon
+        matSuffix
+        *ngIf="searchQuery"
+        (click)="clearSearch()"
+        style="cursor: pointer"
+        >clear</mat-icon
+      >
     </mat-form-field>
-    <button mat-raised-button color="primary" (click)="searchDocumentation()" [disabled]="!searchQuery">Search</button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="searchDocumentation()"
+      [disabled]="!searchQuery"
+    >
+      Search
+    </button>
   </div>
-  
+
   <!-- Search results -->
   <div *ngIf="isSearching" class="search-results">
     <h3>Search Results</h3>
     <mat-list>
-      <mat-list-item *ngFor="let result of searchResults | async" (click)="navigateToResult(result)" class="search-result-item">
+      <mat-list-item
+        *ngFor="let result of searchResults | async"
+        (click)="navigateToResult(result)"
+        class="search-result-item"
+      >
         <mat-icon matListIcon>article</mat-icon>
-        <h4 matLine>{{ result.tab }} > {{ result.section }} {{ result.subsection ? '> ' + result.subsection : '' }}</h4>
+        <h4 matLine>
+          {{ result.tab }} > {{ result.section }}
+          {{ result.subsection ? '> ' + result.subsection : '' }}
+        </h4>
         <p matLine [innerHTML]="result.content"></p>
       </mat-list-item>
-      <mat-list-item *ngIf="(searchResults | async)?.length === 0 && isSearching">
+      <mat-list-item
+        *ngIf="(searchResults | async)?.length === 0 && isSearching"
+      >
         <mat-icon matListIcon color="warn">info</mat-icon>
         <h4 matLine>No results found</h4>
         <p matLine>Try a different search term</p>
       </mat-list-item>
     </mat-list>
   </div>
-  
+
   <!-- Dynamic Documentation Tabs -->
-  <mat-tab-group [(selectedIndex)]="activeTabIndex" *ngIf="!isLoading && dynamicTabs.length > 0">
+  <mat-tab-group
+    [(selectedIndex)]="activeTabIndex"
+    *ngIf="!isLoading && dynamicTabs.length > 0"
+  >
     <mat-tab *ngFor="let tab of dynamicTabs">
       <ng-template mat-tab-label>
         <mat-icon *ngIf="tab.icon">{{ tab.icon }}</mat-icon>
         <span>{{ tab.label }}</span>
       </ng-template>
-      
+
       <div class="tab-content">
         <!-- Markdown content -->
         <div *ngIf="tab.isMarkdown" class="markdown-content">
           <div [innerHTML]="tab.renderedContent"></div>
         </div>
-        
+
         <!-- Category content with files -->
         <div *ngIf="tab.category && tab.files?.length" class="category-content">
           <h2>{{ tab.label }}</h2>
           <p>{{ tab.content }}</p>
-          
+
           <mat-list>
             <h3 mat-subheader>Documentation Files</h3>
-            <mat-list-item *ngFor="let file of tab.files" (click)="loadDocumentationFile(file.name)">
-              <mat-icon mat-list-icon>description</mat-icon>
+            <mat-list-item
+              *ngFor="let file of tab.files"
+              (click)="openDocumentationFile(file)"
+              class="doc-file-item"
+            >
+              <!-- Different icons based on file type -->
+              <mat-icon mat-list-icon [ngClass]="getFileTypeClass(file)">
+                {{ getFileIcon(file) }}
+              </mat-icon>
               <h4 mat-line>{{ formatFilenameAsTitle(file.name) }}</h4>
-              <p mat-line>{{ file.path }}</p>
+              <p mat-line>
+                <span
+                  [ngClass]="getFileTypeClass(file)"
+                  class="file-type-badge"
+                  >{{ file.type || 'unknown' }}</span
+                >
+                {{ file.path }}
+              </p>
             </mat-list-item>
           </mat-list>
         </div>
       </div>
     </mat-tab>
   </mat-tab-group>
-  
+
   <!-- Fallback Static Tabs -->
-  <mat-tab-group *ngIf="!isLoading && (!dynamicTabs || dynamicTabs.length === 0)">
+  <mat-tab-group
+    *ngIf="!isLoading && (!dynamicTabs || dynamicTabs.length === 0)"
+  >
     <mat-tab *ngFor="let tab of tabs" [label]="tab.label">
       <div class="tab-content">
         <div class="content-section">
           <h2>{{ tab.label }}</h2>
           <p>{{ tab.content }}</p>
-          
+
           <!-- Additional content based on tab -->
           <div [ngSwitch]="tab.label">
             <div *ngSwitchCase="'API'">
               <h3>REST Endpoints</h3>
               <ul>
                 <li><code>/api/metrics</code> - System performance metrics</li>
-                <li><code>/api/diagnostics</code> - System health and diagnostics</li>
+                <li>
+                  <code>/api/diagnostics</code> - System health and diagnostics
+                </li>
                 <li><code>/api/kanban</code> - Project board management</li>
                 <li><code>/api/logs</code> - Log management</li>
               </ul>
-              
+
               <h3>WebSocket Namespaces</h3>
               <ul>
                 <li><code>/metrics</code> - Real-time metrics updates</li>
-                <li><code>/diagnostics</code> - Health and socket diagnostics</li>
+                <li>
+                  <code>/diagnostics</code> - Health and socket diagnostics
+                </li>
                 <li><code>/kanban</code> - Real-time board updates</li>
               </ul>
             </div>
-            
+
             <div *ngSwitchCase="'Metrics'">
               <h3>Available Metrics</h3>
               <ul>
@@ -110,7 +179,7 @@
                 <li>User Sessions</li>
               </ul>
             </div>
-            
+
             <div *ngSwitchCase="'Kanban Board'">
               <h3>Board Features</h3>
               <ul>
@@ -120,7 +189,7 @@
                 <li>Real-time collaboration</li>
               </ul>
             </div>
-            
+
             <div *ngSwitchCase="'Logger'">
               <h3>Log Filtering Options</h3>
               <ul>
@@ -135,4 +204,53 @@
       </div>
     </mat-tab>
   </mat-tab-group>
+
+  <!-- Add a content viewer for different file types -->
+  <div *ngIf="activeFile" class="file-viewer">
+    <div class="file-viewer-header">
+      <button mat-icon-button (click)="closeFileViewer()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <h3>{{ formatFilenameAsTitle(activeFile.name) }}</h3>
+    </div>
+
+    <div class="file-viewer-content" [ngSwitch]="activeFile.type">
+      <!-- Markdown content -->
+      <div
+        *ngSwitchCase="'markdown'"
+        class="markdown-content"
+        [innerHTML]="renderedContent"
+      ></div>
+
+      <!-- PDF Viewer -->
+      <div *ngSwitchCase="'pdf'" class="pdf-viewer">
+        <iframe
+          [src]="safeFileUrl"
+          width="100%"
+          height="600"
+          frameborder="0"
+        ></iframe>
+      </div>
+
+      <!-- Audio Player -->
+      <div *ngSwitchCase="'audio'" class="audio-player">
+        <audio controls [src]="safeFileUrl">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <!-- Image Viewer -->
+      <div *ngSwitchCase="'image'" class="image-viewer">
+        <img [src]="safeFileUrl" alt="{{ activeFile.title }}" />
+      </div>
+
+      <!-- Other file types -->
+      <div *ngSwitchDefault class="other-file">
+        <p>
+          This file type ({{ activeFile.type }}) cannot be previewed directly.
+        </p>
+        <a [href]="safeFileUrl" download>Download file</a>
+      </div>
+    </div>
+  </div>
 </div>

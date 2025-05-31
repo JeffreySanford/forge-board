@@ -13,11 +13,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select'; // Add this import
+import { DocumentationService } from '@/app/services/documentation.service';
 
 @NgModule({
-  declarations: [
-    DocumentationComponent
-  ],  imports: [
+  declarations: [DocumentationComponent],
+  imports: [
     CommonModule,
     FormsModule,
     SharedModule,
@@ -28,12 +29,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatFormFieldModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    RouterModule.forChild([
-      { path: '', component: DocumentationComponent }
-    ])
+    MatSelectModule, // Add this module
+    RouterModule.forChild([{ path: '', component: DocumentationComponent }]),
   ],
-  exports: [
-    DocumentationComponent
-  ]
+  providers: [DocumentationService],
+  exports: [DocumentationComponent],
 })
-export class DocumentationModule { }
+export class DocumentationModule {}

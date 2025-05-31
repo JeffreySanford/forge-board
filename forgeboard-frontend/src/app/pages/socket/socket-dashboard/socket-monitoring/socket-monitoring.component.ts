@@ -5,15 +5,15 @@ import { SocketInfo } from '@forge-board/shared/api-interfaces';
 @Component({
   selector: 'app-socket-monitoring',
   templateUrl: './socket-monitoring.component.html', // Correct path
-  styleUrls: ['./socket-monitoring.component.scss'],   // Correct path
-  standalone: false // ensure no standalone components
+  styleUrls: ['./socket-monitoring.component.scss'], // Correct path
+  standalone: false, // ensure no standalone components
 })
 export class SocketMonitoringComponent implements OnInit {
   activeSockets: SocketInfo[] = [];
   isLoading = false;
   error: string | null = null;
 
-  constructor(private socketRegistryService: SocketRegistryService) { }
+  constructor(private socketRegistryService: SocketRegistryService) {}
 
   ngOnInit(): void {
     this.fetchActiveSockets();
@@ -31,10 +31,17 @@ export class SocketMonitoringComponent implements OnInit {
         console.log('Successfully fetched active sockets:', sockets);
       },
       error: (err) => {
-        console.error('Error fetching active sockets:', err);
-        this.error = 'Failed to load active sockets. Please try again.';
+        console.warn(
+          'Socket monitoring: Unable to connect to socket registry service. This may be expected if the backend is not running.',
+          {
+            status: err.status,
+            message: err.message,
+          }
+        );
+        this.error =
+          'Unable to connect to socket service. Please ensure the backend is running.';
         this.isLoading = false;
-      }
+      },
     });
   }
 }

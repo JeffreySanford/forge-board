@@ -39,6 +39,7 @@ import { LogsModule } from './logs/logs.module';
 import { SystemModule } from './system/system.module';
 import { Sound, SoundSchema } from './models/sound.model';
 import { KanbanModule } from './kanban/kanban.module';
+import { DocumentationModule } from './documentation/documentation.module';
 
 @Module({
   imports: [
@@ -48,7 +49,10 @@ import { KanbanModule } from './kanban/kanban.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        let uri = configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/forge-board');
+        let uri = configService.get<string>(
+          'MONGODB_URI',
+          'mongodb://localhost:27017/forge-board'
+        );
         if (configService.get<string>('USE_IN_MEMORY_MONGO') === 'true') {
           const mongod = await MongoMemoryServer.create();
           uri = mongod.getUri();
@@ -83,6 +87,7 @@ import { KanbanModule } from './kanban/kanban.module';
     // JwtModule removed for v10+
     SystemModule,
     KanbanModule,
+    DocumentationModule,
   ],
   controllers: [
     AppController,
@@ -103,19 +108,23 @@ import { KanbanModule } from './kanban/kanban.module';
       provide: Logger,
       useValue: new Logger('AppModule'),
     },
-    AuthService, 
-    AuthGateway, 
-    JwtAuthGuard, 
+    AuthService,
+    AuthGateway,
+    JwtAuthGuard,
     WsJwtGuard,
     JwtService,
     SeedService,
     SecurityStreamGateway,
   ],
-  exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService]
+  exports: [AuthService, JwtAuthGuard, WsJwtGuard, JwtService],
 })
 export class AppModule {
-  constructor(private readonly configService: ConfigService, private readonly seedService: SeedService) {
-    const useInMemory = this.configService.get<string>('USE_IN_MEMORY_MONGO') === 'true';
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly seedService: SeedService
+  ) {
+    const useInMemory =
+      this.configService.get<string>('USE_IN_MEMORY_MONGO') === 'true';
     if (!useInMemory) {
       const dbUri = this.configService.get<string>('MONGODB_URI');
       const dbName = this.configService.get<string>('DB_NAME');
