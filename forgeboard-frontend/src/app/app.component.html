@@ -1,23 +1,30 @@
 <!-- Add gold-bordered page container as the outer wrapper -->
 <div class="gold-page-container">
   <div class="page-indicator" *ngIf="showContainerIndicators">page</div>
-  
-  <!-- Keep the existing page container but now inside our gold container -->
-  <div class="page-container" [class.hide-border]="!showLayoutBorder" [class.hide-indicators]="!showContainerIndicators">
-    <!-- Content wrapper with router outlet -->
-    <div class="content-wrapper blue-border" [class.hide-border]="!showLayoutBorder">
 
-      <mat-toolbar color="primary" class="header-containter" [class.hide-border]="!showLayoutBorder">
-        {{ projectName }}
-        <button mat-icon-button (click)="toggleNavigation()" *ngIf="isHandset$ | async">
-          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
-        </button>
-        <span class="brand-text">ForgeBoard</span>
+  <!-- Keep the existing page container but now inside our gold container -->
+  <div
+    class="page-container"
+    [class.hide-border]="!showLayoutBorder"
+    [class.hide-indicators]="!showContainerIndicators"
+  >
+    <!-- Content wrapper with router outlet -->
+    <div
+      class="content-wrapper blue-border"
+      [class.hide-border]="!showLayoutBorder"
+    >
+      <mat-toolbar
+        color="primary"
+        class="header-containter"
+        [class.hide-border]="!showLayoutBorder"
+      >
         <span class="toolbar-spacer"></span>
-        
+
         <!-- Global Refresh Interval Control -->
         <div class="global-refresh-control">
-          <span class="refresh-label">Global Refresh: {{ refreshInterval }}ms</span>
+          <span class="refresh-label"
+            >Global Refresh: {{ refreshInterval }}ms</span
+          >
           <input
             type="range"
             class="refresh-slider"
@@ -33,17 +40,24 @@
 
       <app-navigation></app-navigation>
 
-      <div class="fieldset-label content-label" *ngIf="showLayoutBorder && showContainerIndicators">content container</div>
+      <div
+        class="fieldset-label content-label"
+        *ngIf="showLayoutBorder && showContainerIndicators"
+      >
+        content container
+      </div>
 
       <!-- Connection status indicator -->
-      <app-connection-status-indicator position="top-right"></app-connection-status-indicator>
+      <app-connection-status-indicator
+        position="top-right"
+      ></app-connection-status-indicator>
 
       <!-- Router outlet will display the current route component -->
       <router-outlet></router-outlet>
     </div>
 
     <!-- Footer moved inside page container for better height management -->
-    <app-footer 
+    <app-footer
       [showContextBlock]="showContextBlock"
       [showLayoutBorder]="showLayoutBorder"
       [animationsStarted]="animationsStarted"
@@ -53,87 +67,128 @@
       (gridToggle)="handleFooterGridToggle()"
       (infoClick)="handleFooterInfoClick()"
       (databaseClick)="handleFooterDatabaseClick()"
-      (audioToggle)="handleFooterAudioToggle($event)">
+      (audioToggle)="handleFooterAudioToggle($event)"
+    >
     </app-footer>
 
     <!-- Controls row -->
     <div class="controls-row">
       <!-- Container indicator toggle button -->
       <div class="control-wrapper">
-        <div class="indicator-toggle mr-1" [class.active]="showContainerIndicators" (click)="toggleContainerIndicators()">
+        <div
+          class="indicator-toggle mr-1"
+          [class.active]="showContainerIndicators"
+          (click)="toggleContainerIndicators()"
+        >
           <mat-icon>label</mat-icon>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle container indicators
-> Shows/hides labels for layout containers</span>
+            <span class="typing-animation"
+              >Toggle container indicators > Shows/hides labels for layout
+              containers</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Layout control -->
       <div class="control-wrapper">
-        <div class="layout-icon mr-1" [class.shake]="layoutWiggle" (click)="toggleLayoutMode()">
+        <div
+          class="layout-icon mr-1"
+          [class.shake]="layoutWiggle"
+          (click)="toggleLayoutMode()"
+        >
           <mat-icon>grid_on</mat-icon>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle layout visualization
-> Controls blueprint-style layout guides</span>
+            <span class="typing-animation"
+              >Toggle layout visualization > Controls blueprint-style layout
+              guides</span
+            >
           </div>
         </div>
       </div>
 
       <!-- 12-column overlay -->
       <div class="control-wrapper">
-        <div class="layout-icon mr-1" (click)="toggle12ColumnOverlay()" [class.active]="is12ColumnVisible">
+        <div
+          class="layout-icon mr-1"
+          (click)="toggle12ColumnOverlay()"
+          [class.active]="is12ColumnVisible"
+        >
           <mat-icon>view_column</mat-icon>
           <span class="layout-indicator">12</span>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle 12-column grid
-> Displays standard 12-column layout</span>
+            <span class="typing-animation"
+              >Toggle 12-column grid > Displays standard 12-column layout</span
+            >
           </div>
         </div>
       </div>
 
       <!-- 4-column overlay -->
       <div class="control-wrapper">
-        <div class="layout-icon mr-1" (click)="toggle4ColumnOverlay()" [class.active]="is4ColumnVisible">
+        <div
+          class="layout-icon mr-1"
+          (click)="toggle4ColumnOverlay()"
+          [class.active]="is4ColumnVisible"
+        >
           <mat-icon>view_column</mat-icon>
           <span class="layout-indicator">4</span>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle 4-column grid
-> Displays simplified 4-column layout</span>
+            <span class="typing-animation"
+              >Toggle 4-column grid > Displays simplified 4-column layout</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Small grid -->
       <div class="control-wrapper">
-        <div class="layout-icon mr-1" (click)="toggleSmallGridOverlay()" [class.active]="isSmallGridVisible">
+        <div
+          class="layout-icon mr-1"
+          (click)="toggleSmallGridOverlay()"
+          [class.active]="isSmallGridVisible"
+        >
           <mat-icon>grid_view</mat-icon>
           <span class="layout-indicator">S</span>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle small grid
-> Fine-grained alignment guide</span>
+            <span class="typing-animation"
+              >Toggle small grid > Fine-grained alignment guide</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Large grid -->
       <div class="control-wrapper">
-        <div class="layout-icon mr-1" (click)="toggleLargeGridOverlay()" [class.active]="isLargeGridVisible">
+        <div
+          class="layout-icon mr-1"
+          (click)="toggleLargeGridOverlay()"
+          [class.active]="isLargeGridVisible"
+        >
           <mat-icon>grid_view</mat-icon>
           <span class="layout-indicator">L</span>
           <div class="console-tooltip">
-            <span class="typing-animation">Toggle large grid
-> Coarse alignment guide</span>
+            <span class="typing-animation"
+              >Toggle large grid > Coarse alignment guide</span
+            >
           </div>
         </div>
       </div>
 
       <!-- Audio control with sound-dependent tooltip -->
       <div class="control-wrapper">
-        <div class="audio-icon" [class.shake]="isShaking" (click)="onAudioIconClick()">
+        <div
+          class="audio-icon"
+          [class.shake]="isShaking"
+          (click)="onAudioIconClick()"
+        >
           <mat-icon>{{ audioEnabled ? 'volume_up' : 'volume_off' }}</mat-icon>
           <div class="console-tooltip" [class.with-sound]="audioEnabled">
-            <span class="typing-animation">{{ audioEnabled ? 'Audio enabled\n> Click to mute system sounds' : 'Audio disabled\n> Click to enable system sounds' }}</span>
+            <span class="typing-animation">{{
+              audioEnabled
+                ? 'Audio enabled\n> Click to mute system sounds'
+                : 'Audio disabled\n> Click to enable system sounds'
+            }}</span>
           </div>
         </div>
       </div>
@@ -148,8 +203,16 @@
     <div *ngIf="isSmallGridVisible" class="layout-grid-overlay small"></div>
     <div *ngIf="isLargeGridVisible" class="layout-grid-overlay large"></div>
   </div>
-  
+
   <!-- Audio elements remain unchanged -->
-  <audio #keyStrikeSound preload="auto" src="assets/sounds/typewriter/keystrike.mp3"></audio>
-  <audio #dingSound preload="auto" src="assets/sounds/typewriter/ding.mp3"></audio>
+  <audio
+    #keyStrikeSound
+    preload="auto"
+    src="assets/sounds/typewriter/keystrike.mp3"
+  ></audio>
+  <audio
+    #dingSound
+    preload="auto"
+    src="assets/sounds/typewriter/ding.mp3"
+  ></audio>
 </div>
